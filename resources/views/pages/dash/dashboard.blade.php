@@ -85,6 +85,7 @@
   <div class="content">
         <div class="container-fluid">
 
+          @include('inc.messages')
           <div class="cols_cont">
 
             <div class="col_60">
@@ -182,6 +183,23 @@
                   
                   <div class="card-footer">
                     <div class="stats">Manage Expenses here.
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+
+            <div class="col_60">
+
+              <a href="/closure_page" class="myA">
+                <div class="card card-stats">
+                  
+                  <i class="fa fa-calendar myIcon"></i>
+
+                  <h3 class='config'>Closure</h3>
+                  
+                  <div class="card-footer">
+                    <div class="stats">Manage Closure here.
                     </div>
                   </div>
                 </div>

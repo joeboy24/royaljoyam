@@ -89,6 +89,11 @@ class DashController extends Controller
             Session::put('date_today', date('Y-m-d'));
         }
 
+        if(session('sales_permit') == 0){
+            return redirect('/dashboard')->with('error', 'Oops..! Contact administrator to initialize '.date('F, Y').' opening');
+        }
+
+
         if(auth()->user()->status == 'Administrator'){
             $uid_hold = 'no';
             $field = "del";

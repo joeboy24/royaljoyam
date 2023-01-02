@@ -33,8 +33,7 @@
             @include('inc.messages')
             <form action="{{ action('ItemsController@store') }}" method="POST">
                 @csrf
-                @if (date('Y') == $yr)
-                    {{-- <p>{{date('Y').' == '.$yr}}</p> --}}
+                {{-- @if (date('Y') == $yr) --}}
                     @if (session('mth_openning') == 1)
                         @if ($closure_state == 'open')
                             <button name="store_action" value="closure" class="closure_btn">Close current month</button>
@@ -42,7 +41,7 @@
                     @else
                         <button name="store_action" value="set_closure" class="closure_btn2">Open current month</button>
                     @endif
-                @endif
+                {{-- @endif --}}
             </form>
             
             <div class="invCenter">
@@ -274,7 +273,9 @@
                     </div>
 
                 @else
-                    <p>No Records Found</p>
+                    <div class="alert alert-danger">
+                        No Sales Records Found 
+                    </div>
                 @endif
             </div>
 

@@ -49,7 +49,7 @@ class PagesController extends Controller
             Session::put('expenses', '');
             Session::put('date_today', date('Y-m-d'));
         }
-        return view('auth.login');
+        return redirect('/dashboard');
         // return view('pages.index')->with('title');
     }
 
@@ -80,6 +80,10 @@ class PagesController extends Controller
     }
 
     public function expenses(){
+
+        if(session('sales_permit') == 0){
+            return redirect('/dashboard')->with('error', 'Oops..! Contact administrator to initialize '.date('F, Y').' opening');
+        }
 
         // $exps = Item::all();
         // // return $ex[1]->companybranch;

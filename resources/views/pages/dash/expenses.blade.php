@@ -124,8 +124,8 @@
                     <div class="form-group">
                       <select name="branch" class="form-control" required>
                         <option value="0">Select Branch Name</option>
-                        @if (count($branches) > 0)
-                          @foreach ($branches as $branch)
+                        @if (count(session('compbranch')) > 0)
+                          @foreach (session('compbranch') as $branch)
                             @if (auth()->user()->status == 'Administrator')
                               <option value="{{ $branch->id }}">{{ $branch->name }}</option> 
                             @elseif (auth()->user()->bv == $branch->id)

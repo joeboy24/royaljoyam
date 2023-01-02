@@ -105,12 +105,15 @@ class ItemsController extends Controller
                     $ps2 = $request->input('password_confirmation');
                     $status = $request->input('status');
 
-                    $uc = CompanyBranch::where('name', $status)->first();
+                    // $uc = CompanyBranch::where('name', $status)->first();
                     if($status == 'Administrator'){
                         $bv = 'A';
+                        $br = 1;
                     }else{
+                        $uc = CompanyBranch::find($status);
                         $bv = $uc->tag;
-                        // $bv = $uc + 1;
+                        $br = $status;
+                        $status = $uc->name;
                     }
     
     
@@ -119,7 +122,7 @@ class ItemsController extends Controller
                             $user->name = $request->input('name');
                             $user->email = $request->input('email');
                             $user->password = Hash::make($ps1);
-                            $user->company_branch_id = $uc->id;
+                            $user->company_branch_id = $br;
                             $user->bv = $bv;
                             $user->status = $status;
                             $user->save();
@@ -136,9 +139,10 @@ class ItemsController extends Controller
                             // $bfind = CompanyBranch::find($companybranch_id);
                             // $bfind->user_id = $this_id;
                             // $bfind->save();
-        
-                    }catch(Exception $ex){
-                        return redirect('/dashuser')->with('error', 'Ooops... Username / Email already exists '.$ex);
+
+                    } catch (\Throwable $th) {
+                        throw $th;
+                        // return redirect('/dashuser')->with('error', 'Ooops... Username / Email already exists '.$ex);
                     }
     
                 break;

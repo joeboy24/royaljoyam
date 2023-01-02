@@ -4122,6 +4122,10 @@ height: 100%;
   margin: 1%;
 }
 
+.myA {
+  margin: 0;
+}
+
 @media (max-width: 700px) {
   #myCol{
     margin: 10px;
