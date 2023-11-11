@@ -164,7 +164,10 @@
                                   {{-- <td>{{$item->desc}}</td> --}}
                                   <td>{{$item->cat}}</td>
                                   {{-- <td>{{$item->barcode}}</td> --}}
-                                  <td><b style="font-weight: 600">{{$item->qty}}</b>
+                                  <td><b style="font-weight: 600">
+                                          <!--{{$item->qty}}-->
+                                          {{$item->q1 + $item->q2 + $item->q3 + $item->q4 + $item->q5}}
+                                      </b>
                                     @for ($i = 0; $i < count(session('compbranch')); $i++)
                                       <input type="hidden" value="{{$q = 'q'.$i+1}}">
                                       @if ($item->$q != 0 || $item->$q != '')

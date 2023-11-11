@@ -255,6 +255,49 @@
                                     <td>
                                       <a href="/reporting/{{$sale->id}}"><button type="button" title="Print Order" class="print_black"><i class="fa fa-print"></i></button></a>
                                       
+                                      @if ($sale->paid != 'Paid' && $sale->pay_mode == 'Post Payment(Debt)')
+                                        {{-- @if ($sale->tot - ())
+                                            
+                                        @endif --}}
+                                        <button type="submit" data-toggle="modal" data-target="#pay_debt{{$sale->id}}" title="Pay Debt" class="print_black"><i class="fa fa-money"></i></button>
+                                        
+                                        <div class="modal fade" id="pay_debt{{$sale->id}}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                          <div class="modal-dialog modtop" role="document">
+                                            <div id="printarea" class="modal-content">
+                                                <div class="modal-header">
+                                                <h6 class="modal-title" id="exampleModalLabel"><i class="fa fa-save"></i>&nbsp;&nbsp; Make Payment for {{$sale->buy_name}}</h6>
+                                              </div>
+                                                <div class="card card-profile">
+                                                  <div class="card-avatar">
+                                                    <a href="#">
+                                                    {{-- <img class="img" src="/storage/members_imgs/{{$fee->student->photo}}" /> --}}
+                                                    </a>
+                                                  </div>
+                                                  <div class="card-body">
+                                                    <h6 class="card-category text-gray"></h6>
+                                                    <div style="height: 30px">
+                                                    </div>
+                                      
+                                                    <form action="{{ action('ItemsController@store') }}" method="POST">
+                                                      @csrf
+                      
+                                                      <div class="cartIncrease">
+                                                        <input type="hidden" name="send_id" value="{{$sale->id}}">
+                                                        <input type="hidden" name="send_tot" value="{{$sale->tot}}">
+                                                        <input type="number" min="1" step="any" name="amt_paid" placeholder="Amount" value="{{$sale->tot - $sale->paid_debt}}" max="{{$sale->tot - $sale->paid_debt}}">
+                                                        <button class="black_btn" type="submit" name="store_action" value="pay_debt" onclick="return confirm('Are you sure you want to proceed payment?');"><i class="fa fa-money"></i> &nbsp; Pay</button>
+                                                      </div>
+                                                        
+                                                    </form>
+                                      
+                                                  </div>
+                                                </div>
+                                            </div>
+                                      
+                                          </div>
+                                        </div>
+                                      @endif
+                                      
                                       <button type="submit" data-toggle="modal" data-target="#edit_order{{ $sale->id }}" title="Edit Order" class="print_black">&nbsp;<i class="fa fa-pencil"></i>&nbsp;</button>
                                       <div class="modal fade" id="edit_order{{ $sale->id }}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                         

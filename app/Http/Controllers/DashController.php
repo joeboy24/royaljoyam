@@ -34,11 +34,31 @@ class DashController extends Controller
     }
     
     public function dashboard(){
+        
+        // $del = ['del' => 'no',
+        // 'paid' => 'Paid',
+        // 'user_bv' => 1
+        // ];
+        // $sales_send = Sale::where($del)->where('created_at', 'LIKE', '%2022-12-02%')->orderBy('id', 'desc')->get();
+        // return 'Total: '.$sales_send->sum('tot');
 
         if(session('date_today') == ''){
             Session::put('date_today', date('Y-m-d'));
         }
         return view('pages.dash.dashboard');
+    }
+
+    public function userprofile(){
+
+        $items = Item::all();
+        $company = Company::all();
+        $branches = CompanyBranch::all();
+        $pass = [
+            'items' => $items,
+            'company' => $company,
+            'branches' => $branches
+        ];
+        return view('pages.dash.user_profile')->with($pass);
     }
 
     public function configurations(){
@@ -83,21 +103,55 @@ class DashController extends Controller
         return view('pages.dash.dashuser')->with($pass);
     }
 
+    public function debts_paid(){
+
+        if (auth()->user()->status == 'Administrator') {
+            $sales_pay = SalesPayment::whereBetween('created_at', [date('Y-m-01', strtotime(session('date_today'))), new \DateTime(date('Y-m-t', strtotime(session('date_today'))).'+1 day')])->orderBy('id', 'desc')->paginate(20);
+        }else{
+            $del = [
+                'del' => 'no',
+                'user_id' => auth()->user()->id
+            ];
+            $sales_pay = SalesPayment::where($del)->where('created_at', 'LIKE', '%'.session('date_today').'%')->orderBy('id', 'desc')->paginate(20);
+        }
+        // return $sales_pay[0]->sale;
+        // $sales_pay = SalesPayment::limit(3)->paginate(10);
+        // foreach ($sales_pay as $sal){
+        //     if ($sal->sale != ''){
+        //         // return $sal->sale->order_no;
+        //     }else{
+        //         return 'Error ID: '.$sal->id;
+        //     }
+        // }
+        $pass = [
+            'c' => 1,
+            'sales_pay' => $sales_pay,
+        ];
+        return view('pages.dash.depts_paid')->with($pass);
+    }
+
     public function sales(){
 
         if(session('date_today') == ''){
             Session::put('date_today', date('Y-m-d'));
         }
 
+        if(session('sales_permit') == 0){
+            return redirect('/dashboard')->with('error', 'Oops..! Contact administrator to initialize '.date('F, Y').' opening');
+        }
+
+
         if(auth()->user()->status == 'Administrator'){
             $uid_hold = 'no';
             $field = "del";
+            $debts = SalesPayment::where('del', 'no')->where('created_at', 'LIKE', '%'.session('date_today').'%')->get();
         }else{
             $uid_hold = auth()->user()->id;
             $field = "user_id";
+            $debts = SalesPayment::where('user_id', $uid_hold)->where('del', 'no')->where('created_at', 'LIKE', '%'.session('date_today').'%')->get();
         }
 
-        $items = Item::all();
+        $items = Item::where('del', 'no')->get();
 
         $uidMatch = [
             $field => $uid_hold
@@ -105,7 +159,7 @@ class DashController extends Controller
         $sales = Sale::where($uidMatch)->where('created_at', 'LIKE', '%'.session('date_today').'%')->orderBy('id', 'desc')->paginate(10);
         $sales2 = Sale::where($uidMatch)->where('created_at', 'LIKE', '%'.session('date_today').'%')->get();
         // return $sales;
-        $debts = SalesPayment::where($uidMatch)->where('updated_at', 'LIKE', '%'.session('date_today').'%')->get();
+        // $debts = SalesPayment::where($uidMatch)->where('updated_at', 'LIKE', '%'.session('date_today').'%')->get();
         // 2021-05-12 18:50:28
         $cashMatch = [
             'pay_mode' => 'Cash',
@@ -158,6 +212,7 @@ class DashController extends Controller
             'sum_dbt' => $sum_dbt,
             'sum_dbt' => $sum_dbt,
             'debts_paid' => $debts_paid,
+            'sum_ex_dbt' => $sum_ex_dbt,
             'sum_inc_dbt' => $sum_inc_dbt,
             'carts' => $carts
         ];
@@ -186,11 +241,11 @@ class DashController extends Controller
         $match = ['del' => 'no'];
         $waybillsearch = $request->query('waybillsearch');
         if(!empty($waybillsearch)){
-            $waybills = Waybill::where($match)->where('comp_name', 'like', '%'.$waybillsearch.'%')->orderBy('id', 'desc')->paginate(10);
-            if(count($waybills) < 1){
-                $waybills = Waybill::where($match)->where('drv_name', 'like', '%'.$waybillsearch.'%')->orderBy('id', 'desc')->paginate(10);
+            $waybills = Waybill::where($match)->where('comp_name', 'like', '%'.$waybillsearch.'%')->orwhere('vno', 'like', '%'.$waybillsearch.'%')->orwhere('drv_name', 'like', '%'.$waybillsearch.'%')->orwhere('drv_contact', 'like', '%'.$waybillsearch.'%')->orderBy('id', 'desc')->paginate(10);
+            // if(count($waybills) < 1){
+            //     $waybills = Waybill::where($match)->where('drv_name', 'like', '%'.$waybillsearch.'%')->orderBy('id', 'desc')->paginate(10);
         
-            }
+            // }
         }else{
             $waybills = Waybill::where($match)->orderBy('id', 'desc')->paginate(10);
         }

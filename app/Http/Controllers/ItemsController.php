@@ -105,12 +105,15 @@ class ItemsController extends Controller
                     $ps2 = $request->input('password_confirmation');
                     $status = $request->input('status');
 
-                    $uc = CompanyBranch::where('name', $status)->first();
+                    // $uc = CompanyBranch::where('name', $status)->first();
                     if($status == 'Administrator'){
                         $bv = 'A';
+                        $br = 1;
                     }else{
+                        $uc = CompanyBranch::find($status);
                         $bv = $uc->tag;
-                        // $bv = $uc + 1;
+                        $br = $status;
+                        $status = $uc->name;
                     }
     
     
@@ -119,7 +122,7 @@ class ItemsController extends Controller
                             $user->name = $request->input('name');
                             $user->email = $request->input('email');
                             $user->password = Hash::make($ps1);
-                            $user->company_branch_id = $uc->id;
+                            $user->company_branch_id = $br;
                             $user->bv = $bv;
                             $user->status = $status;
                             $user->save();
@@ -136,9 +139,10 @@ class ItemsController extends Controller
                             // $bfind = CompanyBranch::find($companybranch_id);
                             // $bfind->user_id = $this_id;
                             // $bfind->save();
-        
-                    }catch(Exception $ex){
-                        return redirect('/dashuser')->with('error', 'Ooops... Username / Email already exists '.$ex);
+
+                    } catch (\Throwable $th) {
+                        // throw $th;
+                        return redirect('/dashuser')->with('error', 'Ooops... Username / Email already exists '.$th);
                     }
     
                 break;
@@ -692,18 +696,23 @@ class ItemsController extends Controller
                         $pay_mode = $request->input('pay_mode');
                         $del_status = $request->input('del_status');
 
-                        if($pay_mode == '-- Mode of Payment --' or $del_status == '-- Delivery Status --'){
+                        if ($pay_mode == '-- Mode of Payment --' or $del_status == '-- Delivery Status --'){
                             return redirect('/sales')->with('error', "Select -- Mode of Payment -- / -- Delivery Status -- to proceed..");
                         }
-                        if($pay_mode == 'Post Payment(Debt)'){
+                        if ($pay_mode == 'Post Payment(Debt)'){
                             $pd = 'No';
                         }
 
                         // Transport Cart to Sales History
 
                         $carts = Cart::where('user_id', auth()->user()->id)->get();
+                        // return count($carts);
                         $qty = $carts->sum('qty');
                         $tot = $carts->sum('tot');
+
+                        if ($request->input('discount') > $tot) {
+                            return redirect(url()->previous())->with('error', "Oops..! Discount cannot be greater than total amount");
+                        }
 
                         if($request->input('discount') == ''){
                             $discount = 0;
@@ -738,16 +747,23 @@ class ItemsController extends Controller
                             ]);
 
                             if ($pay_mode == 'Post Payment(Debt)' && $pmt > 0) {
-
+                                
+                                if ($pmt > $tot) {
+                                    $pmt = $tot;
+                                }
                                 $sales_pay = new SalesPayment;
                                 $sales_pay->user_id = auth()->user()->id;
                                 $sales_pay->sale_id = $sales->id;
                                 $sales_pay->amt_paid = $pmt;
                                 $sales_pay->bal = $tot - $pmt;
                                 $sales_pay->save();
-
+                                if ($pmt == $tot){
+                                    $pd = 'Paid';
+                                }
+                                $sales->paid = $pd;
                                 $sales->paid_debt = $pmt;
                                 $sales->save();
+
                             }
 
                             $sale_id = Sale::latest()->limit(1)->get();
@@ -773,6 +789,12 @@ class ItemsController extends Controller
                                     'tot' => $cart->tot,
                                     'del_status' => $del_status,
                                 ]);
+                                // Reduce stock
+                                // $itm = Item::where('id', $cart->item_id)->first();
+                                // $bvv = 'q'.auth()->user()->bv;
+                                // $itm->$bvv = $itm->$bvv - $cart->qty;
+                                // $itm->save();
+
                                 // Empty specific user cart after transport
                                 $cart_del = Cart::find($cart->id);
                                 $cart_del->delete();
@@ -832,7 +854,7 @@ class ItemsController extends Controller
                         return redirect('/sales')->with('error', 'Oops..! Amount paying cannot be greater than amount owing.');
                     }
 
-                    $sum_debts = SalesPayment::where('sale_id', $sale_id)->sum('amt_paid');
+                    $sum_debts = SalesPayment::where('del', 'no')->where('sale_id', $sale_id)->sum('amt_paid');
                     if($sum_debts == 0){
                         $sum_debts = $amt_paid;
                         // return redirect(url()->previous())->with('error', 'No entries for Sales Payments');
@@ -859,7 +881,7 @@ class ItemsController extends Controller
 
 
                     // $cat->save();
-                    return redirect('/sales')->with('success', 'Payment of Gh₵ '.$amt_paid.' successfull made.');
+                    return redirect(url()->previous())->with('success', 'Payment of Gh₵ '.$amt_paid.' successfull made.');
                    
                     //Hash::make($data['password']);
     
@@ -1062,6 +1084,25 @@ class ItemsController extends Controller
         //
         switch ($request->input('store_action')) {
 
+            case 'update_user':
+
+                $ps1 = $request->input('password');
+                $ps2 = $request->input('password_confirmation');
+
+                if($ps1 == $ps2){
+                    $user = User::find($id);
+                    $user->name = $request->input('name');
+                    $user->email = $request->input('email');
+                    $user->password = Hash::make($ps1);
+                    $user->save();
+
+                    return redirect(url()->previous())->with('success', 'Update Successful');
+                }else{
+                    return redirect(url()->previous())->with('error', 'Passwords do not match');
+                }
+
+            break;
+
             case 'update_item':
 
                 $qtySum = $request->input('q1') + $request->input('q2') + $request->input('q3');
@@ -1155,7 +1196,6 @@ class ItemsController extends Controller
 
                     
             break;
-
 
             case 'del_waybil':
 
@@ -1475,6 +1515,29 @@ class ItemsController extends Controller
                 return redirect(url()->previous())->with('success', 'Waybill branch quantities update successful');
             break;
 
+            case 'del_paid_debt':
+                $sp = SalesPayment::find($id);
+                $order = Sale::where('id', $sp->sale_id)->first();
+                $replace = $order->paid_debt - $sp->amt_paid;
+                $order->paid_debt = $replace;
+                $order->paid = 'No';
+                $order->save();
+                $sp->del = 'yes';
+                $sp->save();
+                return redirect(url()->previous())->with('success', 'Record deletion successfull');
+            break;
+
+            case 'cart_del':
+                $cart = Cart::find($id);
+                // Reduce stock
+                $itm = Item::where('id', $cart->item_id)->first();
+                $bvv = 'q'.auth()->user()->bv;
+                $itm->$bvv = $itm->$bvv + $cart->qty;
+                $itm->save();
+                $cart->delete();
+                return redirect(url()->previous())->with('success', $cart->name.' deleted successfully');
+            break;
+
         }
     }
 
@@ -1514,6 +1577,13 @@ class ItemsController extends Controller
                 $user->del = 'yes';
                 $user->save();
                 return redirect(url()->previous())->with('success', 'User Deleted.');
+            break;
+
+            case 'usr_restore':
+                $user = User::find($id);
+                $user->del = 'no';
+                $user->save();
+                return redirect(url()->previous())->with('success', 'User Successfully Restored.');
             break;
 
             case 'branch_del':

@@ -38,6 +38,7 @@ Route::get('/download', function () {
     return response()->download('maindir/exfile/student_file_format.xlsx');
 });
 
+Route::get('/user_profile', 'DashController@userprofile');
 Route::get('/try', 'PagesController@try');
 Route::resource('/fees', 'FeesController');
 
@@ -84,6 +85,7 @@ Route::get('/stockbal', 'DashController@stockbal');
 Route::get('/genstockbal', 'DashController@genstockbal');
 Route::get('/expensereport', 'DashController@expensereport');
 Route::get('/debts', 'DashController@debts');
+Route::get('/paid_debts', 'DashController@debts_paid');
 Route::get('/waybillreport', 'DashController@waybillreport');
 Route::get('/returnsreport', 'DashController@returnsreport');
 Route::get('/distreport', 'DashController@distreport');

@@ -22,6 +22,11 @@ class load_auth
      */
     public function handle(Request $request, Closure $next)
     {
+        // if (Session::get('https') != 'https'){
+        //     Session::put('https', 'https');
+        //     return redirect('https://rjv.pivoapps.net');
+        // }
+
         if (auth()->user()->del == 'yes') {
             auth()->logout();
             return redirect('/')->with('error', 'Oops..! Access Denied');
@@ -32,7 +37,9 @@ class load_auth
             $cl = Closures::where('month', date('Y-m-01'))->latest()->first();
             Session::put('cl', $cl);
             if ($cl == '' && auth()->user()->status != 'Administrator') {
-                return redirect('/')->with('error', 'Oops..! Contact administrator to initialize '.date('F, Y').' opening');
+                Session::put('sales_permit', 0);
+            }else {
+                Session::put('sales_permit', 1);
             }
             
 
@@ -45,14 +52,14 @@ class load_auth
             Session::put('branch_A', $b1->name);
             Session::put('branch_B', $b2->name);
             Session::put('branch_C', $b3->name);
-            Session::put('branch_D', $b3->name);
-            Session::put('branch_E', $b3->name);
+            Session::put('branch_D', $b4->name);
+            Session::put('branch_E', $b5->name);
 
             Session::put('branch_1', $b1->name);
             Session::put('branch_2', $b2->name);
             Session::put('branch_3', $b3->name);
-            Session::put('branch_4', $b3->name);
-            Session::put('branch_5', $b3->name);
+            Session::put('branch_4', $b4->name);
+            Session::put('branch_5', $b5->name);
             
             $cats = Category::All();
             $company = Company::find(1);

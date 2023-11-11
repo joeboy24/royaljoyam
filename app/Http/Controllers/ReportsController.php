@@ -14,6 +14,7 @@ use App\Models\Expense;
 use App\Models\Waybill;
 use App\Models\OrderReturn;
 use App\Models\SalesHistory;
+use App\Models\SalesPayment;
 use App\Models\CompanyBranch;
 use Exception;
 use Session;
@@ -599,8 +600,8 @@ class ReportsController extends Controller
         // $sh = SalesHistory::find($id);
         // return $id;
 
-        $SalesHistory = SalesHistory::where('sale_id', $id)->get();
-        foreach ($SalesHistory as $sh) {
+        $salesHistory = SalesHistory::where('sale_id', $id)->get();
+        foreach ($salesHistory as $sh) {
             # code...
             $OrderReturn = OrderReturn::firstOrCreate([
                 'user_id' => $sh->user_id,
@@ -630,12 +631,18 @@ class ReportsController extends Controller
             
         }
 
-            // Delete from Sales
-            $sales = Sale::find($id);
-            $sales->delete();
+        $salesP = SalesPayment::where('sale_id', $id)->get();
+        foreach ($salesP as $sp) {
+            $sp->del = 'Yes';
+            $sp->delete();
+        }
 
-        // return $SalesHistory;
-        return redirect(url()->previous());
+        // Delete from Sales
+        $sales = Sale::find($id);
+        $sales->delete();
+
+        // return $salesHistory;
+        return redirect(url()->previous())->with('success', 'Order return successfull');
         // return $id;
     }
 

@@ -65,27 +65,17 @@
                             <td class="col-sm-3"><b>Profit Gh₵</b></td>
                         </tr>
                         <tr>
-                            @php
-                                $qty = 0; $btot = 0; $bprof = 0;
-                                foreach (session('sales_history') as $sh){
-                                
-                                    if ($sh->user_bv == '1'){
-                                        $qty = $qty + $sh->qty;
-                                        $btot = $btot + $sh->tot;
-                                        $bprof = $bprof + $sh->profits;
-                                    }
-                                }
-                            @endphp
-                            
                             <td class="col-sm-2 pr">Qty. Sold :</td>
-                            <td class="col-sm-3">{{number_format($qty)}}</td>
-                            <td class="col-sm-2">{{number_format($btot, 2)}}</td>
-                            <td class="col-sm-2">{{number_format($bprof, 2)}}</td>
+                            <td class="col-sm-3">{{number_format(session('sales_history')->sum('qty'))}}</td>
+                            <td class="col-sm-2">{{number_format(session('sales_history')->sum('tot'), 2)}}</td>
+                            <td class="col-sm-2">{{number_format(session('sales_history')->sum('profits'), 2)}}</td>
                             {{-- <td class="col-sm-3">Royal Joham V... {{session('company')->contact}}</td> --}}
                         </tr>
                         <tr>
                             <td class="col-sm-2 pr">Qty. Available :</td>
                             <td class="col-sm-3">{{number_format(session('items')->sum('qty'))}}</td>
+                            {{-- <td class="col-sm-2">172,120.30</td> --}}
+                            {{-- <td class="col-sm-3">Royal Joham V... {{session('company')->contact}}</td> --}}
                         </tr>
                         <!--tr>
                             <td class="col-sm-3">Payment Methods :</td>
@@ -107,15 +97,22 @@
                         <thead class=" text-secondary hideMe">
                             <th>#</th>
                             <th>Items Distributed</th>
-                            {{-- <th class="pr">All</th>
+                            <th class="pr">All</th>
                             <th>Branches</th>
                             @for ($i = 0; $i < count(session('compbranch'))-2; $i++)
                                 <th>&nbsp;</th>
-                            @endfor --}}
+                            @endfor
                             <th class="pr">Total&nbsp;Gh₵</th>
                         </thead>
                         
                         <tbody>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                                @foreach (session('compbranch') as $br)
+                                    <td class="ryt pr">&nbsp;&nbsp;&nbsp;Branch&nbsp;{{$br->tag}} <p class="small_p">{{substr($br->name, 0,8)}}..</p></td>
+                                @endforeach
+                            </tr>
                             @foreach ($dist_dist as $dist)
                                 <tr>
                                     <td class="col-sm-1">{{$p++}}</td>
@@ -127,11 +124,11 @@
                                                 {{-- <input type="hidden" value="{{$m = 'q'.$i+1}}"> --}}
 
                                                 <input type="hidden" value="{{$br1 = $br1 + $distr->q1}}">
-                                                {{-- <input type="hidden" value="{{$br2 = $br2 + $distr->q2}}">
+                                                <input type="hidden" value="{{$br2 = $br2 + $distr->q2}}">
                                                 <input type="hidden" value="{{$br3 = $br3 + $distr->q3}}">
                                                 <input type="hidden" value="{{$br4 = $br4 + $distr->q4}}">
                                                 <input type="hidden" value="{{$br5 = $br5 + $distr->q5}}">
-                                                <input type="hidden" value="{{$br6 = $br6 + $distr->q6}}">
+                                                {{-- <input type="hidden" value="{{$br6 = $br6 + $distr->q6}}">
                                                 <input type="hidden" value="{{$br7 = $br7 + $distr->q7}}"> --}}
                                             @endif
                                                 
@@ -142,13 +139,13 @@
                                             <td class="col-sm-1 pr">{{ $vl }}</td>
                                         @endfor --}}
                                         <td class="col-sm-1 pr">{{ number_format($br1) }}</td>
-                                        {{-- <td class="col-sm-1 pr">{{ number_format($br2) }}</td>
+                                        <td class="col-sm-1 pr">{{ number_format($br2) }}</td>
                                         <td class="col-sm-1 pr">{{ number_format($br3) }}</td>
                                         <td class="col-sm-1 pr">{{ number_format($br4) }}</td>
                                         <td class="col-sm-1 pr">{{ number_format($br5) }}</td>
-                                        <td class="col-sm-1 pr">{{ number_format($br6) }}</td>
-                                        <td class="col-sm-1 pr">{{ number_format($br7) }}</td>
-                                        <td class="col-sm-1 pr">{{ number_format($br1+$br2+$br3+$br4+$br5+$br6+$br7) }}</td> --}}
+                                        {{-- <td class="col-sm-1 pr">{{ number_format($br6) }}</td>
+                                        <td class="col-sm-1 pr">{{ number_format($br7) }}</td> --}}
+                                        <td class="col-sm-1 pr">{{ number_format($br1+$br2+$br3+$br4+$br5+$br6+$br7) }}</td>
                                         @php
                                             $br1 = 0; $br2 = 0; $br3 = 0; $br4 = 0; $br5 = 0; $br6 = 0; $br7 = 0; 
                                         @endphp
@@ -169,13 +166,11 @@
                             <tr class="invTot">
                                 <td class="col-sm-1"><h4>Total</h4></td>
                                 <td class="col-sm-6">Distribution</td>
-                                <td class="col-sm-1 pr">{{$distribution->sum('q1')}}</td>
-                                {{-- @foreach (session('compbranch') as $br)
+                                @foreach (session('compbranch') as $br)
                                     <input type="hidden" value="{{$m = 'q'.$br->tag}}">
                                     <td class="col-sm-1 pr">{{$distribution->sum($m)}}</td>
                                 @endforeach
                                 <td class="col-sm-1 pr"><h4>{{ number_format($distribution->sum('q1')+$distribution->sum('q2')+$distribution->sum('q3')+$distribution->sum('q4')+$distribution->sum('q5')+$distribution->sum('q6')+$distribution->sum('q7'), 2) }}</h4></td>
-                                --}}
                             </tr>
                         </tbody>
                     </table>
@@ -195,16 +190,12 @@
                             <thead class=" text-secondary hideMe">
                                 <th>#</th>
                                 <th>Items</th>
-                                <th>Summary</th>
-                                <th></th>
-                                <th></th>
-                                <th></th>
-                                {{-- @foreach (session('compbranch') as $br)
+                                @foreach (session('compbranch') as $br)
                                 <th></th>
                                 <th class="ryt">Branch</th>
                                 <th>{{$br->tag}}</th>
                                 <th></th>
-                                @endforeach --}}
+                                @endforeach
                             </thead>
 
                             <tbody id="tb">
@@ -212,12 +203,12 @@
                                 <tr>
                                 <td></td>
                                 <td></td>
-                                
+                                @foreach (session('compbranch') as $br)
                                     <td class="ryt avl2">QTY<br><p class="small_gr">SOLD</p></td>
                                     <td class="ryt avl2">TOTAL<br><p class="small_gr">AMT. Gh₵</p></td>
                                     <td class="added">QTY<br><p class="small_gr">REM</p></td>
                                     <td class="avl2">PROFIT<br><p class="small_gr">Gh₵</p></td>
-                                    
+                                @endforeach
                                 </tr>
 
                                 @foreach (session('stock') as $stk)
@@ -225,7 +216,7 @@
                                 <tr>
                                 <td>{{$x++}}</td>
                                 <td>{{$stk->item->name}}<br><p class="small_p">{{$stk->item->item_no.' - '.$stk->item->desc}}</p></td>
-                                @for ($i = 0; $i < 1; $i++)
+                                @for ($i = 0; $i < count(session('compbranch')); $i++)
                                     <input type="hidden" value="{{$qval = 'q'.$i+1}}">
                                     <input type="hidden" name="tvalue" value="{{$qtr = $stk->item->$qval}}">
                                     <input type="hidden" name="tvalue" value="{{$qtr_tot = $qtr_tot + $stk->item->$qval}}">
@@ -253,7 +244,7 @@
                                 <tr>
                                     <td></td>
                                     <td><h6>Total</h6></td>
-                                    @for ($i = 0; $i < 1; $i++)
+                                    @for ($i = 0; $i < count(session('compbranch')); $i++)
                                         
                                         <input type="hidden" name="tvalue" value="{{$qtr_tot = $qtr_tot + $stk->item->$qval}}">
                                         @foreach (session('sales_history') as $sh)

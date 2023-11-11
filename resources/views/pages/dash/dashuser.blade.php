@@ -178,44 +178,6 @@
                 </div>
               </div>
 
-              
-              {{-- <div class="card-body">
-                <h4 class="card-title">Registered Users</h4>
-  
-                @if (count($users) > 0)
-                          <table class="table">
-                            <thead class=" text-secondary">
-                              <th>ID</th>
-                              <th>Name</th>
-                              <th>Email</th>
-                              <th class="ryt">
-                                Action
-                              </th>
-                            </thead>
-                            <tbody>
-                            @foreach ($users as $user)
-                                <tr><td>{{$c++}}</td>
-                                  <td>{{$user->name}}</td>
-                                  <td>{{$user->email}}</td>
-                                  <td class="ryt">
-                                    <form action="{{ action('StudentController@destroy', $user->id) }}" method="POST">
-                                      <input type="hidden" name="_method" value="DELETE">
-                                      @csrf
-                                      <button type="submit" name="sub_action" value="user_del" rel="tooltip" title="Delete User" class="close2" onclick="return confirm('Are you sure you want to delete this user?');"><i class="fa fa-close"></i></button>
-                                    </form>
-                                  </td>
-                                </tr>
-                            @endforeach
-                            </tbody>
-                          </table>
-                          @else
-                            <p>No User Registered</p>
-                          @endif
-
-
-
-
-              </div> --}}
 
             </div>
 
@@ -226,40 +188,40 @@
                 <div class="card-body myScroll">
                   <h4 class="card-title">All Registered Categories</h4>
 
-                          @if (count($category) > 0)
-                            <table class="newtable1">
-                              <thead class="text-secondary">
-                                <th class="text_left">Category / Description</th>
-                                <th class="ryt">
-                                  Action
-                                </th>
-                              </thead>
-                              <tbody>
+                    @if (count($category) > 0)
+                      <table class="newtable1">
+                        <thead class="text-secondary">
+                          <th class="text_left">Category / Description</th>
+                          <th class="ryt">
+                            Action
+                          </th>
+                        </thead>
+                        <tbody>
 
 
-                              @foreach ($category as $cat)
-                                  <tr>
-                                    <td>{{$i++}} &nbsp; <b class="myb">{{$cat->name}}</b><br>{{$cat->desc}}</td>
-                                    <td class="ryt">
-                                      <form action="{{ action('ItemsController@destroy', $cat->id) }}" method="POST">
+                        @foreach ($category as $cat)
+                            <tr>
+                              <td>{{$i++}} &nbsp; <b class="myb">{{$cat->name}}</b><br>{{$cat->desc}}</td>
+                              <td class="ryt">
+                                <form action="{{ action('ItemsController@destroy', $cat->id) }}" method="POST">
 
-                                        {{-- <input type="checkbox" class="checkbox1" id="myCheck{{$i}}" name="" value="{{$course->name}}" onclick="myFunction{{$i}}()"> --}}
+                                  {{-- <input type="checkbox" class="checkbox1" id="myCheck{{$i}}" name="" value="{{$course->name}}" onclick="myFunction{{$i}}()"> --}}
 
-                                        <input type="hidden" name="_method" value="DELETE">
-                                        @csrf
-                                        <button type="submit" name="del_action" value="cat_del" rel="tooltip" title="Delete Category" class="close2" onclick="return confirm('Are you sure you want to delete this Category?');"><i class="fa fa-close"></i></button>
-                                    
-                                      </form>
-                                    </td>
-                                  </tr>
-                              @endforeach
+                                  <input type="hidden" name="_method" value="DELETE">
+                                  @csrf
+                                  <button type="submit" name="del_action" value="cat_del" rel="tooltip" title="Delete Category" class="close2" onclick="return confirm('Are you sure you want to delete this Category?');"><i class="fa fa-close"></i></button>
+                              
+                                </form>
+                              </td>
+                            </tr>
+                        @endforeach
 
-                              </tbody>
-                            </table>
+                        </tbody>
+                      </table>
 
-                            @else
-                              <p>No Category Added Yet</p>
-                            @endif
+                    @else
+                      <p>No Category Added Yet</p>
+                    @endif
 
                 </div>
               </div>
@@ -575,7 +537,7 @@
                     <option>Administrator</option>
                     @if (count($branches) > 0)
                       @foreach ($branches as $branch)
-                        <option value="{{ $branch->name }}">{{ $branch->name }}</option> 
+                        <option value="{{ $branch->id }}">{{ $branch->name }}</option> 
                       @endforeach
                     @endif
                   </select>
@@ -678,15 +640,23 @@
                         <input type="hidden" name="_method" value="DELETE">
                         @csrf
 
-                        @if ($user->del != 'yes')
+                        @if ($user->del == 'yes')
+                          {{-- @if ($c%2==0) --}}
+                          <tr class="alert-danger">
+                        @else
                           <tr>
-                            <td>{{$user->name}}</td>
-                            <td>{{$user->email}}</td>
-                            <td>{{$user->status}}
-                            <button type="submit" name="del_action" value="usr_del" rel="tooltip" title="Delete User" class="close2" onclick="return confirm('Are you sure you want to delete user?');"><i class="fa fa-close"></i></button>
+                        @endif
+                          <td>{{$user->name}}</td>
+                          <td>{{$user->email}}</td>
+                          <td>{{$user->status}}
+                        @if ($user->del == 'yes')
+                          <button type="submit" name="del_action" value="usr_restore" rel="tooltip" title="Restore User" class="close2 color10" onclick="return confirm('Are you sure you want to restore user?');"><i class="fa fa-reply"></i></button>
+                        @else
+                          <button type="submit" name="del_action" value="usr_del" rel="tooltip" title="Delete User" class="close2" onclick="return confirm('Are you sure you want to delete user?');"><i class="fa fa-close"></i></button>
+                        @endif
                             </td>
                           </tr>
-                        @endif
+                        {{-- @endif --}}
 
                       </form>
                     @endif
@@ -697,7 +667,7 @@
               </table>
 
               @else
-              <p>Oops..! No user registered yet!</p>
+                <p>Oops..! No user registered yet!</p>
               @endif
 
             </div>

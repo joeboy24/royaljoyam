@@ -331,7 +331,7 @@
                         </table>
                         <p>No. of Records : <b style="color: #000000">{{$sales->total()}}</b> &nbsp;&nbsp;&nbsp; Total Amount : <b style="color: #000000">Gh₵ {{ number_format($cash + $cheque + $momo + $sum_dbt, 2) }}</b></p>
                         {{-- {{ $sales->links() }} --}}
-                        {{ $sales->appends(['date_from' => request()->query('date_from'), 'date_to' => request()->query('date_to'), 'branch' => request()->query('branch')])->links() }}
+                        {{ $sales->appends(['date_from' => request()->query('date_from'), 'date_to' => request()->query('date_to'), 'branch' => request()->query('branch'), 'delvr' => request()->query('delvr')])->links() }}
 
                         <div style="height: 30px">
                         </div>
@@ -396,7 +396,7 @@
                         <h4 class='config2'>Gh₵ {{number_format($b3, 2)}}</h4>
                         
                         <div class="card-footer">
-                          <div class="stats">Branch 3: {{session('branch')}}{{substr(session('branch_C'), 0,12)}}...
+                          <div class="stats">Branch 3: {{substr(session('branch_C'), 0,12)}}...
                             @if (session('branch') == 3 || session('branch') == 'All Branches')
                               <br>Profits: Gh₵&nbsp;{{number_format($b3_profits, 2)}}<br>Expenses: Gh₵&nbsp;{{number_format($exp_b3, 2)}}
                             @endif
@@ -413,7 +413,7 @@
                         <h4 class='config2'>Gh₵ {{number_format($b4, 2)}}</h4>
                         
                         <div class="card-footer">
-                          <div class="stats">Branch 4: {{session('branch')}}{{substr(session('branch_D'), 0,12)}}...
+                          <div class="stats">Branch 4: {{substr(session('branch_D'), 0,12)}}...
                             @if (session('branch') == 4 || session('branch') == 'All Branches')
                               <br>Profits: Gh₵&nbsp;{{number_format($b4_profits, 2)}}<br>Expenses: Gh₵&nbsp;{{number_format($exp_b4, 2)}}
                             @endif
@@ -430,7 +430,7 @@
                         <h4 class='config2'>Gh₵ {{number_format($b5, 2)}}</h4>
                         
                         <div class="card-footer">
-                          <div class="stats">Branch 5: {{session('branch')}}{{substr(session('branch_E'), 0,12)}}...
+                          <div class="stats">Branch 5: {{substr(session('branch_E'), 0,12)}}...
                             @if (session('branch') == 5 || session('branch') == 'All Branches')
                               <br>Profits: Gh₵&nbsp;{{number_format($b5_profits, 2)}}<br>Expenses: Gh₵&nbsp;{{number_format($exp_b5, 2)}}
                             @endif

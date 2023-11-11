@@ -101,7 +101,7 @@
                 </a>
                 {{-- <a class="dropdown-item" href="{{route('logout')}}" class="simple-text logo-normal">AAAAA</a> --}}
                 <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownProfile">
-                  <a class="dropdown-item" href="#">Profile</a>
+                  <a class="dropdown-item" href="/user_profile">Profile</a>
                   <a class="dropdown-item" href="#">Settings</a>
                   <div class="dropdown-divider"></div>
 

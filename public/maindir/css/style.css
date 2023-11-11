@@ -4122,6 +4122,10 @@ height: 100%;
   margin: 1%;
 }
 
+.myA {
+  margin: 0;
+}
+
 @media (max-width: 700px) {
   #myCol{
     margin: 10px;
@@ -4836,6 +4840,20 @@ height: 100%;
 
 .avl {
   border-right: 1px solid #089aad;
+}
+
+.profile_img {
+  width: 150px;
+  /* height: 200px; */
+  border-radius: 50%;
+  margin: 20px calc((100% - 150px)/2);
+}
+
+.profile_header {
+  text-align: center;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 /* .added {

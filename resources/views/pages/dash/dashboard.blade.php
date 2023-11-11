@@ -85,6 +85,7 @@
   <div class="content">
         <div class="container-fluid">
 
+          @include('inc.messages')
           <div class="cols_cont">
 
             <div class="col_60">
@@ -109,12 +110,12 @@
               <a href="/dashuser" class="myA">
                 <div class="card card-stats">
                   
-                  <i class="fa fa-file-text myIcon"></i>
+                  <i class="fa fa-edit myIcon"></i>
 
                   <h3 class='config'>Registry</h3>
                   
                   <div class="card-footer">
-                    <div class="stats">Register User, Items/Categoies...
+                    <div class="stats">Register User, Items/Categories...
                     </div>
                   </div>
                 </div>
@@ -126,7 +127,7 @@
               <a href="/waybill" class="myA">
                 <div class="card card-stats">
                   
-                  <i class="fa fa-edit myIcon"></i>
+                  <i class="fa fa-truck myIcon"></i>
 
                   <h3 class='config'>Waybill</h3>
                   
@@ -159,7 +160,7 @@
               <a href="/reporting" class="myA">
                 <div class="card card-stats">
                   
-                  <i class="fa fa-table myIcon"></i>
+                  <i class="fa fa-file-text myIcon"></i>
 
                   <h3 class='config'>Reports</h3>
                   
@@ -182,6 +183,23 @@
                   
                   <div class="card-footer">
                     <div class="stats">Manage Expenses here.
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+
+            <div class="col_60">
+
+              <a href="/closure_page" class="myA">
+                <div class="card card-stats">
+                  
+                  <i class="fa fa-calendar myIcon"></i>
+
+                  <h3 class='config'>Closure</h3>
+                  
+                  <div class="card-footer">
+                    <div class="stats">Manage Closure here.
                     </div>
                   </div>
                 </div>

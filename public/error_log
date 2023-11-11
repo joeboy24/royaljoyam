@@ -1,0 +1,2 @@
+[01-Jan-2023 21:37:00 America/Boise] PHP Fatal error:  Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.1.0". You are running 8.0.26. in /home1/pivoapps/public_html/royaljoyam/vendor/composer/platform_check.php on line 24
+[05-Jan-2023 14:14:07 UTC] PHP Fatal error:  Allowed memory size of 536870912 bytes exhausted (tried to allocate 320545104 bytes) in /home1/pivoapps/public_html/royaljoyam/vendor/laravel/framework/src/Illuminate/View/Concerns/ManagesLayouts.php on line 102

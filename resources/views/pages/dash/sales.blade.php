@@ -279,6 +279,7 @@
                                       @csrf
 
                                       <a class="edit" rel="tooltip" title="Edit Record" data-toggle="modal" data-target="#changeModal_{{$cart->id}}">&nbsp;<i class="fa fa-pencil"></i>&nbsp;</a>
+                                      <button name="store_action" value="cart_del" rel="tooltip" title="Delete Record" class="icon_btn color6" title="Distribute" onclick="return confirm('Are you sure you want to delete record from cart?');"><i class="fa fa-trash"></i></button>
                                       
                                       {{-- <a href="/reporting/{{$sale->id}}/edit"><button type="button" title="Return Order" class="print_black" onclick="return confirm('Returning order will permanently delete record. Are you sure you want to return selected item?')"><i class="fa fa-mail-reply"></i></button></a> --}}
                                     
@@ -679,10 +680,23 @@
                     <a data-toggle="modal" data-target="#totbreakdownModal" class="myA">
                       <div class="card card-stats">
                         <button class="btn salesBtn purple"><i class="fa fa-folder-open salesI"></i></button>
-                        <h4 class='config2'>Gh₵ {{number_format($sum_inc_dbt, 2)}}</h4>
+                        <h4 class='config2'>Gh₵ {{number_format($sum_ex_dbt, 2)}}</h4>
                         
                         <div class="card-footer">
-                          <div class="stats">Total Sales {{date('d/m/Y')}}</div>
+                          <div class="stats">Daily Sales {{session('date_today')}}</div>
+                        </div>
+                      </div>
+                    </a>
+                  </div>
+
+                  <div class="col-lg-3 col-md-6 col-sm-6">
+                    <a href="/paid_debts" class="myA">
+                      <div class="card card-stats">
+                        <button class="btn salesBtn pink"><i class="fa fa-dollar salesI"></i></button>
+                        <h4 class='config2'>Gh₵ {{number_format($debts_paid, 2)}}</h4>
+                        
+                        <div class="card-footer">
+                          <div class="stats">Paid Debts</div>
                         </div>
                       </div>
                     </a>
@@ -691,24 +705,24 @@
                   <div class="col-lg-3 col-md-6 col-sm-6">
                     <a href="/expenses" class="myA">
                       <div class="card card-stats">
-                        <button class="btn salesBtn pink"><i class="fa fa-money salesI"></i></button>
+                        <button class="btn salesBtn mygreen"><i class="fa fa-money salesI"></i></button>
                         <h4 class='config2'>Gh₵ {{number_format($expenses->sum('expense_cost'), 2)}}</h4>
                         
                         <div class="card-footer">
-                          <div class="stats">Daily Expenditure Report</div>
+                          <div class="stats">Daily Expenditure</div>
                         </div>
                       </div>
                     </a>
                   </div>
-
+      
                   <div class="col-lg-3 col-md-6 col-sm-6">
                     <a href="#" class="myA">
                       <div class="card card-stats">
-                        <button class="btn salesBtn mygreen"><i class="fa fa-dollar salesI"></i></button>
-                        <h4 class='config2'>Gh₵ {{number_format($debts_paid, 2)}}</h4>
+                        <button class="btn salesBtn seablue"><i class="fa fa-money salesI"></i></button>
+                        <h4 class='config2'>Gh₵ {{number_format($sum_ex_dbt + $debts_paid - $expenses->sum('expense_cost'), 2)}}</h4>
                         
                         <div class="card-footer">
-                          <div class="stats">Paid Debts</div>
+                          <div class="stats">Net Total</div>
                         </div>
                       </div>
                     </a>
