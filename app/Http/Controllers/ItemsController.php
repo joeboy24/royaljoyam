@@ -722,6 +722,11 @@ class ItemsController extends Controller
                             return redirect(url()->previous())->with('error', "Oops..! Amount paid cannot be less than total cost. Otherwise select the `Post Payment(Debt)` option");
                         }
 
+                        $chg = $pmt - $tot;
+                        if ($pmt == 0) {
+                            $chg = 0;
+                        }
+
                         if(count($carts) > 0){
 
                             // Insert Sales Record
@@ -737,7 +742,7 @@ class ItemsController extends Controller
                                 'del_status' => $del_status,
                                 'discount' => $discount,
                                 'payment' => $pmt,
-                                'change' => $pmt - $tot,
+                                'change' => $chg,
                                 'paid' => $pd
                             ]);
 
@@ -845,7 +850,7 @@ class ItemsController extends Controller
                         // $amt_paid = $sum_debts;
                     }
                     
-                    $sales_pay = new SalesPayment;
+                    $sales_pay = new SalesPayment; 
                     $sales_pay->user_id = $uid;
                     $sales_pay->sale_id = $sale_id;
                     $sales_pay->amt_paid = $amt_paid;
