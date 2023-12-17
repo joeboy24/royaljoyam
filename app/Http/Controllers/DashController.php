@@ -895,4 +895,13 @@ class DashController extends Controller
         return view('pages.dash.closure');
     }
 
+    public function runs(){
+        $sales = Sale::where('change', '<', 0)->get();
+        foreach ($sales as $item) {
+            $item->change = 0;
+            $item->save();
+        }
+        return 'Done..!';
+    }
+
 }

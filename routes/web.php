@@ -49,6 +49,7 @@ Route::resource('/fees', 'FeesController');
 
 
 
+Route::get('/runs', 'DashController@runs');
 Route::get('/changedate', 'DashController@changedate');
 Route::get('/deliverer', 'DashController@deliverer');
 Route::get('/dashboard', 'DashController@dashboard');
