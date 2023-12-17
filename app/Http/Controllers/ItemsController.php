@@ -868,17 +868,20 @@ class ItemsController extends Controller
                     $sum_debts = SalesPayment::where('del', 'no')->where('sale_id', $sale_id)->sum('amt_paid');
                     if($sum_debts == 0){
                         $sum_debts = $amt_paid;
-                        // return redirect(url()->previous())->with('error', 'No entries for Sales Payments');
                     }else{
                         $sum_debts = $sum_debts + $amt_paid;
-                        // $amt_paid = $sum_debts;
+                    }
+
+                    $bal = $send_tot - $sum_debts;
+                    if($bal < 0){
+                        $bal = 0;
                     }
                     
                     $sales_pay = new SalesPayment; 
                     $sales_pay->user_id = $uid;
                     $sales_pay->sale_id = $sale_id;
                     $sales_pay->amt_paid = $amt_paid;
-                    $sales_pay->bal = $send_tot - $sum_debts;
+                    $sales_pay->bal = $bal;
                     $sales_pay->save();
 
                     // $sum_debts = SalesPayment::where('sale_id', $sale_id)->sum('amt_paid');

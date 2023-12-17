@@ -901,6 +901,16 @@ class DashController extends Controller
             $item->change = 0;
             $item->save();
         }
+        
+        $sales_pay = SalesPayment::where('change', '<', 0)->get();
+        foreach ($sales_pay as $item) {
+            $check = $item->amt_paid + $item->bal;
+            if ($check == 0) {
+                # code...
+                $item->bal = 0;
+                $item->save();
+            }
+        }
         return 'Done..!';
     }
 
