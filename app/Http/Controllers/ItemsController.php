@@ -106,12 +106,17 @@ class ItemsController extends Controller
                     $status = $request->input('status');
 
                     // $uc = CompanyBranch::where('name', $status)->first();
+                    // $uc = CompanyBranch::where('name', $status)->first();
                     if($status == 'Administrator'){
                         $bv = 'A';
                         $br = 1;
+                        $br = 1;
                     }else{
                         $uc = CompanyBranch::find($status);
+                        $uc = CompanyBranch::find($status);
                         $bv = $uc->tag;
+                        $br = $status;
+                        $status = $uc->name;
                         $br = $status;
                         $status = $uc->name;
                     }
@@ -122,6 +127,7 @@ class ItemsController extends Controller
                             $user->name = $request->input('name');
                             $user->email = $request->input('email');
                             $user->password = Hash::make($ps1);
+                            $user->company_branch_id = $br;
                             $user->company_branch_id = $br;
                             $user->bv = $bv;
                             $user->status = $status;
@@ -868,7 +874,7 @@ class ItemsController extends Controller
                         // $amt_paid = $sum_debts;
                     }
                     
-                    $sales_pay = new SalesPayment;
+                    $sales_pay = new SalesPayment; 
                     $sales_pay->user_id = $uid;
                     $sales_pay->sale_id = $sale_id;
                     $sales_pay->amt_paid = $amt_paid;
