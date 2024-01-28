@@ -101,7 +101,9 @@
               <div class="card">
                 <div class="card-header card-header-primary">
                   <h4 class="card-title">Paid Debts</h4>
-                  <p class="card-category">An overview of debt paid on {{date('D. d-m-Y', strtotime(session('date_today')))}}</p>
+                  <p class="card-category">An overview of paid debts 
+                    {{-- on {{date('D. d-m-Y', strtotime(session('date_today')))}} --}}
+                  </p>
                 </div>
                 <div id="printarea1" class="card-body">
             

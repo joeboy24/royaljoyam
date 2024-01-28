@@ -807,8 +807,8 @@ class ItemsController extends Controller
                                 // $itm->save();
 
                                 // Empty specific user cart after transport
-                                $cart_del = Cart::find($cart->id);
-                                $cart_del->delete();
+                                // $cart_del = Cart::find($cart->id);
+                                $cart->delete();
                             }
 
 

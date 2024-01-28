@@ -484,11 +484,18 @@
             <tr><td class="tt">Cash</td><td><b class="pr">{{$cash_b1}}</b></td><td><b class="pr">{{$cash_b2}}</b></td><td><b class="pr">{{$cash_b3}}</b></td><td><b class="pr">{{$cash_b4}}</b></td><td><b class="pr">{{$cash_b5}}</b></td><td><b class="pr">{{number_format($cash, 2)}}</b></td></tr>
             <tr><td class="tt">Cheque</td><td><b class="pr">{{$cheque_b1}}</b></td><td><b class="pr">{{$cheque_b2}}</b></td><td><b class="pr">{{$cheque_b3}}</b></td><td><b class="pr">{{$cheque_b4,}}</b></td><td><b class="pr">{{$cheque_b5}}</b></td><td><b class="pr">{{number_format($cheque, 2)}}</b></td></tr>
             <tr><td class="tt">Mobile Money</td><td><b class="pr">{{$momo_b1}}</b></td><td><b class="pr">{{$momo_b2}}</b></td><td><b class="pr">{{$momo_b3}}</b></td><td><b class="pr">{{$momo_b4}}</b></td><td><b class="pr">{{$momo_b5}}</b></td><td><b class="pr">{{number_format($momo, 2)}}</b></td></tr>
-            <tr><td class="tt">Post Payment(Debt)</td><td><b class="pr">{{$debt_b1}}</b></td><td><b class="pr">{{$debt_b2}}</b></td><td><b class="pr">{{$debt_b3}}</b></td><td><b class="pr">{{$debt_b4}}</b></td><td><b class="pr">{{$debt_b5}}</b></td><td><b class="pr">{{number_format($sum_dbt, 2)}}</b></td></tr>
+            <tr><td class="tt">Post&nbsp;Pmt(Debt)<p>Paid Debts</p></td>
+              <td><b class="pr">{{$debt_b1}}</b><p>{{$pds[0]}}</p></td>
+              <td><b class="pr">{{$debt_b2}}</b><p>{{$pds[1]}}</p></td>
+              <td><b class="pr">{{$debt_b3}}</b><p>{{$pds[2]}}</p></td>
+              <td><b class="pr">{{$debt_b4}}</b><p>{{$pds[3]}}</p></td>
+              <td><b class="pr">{{$debt_b5}}</b><p>{{$pds[4]}}</p></td>
+              <td><b class="pr">{{number_format($sum_dbt, 2)}}</b><p>{{number_format($pds[0]+$pds[1]+$pds[2]+$pds[3]+$pds[4], 2)}}</p></td></tr>
             <tr><td class="tt">Expenditure</td><td><b class="tt">{{$exp_b1}}</b></td><td><b class="tt">{{$exp_b2}}</b></td><td><b class="tt">{{$exp_b3}}</b></td><td><b class="tt">{{$exp_b4}}</b></td><td><b class="tt">{{$exp_b5}}</b></td><td><b class="pr">{{number_format($expenses->sum('expense_cost'), 2)}}</b></td></tr>
             <tr><td class="tt">Profits</td><td class="tt">{{$b1_profits}}</td><td class="tt">{{$b2_profits}}</td><td class="tt">{{$b3_profits}}</td><td class="tt">{{$b4_profits}}</td><td class="tt">{{$b5_profits}}</td><td><b class="pr">{{number_format($gen_profits, 2)}}</b></td></tr>
             <tr><td class="pr">Total</td>
-              <td><b class="pr">{{number_format($cash_b1 + $cheque_b1 + $momo_b1 + $debt_b1 - $exp_b1, 2)}}</b></td>
+              <td><b class="pr">{{number_format($cash_b1 + $cheque_b1 + $momo_b1 + $debt_b1 - $exp_b1, 2)}}</b>
+              </td>
               <td><b class="pr">{{number_format($cash_b2 + $cheque_b2 + $momo_b2 + $debt_b2 - $exp_b2, 2)}}</b></td>
               <td><b class="pr">{{number_format($cash_b3 + $cheque_b3 + $momo_b3 + $debt_b3 - $exp_b3, 2)}}</b></td>
               <td><b class="pr">{{number_format($cash_b4 + $cheque_b4 + $momo_b4 + $debt_b4 - $exp_b4, 2)}}</b></td>

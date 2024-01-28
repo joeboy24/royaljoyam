@@ -424,50 +424,70 @@ class ReportsController extends Controller
         $gross = $cash + $cheque + $momo + $sum_dbt;
         $net = $gross - $expenses->sum('expense_cost');
 
-            // Set session variables
-            Session::put('b1_profits', $b1_profits);
-            Session::put('b2_profits', $b2_profits);
-            Session::put('b3_profits', $b3_profits);
-            Session::put('b4_profits', $b4_profits);
-            Session::put('b5_profits', $b5_profits);
-            // Session::put('b6_profits', $b6_profits);
-            // Session::put('b7_profits', $b7_profits);
+        // Set session variables
+        Session::put('b1_profits', $b1_profits);
+        Session::put('b2_profits', $b2_profits);
+        Session::put('b3_profits', $b3_profits);
+        Session::put('b4_profits', $b4_profits);
+        Session::put('b5_profits', $b5_profits);
+        // Session::put('b6_profits', $b6_profits);
+        // Session::put('b7_profits', $b7_profits);
 
-            Session::put('gen_profits', $gen_profits);
-            Session::put('b1', $b1);
-            Session::put('b2', $b2);
-            Session::put('b3', $b3);
-            Session::put('b4', $b4);
-            Session::put('b5', $b5);
-            // Session::put('b6', $b6);
-            // Session::put('b7', $b7);
+        Session::put('gen_profits', $gen_profits);
+        Session::put('b1', $b1);
+        Session::put('b2', $b2);
+        Session::put('b3', $b3);
+        Session::put('b4', $b4);
+        Session::put('b5', $b5);
+        // Session::put('b6', $b6);
+        // Session::put('b7', $b7);
 
-            Session::put('exp_b1', $exp_b1);
-            Session::put('exp_b2', $exp_b2);
-            Session::put('exp_b3', $exp_b3);
-            Session::put('exp_b4', $exp_b4);
-            Session::put('exp_b5', $exp_b5);
-            // Session::put('exp_b6', $exp_b6);
-            // Session::put('exp_b7', $exp_b7);
+        Session::put('exp_b1', $exp_b1);
+        Session::put('exp_b2', $exp_b2);
+        Session::put('exp_b3', $exp_b3);
+        Session::put('exp_b4', $exp_b4);
+        Session::put('exp_b5', $exp_b5);
+        // Session::put('exp_b6', $exp_b6);
+        // Session::put('exp_b7', $exp_b7);
 
-            Session::put('gross', $gross);
-            Session::put('net', $net);
-            Session::put('sales', $sales_send);
-            Session::put('cash', $cash);
-            Session::put('cheque', $cheque);
-            Session::put('momo', $momo);
-            Session::put('sum_dbt', $sum_dbt);
-            // Session::put('cash_b1', $cash);
-            // Session::put('cash_b2', $cash);
-            // Session::put('cash_b3', $cash);
-            // Session::put('cheque_b1', $cheque);
-            // Session::put('cheque_b2', $cheque);
-            // Session::put('cheque_b3', $cheque);
-            Session::put('expenses', $expenses);
-            Session::put('date_from', $date_from);
-            Session::put('date_to', $date_to);
+        Session::put('gross', $gross);
+        Session::put('net', $net);
+        Session::put('sales', $sales_send);
+        Session::put('cash', $cash);
+        Session::put('cheque', $cheque);
+        Session::put('momo', $momo);
+        Session::put('sum_dbt', $sum_dbt);
+        // Session::put('cash_b1', $cash);
+        // Session::put('cash_b2', $cash);
+        // Session::put('cash_b3', $cash);
+        // Session::put('cheque_b1', $cheque);
+        // Session::put('cheque_b2', $cheque);
+        // Session::put('cheque_b3', $cheque);
+        Session::put('expenses', $expenses);
+        Session::put('date_from', $date_from);
+        Session::put('date_to', $date_to);
 
-            $company_branch = CompanyBranch::all();
+        $company_branch = CompanyBranch::all();
+
+        // Get paid debts
+        $pd1 = 0; $pd2 = 0; $pd3 = 0; $pd4 = 0; $pd5 = 0; 
+        foreach ($sales as $item) {
+            # code...
+            $getSp = SalesPayment::where('sale_id', $item->id)->get();
+            if ($item->user_bv == 1) {
+                $pd1 = $pd1 + $getSp->sum('amt_paid');
+            } elseif ($item->user_bv == 2) {
+                $pd2 = $pd2 + $getSp->sum('amt_paid');
+            } elseif ($item->user_bv == 3) {
+                $pd3 = $pd3 + $getSp->sum('amt_paid');
+            } elseif ($item->user_bv == 4) {
+                $pd4 = $pd4 + $getSp->sum('amt_paid');
+            } elseif ($item->user_bv == 5) {
+                $pd5 = $pd5 + $getSp->sum('amt_paid');
+            }
+            
+        }
+        $pds = [$pd1, $pd2, $pd3, $pd4, $pd5];
 
         $pass = [
             'c' => $c, 
@@ -478,6 +498,7 @@ class ReportsController extends Controller
             'b5' => $b5, 
             // 'b6' => $b6, 
             // 'b7' => $b7, 
+            'pds' => $pds,
 
             'exp_b1' => $exp_b1, 
             'exp_b2' => $exp_b2, 
