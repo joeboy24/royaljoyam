@@ -1119,96 +1119,46 @@ class ItemsController extends Controller
 
             case 'update_item':
 
-                $qtySum = $request->input('q1') + $request->input('q2') + $request->input('q3');
-                // if($qtySum != $request->input('qty')){
-                //     # code...
-                //     return redirect('/items')->with('error', 'Oops..! Sum of branch quantities should be equal to Total Quantity.');
-                // }
-
                 $item = Item::find($id);
-                // try {
 
-                    $itemAudit = ItemAudit::firstOrCreate([
-                        'item_no' => $item->item_no,
-                        'user_id' => auth()->user()->id,
-                        'name' => $item->name,
-                        'desc' => $item->desc,
-                        'cat' => $item->cat,
-                        'brand' => $item->brand,
-                        'barcode' => $item->barcode,
-                        'qty' => $item->qty,
-                        'q1' => $item->q1,
-                        'q2' => $item->q2,
-                        'q3' => $item->q3,
-                        'q4' => $item->q4,
-                        'q5' => $item->q5,
-                        'q6' => $item->q6,
-                        'q7' => $item->q7,
-                        'price' => $item->price,
-                        'cost_price' => $item->price,
-                        'b1' => $item->b1,
-                        'b2' => $item->b2,
-                        'b3' => $item->b3,
-                        'b4' => $item->b4,
-                        'b5' => $item->b5,
-                        'b6' => $item->b6,
-                        'b7' => $item->b7,
-                    ]);
-                    
+                if (!$item) {
+                    return redirect('/items')->with('error', 'Item not found');
+                }
+
+                try {
+                    $generalQty = (int) $request->input('qty', 0);
+                    $branchQtyTotal = 0;
+
+                    for ($i = 1; $i <= count(session('compbranch')); $i++) {
+                        $qq = 'q' . $i;
+                        $bb = 'b' . $i;
+                        $qtyValue = (int) $request->input($qq, 0);
+                        $priceValue = $request->input($bb, 0);
+
+                        $branchQtyTotal += $qtyValue;
+                        $item->$qq = $qtyValue;
+                        $item->$bb = $priceValue;
+                    }
+
+                    if ($branchQtyTotal > $generalQty) {
+                        return redirect('/items')->with('error', 'Oops..! Sum of branch quantities cannot be greater than General Quantity.');
+                    }
+
                     $item->name = $request->input('name');
                     $item->desc = $request->input('desc');
                     $item->cat = $request->input('cat');
                     $item->brand = $request->input('brand');
                     $item->barcode = $request->input('barcode');
-                    $item->qty = $request->input('qty');
+                    $item->qty = $generalQty;
                     $item->price = $request->input('price');
                     $item->cost_price = $request->input('price');
                     $item->save();
 
-                    for ($i=0; $i < count(session('compbranch')); $i++) { 
-                        $qq = 'q'.$i + 1;
-                        $bb = 'b'.$i + 1;
-                        $item->$qq = $request->input($qq);
-                        $item->$bb = $request->input($bb);
-                        $item->save();
-                    }
-                    $item = '';
+                    return redirect('/items')->with('success', 'Record successfully updated');
+                } catch (Exception $ex) {
+                    return redirect('/items')->with('error', 'Oops..! Unhandled Error! ');
+                }
 
-
-                    $item = Item::find($id);
-                    $itemAudit = ItemAudit::firstOrCreate([
-                        'item_no' => $item->item_no,
-                        'user_id' => auth()->user()->id,
-                        'name' => $item->name,
-                        'desc' => $item->desc,
-                        'cat' => $item->cat,
-                        'brand' => $item->brand,
-                        'barcode' => $item->barcode,
-                        'qty' => $item->qty,
-                        'q1' => $item->q1,
-                        'q2' => $item->q2,
-                        'q3' => $item->q3,
-                        'q4' => $item->q4,
-                        'q5' => $item->q5,
-                        'q6' => $item->q6,
-                        'q7' => $item->q7,
-                        'price' => $item->price,
-                        'cost_price' => $item->price,
-                        'b1' => $item->b1,
-                        'b2' => $item->b2,
-                        'b3' => $item->b3,
-                        'b4' => $item->b4,
-                        'b5' => $item->b5,
-                        'b6' => $item->b6,
-                        'b7' => $item->b7,
-                    ]);
-
-                    return redirect(url()->previous())->with('success', 'Record successfully updated');
-                // } catch(Exception $ex){
-                //     return redirect('/items')->with('error', 'Oops..! Unhandled Error! ');
-                // }      
-
-                    
             break;
 
             case 'del_waybil':
