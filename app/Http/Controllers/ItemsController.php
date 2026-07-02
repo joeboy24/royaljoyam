@@ -46,21 +46,45 @@ class ItemsController extends Controller
         $lowStockThreshold = Item::LOW_STOCK_THRESHOLD;
         $match = ['del' => $showRecycle ? 'yes' : 'no'];
         $itemsearch = trim((string) $request->query('itemsearch', ''));
-        $totalItemCount = Item::where($match)->count();
+        $filterCategory = trim((string) $request->query('category', ''));
+        $filterStock = (string) $request->query('stock', '');
+        $perPage = $this->allowedInventoryPerPage((int) $request->query('per_page', 10));
+        $branchCount = count(session('compbranch'));
+
+        if (!in_array($filterStock, ['low', 'has_branch'], true)) {
+            $filterStock = '';
+        }
+
         $itemsQuery = Item::where($match);
 
         if ($itemsearch !== '') {
             $itemsQuery->where('name', 'like', '%'.$itemsearch.'%');
         }
 
-        $items = $itemsQuery->orderBy('id', 'desc')->paginate(10)->appends(array_filter([
-            'itemsearch' => $itemsearch !== '' ? $itemsearch : null,
-            'recycle' => $showRecycle ? '1' : null,
-        ]));
+        if ($filterCategory !== '') {
+            $itemsQuery->where('cat', $filterCategory);
+        }
+
+        if (!$showRecycle && $filterStock !== '') {
+            $this->applyInventoryStockFilter($itemsQuery, $filterStock, $lowStockThreshold, $branchCount);
+        }
+
+        $filteredItemCount = (clone $itemsQuery)->count();
+        $grandTotalCount = Item::where($match)->count();
+
+        $items = $itemsQuery->orderBy('id', 'desc')->paginate($perPage)->appends(
+            $this->inventoryListQueryParams($itemsearch, $showRecycle, $filterCategory, $filterStock, $perPage)
+        );
 
         // $items = Item::All();
         $ITM = ItemImage::All();
         $cats = Category::All();
+        $filterCategories = Item::where($match)
+            ->whereNotNull('cat')
+            ->where('cat', '!=', '')
+            ->distinct()
+            ->orderBy('cat')
+            ->pluck('cat');
 
         $pass = [
             'c' => 1,
@@ -69,12 +93,54 @@ class ItemsController extends Controller
             'cats' => $cats,
             'items' => $items,
             'itemsearch' => $itemsearch,
-            'totalItemCount' => $totalItemCount,
+            'filteredItemCount' => $filteredItemCount,
+            'grandTotalCount' => $grandTotalCount,
             'showRecycle' => $showRecycle,
             'lowStockThreshold' => $lowStockThreshold,
+            'filterCategory' => $filterCategory,
+            'filterStock' => $filterStock,
+            'perPage' => $perPage,
+            'filterCategories' => $filterCategories,
         ];
         // return $items;
         return view('pages.dash.itemsview')->with($pass);
+    }
+
+    private function allowedInventoryPerPage(int $perPage): int
+    {
+        return in_array($perPage, [10, 25, 50], true) ? $perPage : 10;
+    }
+
+    private function applyInventoryStockFilter($query, string $filterStock, int $lowStockThreshold, int $branchCount): void
+    {
+        if ($filterStock === 'low') {
+            $query->whereRaw('(qty + 0) <= ?', [$lowStockThreshold]);
+            return;
+        }
+
+        if ($filterStock === 'has_branch' && $branchCount > 0) {
+            $query->where(function ($subQuery) use ($branchCount) {
+                for ($i = 1; $i <= $branchCount; $i++) {
+                    $subQuery->orWhereRaw('(q' . $i . ' + 0) > 0');
+                }
+            });
+        }
+    }
+
+    private function inventoryListQueryParams(
+        string $itemsearch,
+        bool $showRecycle,
+        string $filterCategory,
+        string $filterStock,
+        int $perPage
+    ): array {
+        return array_filter([
+            'itemsearch' => $itemsearch !== '' ? $itemsearch : null,
+            'recycle' => $showRecycle ? '1' : null,
+            'category' => $filterCategory !== '' ? $filterCategory : null,
+            'stock' => $filterStock !== '' ? $filterStock : null,
+            'per_page' => $perPage !== 10 ? $perPage : null,
+        ]);
     }
 
     /**

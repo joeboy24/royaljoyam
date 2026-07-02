@@ -154,7 +154,7 @@ class InventoryPageTest extends TestCase
         $response->assertOk();
         $response->assertSee('Inventory');
         $response->assertSee('addItemModal', false);
-        $response->assertSee('Add Item');
+        $response->assertSee('Add item');
         $response->assertSee('href="/items"', false);
         $response->assertSee('active2');
         $response->assertSee('Widget Alpha');
@@ -332,7 +332,7 @@ class InventoryPageTest extends TestCase
         $response->assertOk();
         $response->assertSee('Recycle Bin');
         $response->assertSee('href="' . url('/items') . '"', false);
-        $response->assertSee('Back to Inventory', false);
+        $response->assertSee('data-tip="Back to inventory"', false);
         $response->assertSee('Trashed Item');
         $response->assertDontSee('Active Item');
         $response->assertSee('restore_item', false);
@@ -382,6 +382,80 @@ class InventoryPageTest extends TestCase
         $response->assertOk();
         $response->assertDontSee('<p class="stock-badge-legend', false);
         $response->assertSee('Out of stock');
+    }
+
+    public function test_inventory_filters_by_category(): void
+    {
+        $this->createItem(['name' => 'Soap Item', 'cat' => 'General']);
+        $this->createItem(['name' => 'Phone Item', 'cat' => 'Electronics']);
+
+        $response = $this->actingAs($this->admin)->get('/items?category=Electronics');
+
+        $response->assertOk();
+        $response->assertSee('Phone Item');
+        $response->assertDontSee('Soap Item');
+        $response->assertSee('value="Electronics"', false);
+    }
+
+    public function test_inventory_low_stock_filter_shows_only_low_and_out_items(): void
+    {
+        $this->createItem(['name' => 'Healthy Stock', 'qty' => '20']);
+        $this->createItem(['name' => 'Low Stock Item', 'qty' => '2']);
+        $this->createItem(['name' => 'Empty Stock', 'qty' => '0']);
+
+        $response = $this->actingAs($this->admin)->get('/items?stock=low');
+
+        $response->assertOk();
+        $response->assertSee('Low Stock Item');
+        $response->assertSee('Empty Stock');
+        $response->assertDontSee('Healthy Stock');
+    }
+
+    public function test_inventory_has_branch_stock_filter(): void
+    {
+        $this->createItem(['name' => 'Branch Stock', 'q1' => '2', 'q2' => '0', 'q3' => '0']);
+        $this->createItem(['name' => 'No Branch Stock', 'q1' => '0', 'q2' => '0', 'q3' => '0']);
+
+        $response = $this->actingAs($this->admin)->get('/items?stock=has_branch');
+
+        $response->assertOk();
+        $response->assertSee('Branch Stock');
+        $response->assertDontSee('No Branch Stock');
+    }
+
+    public function test_inventory_per_page_setting_shows_more_rows(): void
+    {
+        for ($i = 0; $i < 11; $i++) {
+            $this->createItem(['name' => 'Sized Item ' . $i]);
+        }
+
+        $response = $this->actingAs($this->admin)->get('/items?per_page=25');
+
+        $response->assertOk();
+        $response->assertSee('Sized Item 0');
+        $response->assertSee('Sized Item 10');
+        $response->assertDontSee('page=2', false);
+    }
+
+    public function test_inventory_filters_persist_in_pagination_links(): void
+    {
+        DB::table('categories')->insert([
+            'user_id' => '1',
+            'name' => 'Filtered Cat',
+            'desc' => 'Filter test category',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        for ($i = 0; $i < 11; $i++) {
+            $this->createItem(['name' => 'Filtered Item ' . $i, 'cat' => 'Filtered Cat']);
+        }
+
+        $response = $this->actingAs($this->admin)->get('/items?category=Filtered+Cat&per_page=10');
+
+        $response->assertOk();
+        $response->assertSee('category=Filtered', false);
+        $response->assertSee('page=2', false);
     }
 
     public function test_inventory_pagination_links_appear_when_more_than_ten_items(): void
