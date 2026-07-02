@@ -553,6 +553,21 @@ html[data-sidebar-theme="mint"] {
 }
 
 @media (max-width: 991px) {
+  .sidebar,
+  .nav-open .sidebar {
+    background: var(--dash-sidebar-bg) !important;
+    background-color: transparent !important;
+  }
+
+  .sidebar::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  .sidebar .sidebar-wrapper > .navbar-form {
+    display: none !important;
+  }
+
   .sidebar .dash-sidebar .nav .nav-link:hover {
     transform: none;
   }
