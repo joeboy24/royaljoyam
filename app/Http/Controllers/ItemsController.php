@@ -53,12 +53,6 @@ class ItemsController extends Controller
         // $items = Item::All();
         $ITM = ItemImage::All();
         $cats = Category::All();
-        
-        // $allStudents = Student::where('del', 'no')->get();
-        
-        // $searchquery = request()->query('searchquery');
-        // $students = Student::where('fname', 'LIKE', '%'.$searchquery.'%')->paginate(10);
-        // $std_pop = count($allStudents);
 
         $pass = [
             'c' => 1,
@@ -466,98 +460,6 @@ class ItemsController extends Controller
                         
                     }
                     
-                break;
-
-                case 'admi_create_std':
-
-                        try {
-
-                            if($request->hasFile('std_img')){
-                                //get filename with ext
-                                $filenameWithExt = $request->file('std_img')->getClientOriginalName();
-                                //get filename
-                                $filename = pathinfo($filenameWithExt, PATHINFO_FILENAME);
-                                //get file ext
-                                $fileExt = $request->file('std_img')->getClientOriginalExtension();
-                                //filename to store
-                                $filenameToStore = $request->input('fname').'_'.time().'.'.$fileExt;
-                                //upload path
-                                $path = $request->file('std_img')->storeAs('public/std_imgs', $filenameToStore);
-                            }else{
-                                $filenameToStore = 'noimage.png';
-                            }
-
-                            $company = Company::Find(1);
-                            $calc = Student::latest('id')->first();
-                            // $calc = Student::count('id');
-                            $calc = substr($calc->std_id, 4);
-                            $final = date('Y').($calc + 1);
-
-                            $std_insert = Student::firstOrCreate(
-                                ['std_id' => $final,
-                                'user_id' => auth()->user()->id, 
-                                'fname' => $fname, 
-                                'sname' => $sname, 
-                                'dob' => $dob,  
-                                'sex' => $request->input('sex'), 
-                                'class' => $request->input('std_cls'), 
-                                'guardian' => $request->input('guardian'),  
-                                'contact' => $request->input('contact'), 
-                                'email' => $request->input('email'), 
-                                'residence' => $request->input('residence'), 
-                                'bill' => $request->input('bill_total'), 
-                                'photo' => $filenameToStore]
-                            );
-            
-                            $get_id = Student::latest('id')->first();
-                            $get_id = $get_id->id;
-                    
-                            // $fee->student_id = $calc + 1;
-                            $fee->student_id = $get_id;
-                            $fee->user_id = auth()->user()->id;
-                            $fee->fullname = $fname.' '.$sname;
-                            $fee->class = $request->input('std_cls');
-                            $fee->term = $company->ac_term;
-                            $fee->year = $company->ac_year;
-                            
-                            $fee->save();
-
-                            return redirect('/addstudent')->with('success', $fname.'`s details successfully added');
-
-                        }catch(Exception $ex) {
-                            $ex2 = $ex->getMessage();
-                            $ex2 = substr($ex2,0,100).'.....!';
-                            return redirect('/addstudent')->with('error', 'Ooops..! Unhandled Error --> Invalid information provided. Check input(Class / Date of Birth / Add Items To Bill)');
-                           
-                        }
-                    
-                break;
-
-                case 'update_student':
-
-                    //$student = Student::find($id);
-                    $fname = $request->input('fname');
-                    $sname = $request->input('sname');
-    
-    
-                    try {
-                        if($request->hasFile('std_img')){
-                            //get filename with ext
-                            $filenameWithExt = $request->file('std_img')->getClientOriginalName();
-                            //get filename
-                            $filename = pathinfo($filenameWithExt, PATHINFO_FILENAME);
-                            //get file ext
-                            $fileExt = $request->file('std_img')->getClientOriginalExtension();
-                            //filename to store
-                            $filenameToStore = $fname.'_'.time().'.'.$fileExt;
-                            //upload path
-                            $path = $request->file('std_img')->storeAs('public/std_imgs', $filenameToStore);
-        
-                            return redirect('/dashboard')->with('success', $fname.'`s details successfully updated');
-                        }
-                    } catch (Exception $ex) {
-                        return redirect('/addstudent')->with('error', 'Ooops..! Unhandled Error');
-                    }
                 break;
 
                 case 'add_waybill':
@@ -1013,17 +915,8 @@ class ItemsController extends Controller
 
             }
         
-        }catch(Exception $e) {
-            //echo 'Message: ' .$e->getMessage();
-
-            switch ($request->input('store_action')) {
-
-                case 'admi_create_trs':
-                    return redirect('/dashboard')->with('error', 'Ooops..! Unhandled Error');
-                break;
-
-            }
-
+        } catch (Exception $e) {
+            return redirect()->back()->with('error', 'Oops..! Something went wrong while processing that request.');
         }
     }
 

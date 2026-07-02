@@ -273,19 +273,7 @@
 
 @section('footer')
 
-<script type="text/javascript">
-  $('#search').on('keyup',function(){
-      $value=$(this).val();
-      $.ajax({
-          type : 'get',
-          url : '{{URL::to('/searchfee')}}',
-          data:{'search':$value},
-          success:function(data){
-          $('#tb').html(data);
-          }
-      });
-  })
-</script>
+
 <script type="text/javascript">
   $.ajaxSetup({ headers: { 'csrftoken' : '{{ csrf_token() }}' } });
 </script>

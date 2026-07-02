@@ -120,7 +120,6 @@
                   <div class="col-md-7 offset-md-0 myTrim">
                     <a href="#"><button type="submit" class="btn btn-white pull-right" title="Recycle Bin"><i class="fa fa-trash"></i></button></a>
                     <a href="/waybill"><button type="submit" class="btn btn-white pull-right" ><i class="fa fa-arrow-left"></i></button></a>
-                    {{-- <a href="/students"><button type="submit" class="btn btn-white pull-right" ><i class="fa fa-refresh"></i></button></a> --}}
                   </div>
 
                 </div>

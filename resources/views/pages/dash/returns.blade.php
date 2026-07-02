@@ -89,18 +89,6 @@
 
               @include('inc.messages')
 
-                <div class="form-group row mb-0 hideMe">
-                    <div class="col-md-5 offset-md-0 myTrim">
-                      <div class="input-group no-border">
-                        
-
-                        <form action="{{action('FeesController@store')}}" method="POST">
-                          @csrf
-                        </form>
-
-                      </div>
-                    </div>
-                </div>
 
                 <div class="row">
                   <div class="col-md-12">
@@ -264,19 +252,7 @@
 
 @section('footer')
 
-<script type="text/javascript">
-  $('#search').on('keyup',function(){
-      $value=$(this).val();
-      $.ajax({
-          type : 'get',
-          url : '{{URL::to('/searchfee')}}',
-          data:{'search':$value},
-          success:function(data){
-          $('#tb').html(data);
-          }
-      });
-  })
-</script>
+
 <script type="text/javascript">
   $.ajaxSetup({ headers: { 'csrftoken' : '{{ csrf_token() }}' } });
 </script>

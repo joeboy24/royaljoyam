@@ -383,9 +383,7 @@
       <div id="printarea" class="modal-content">
           <div class="card card-profile">
             <div class="card-avatar">
-              <a href="#">
-              <!--img class="img" src="/storage/members_imgs/{{$fee->student->photo}}" /-->
-              </a>
+              <a href="#">              </a>
             </div>
             <div class="card-body">
               <h6 class="card-category text-gray"></h6>

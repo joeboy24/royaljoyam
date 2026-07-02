@@ -270,9 +270,7 @@
                                             </div>
                                               <div class="card card-profile">
                                                 <div class="card-avatar">
-                                                  <a href="#">
-                                                  {{-- <img class="img" src="/storage/members_imgs/{{$fee->student->photo}}" /> --}}
-                                                  </a>
+                                                  <a href="#">                                                  </a>
                                                 </div>
                                                 <div class="card-body">
                                                   <h6 class="card-category text-gray"></h6>
@@ -577,19 +575,7 @@
 
 @section('footer')
 
-<script type="text/javascript">
-  $('#search').on('keyup',function(){
-      $value=$(this).val();
-      $.ajax({
-          type : 'get',
-          url : '{{URL::to('/searchfee')}}',
-          data:{'search':$value},
-          success:function(data){
-          $('#tb').html(data);
-          }
-      });
-  })
-</script>
+
 <script type="text/javascript">
   $.ajaxSetup({ headers: { 'csrftoken' : '{{ csrf_token() }}' } });
 </script>

@@ -121,7 +121,6 @@
                   <div class="col-md-7 offset-md-0 myTrim">
                     <a href="#"><button type="submit" class="btn btn-white pull-right" title="Recycle Bin"><i class="fa fa-trash"></i></button></a>
                     <a href="/dashuser"><button type="submit" class="btn btn-white pull-right" ><i class="fa fa-arrow-left"></i></button></a>
-                    {{-- <a href="/students"><button type="submit" class="btn btn-white pull-right" ><i class="fa fa-refresh"></i></button></a> --}}
                   </div>
 
                 </div>
@@ -434,19 +433,6 @@
 
 @section('footer')
 
-<script type="text/javascript">
-  $('#search').on('keyup',function(){
-      $value=$(this).val();
-      $.ajax({
-          type : 'get',
-          url : '{{URL::to('searchstudent')}}',
-          data:{'search':$value},
-          success:function(data){
-          $('#tb').html(data);
-          }
-      });
-  })
-</script>
 <script type="text/javascript">
   $.ajaxSetup({ headers: { 'csrftoken' : '{{ csrf_token() }}' } });
 </script>

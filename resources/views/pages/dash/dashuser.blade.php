@@ -452,51 +452,6 @@
 
             </div>
 
-            
-            {{-- 
-            <div class="card-body col-md-0">
-              <h4 class="card-title">All Registered Teachers</h4>
-
-              @if (count($teachers) > 0)
-                        <table class="table">
-                          <thead class=" text-secondary">
-                            <th></th>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>DOB</th>
-                            <th>Gender</th>
-                            <th>Role</th>
-                            <th>Contact</th>
-                            <th class="ryt">
-                              Action
-                            </th>
-                          </thead>
-                          <tbody>
-                          @foreach ($teachers as $teacher)
-                              <tr><td>{{$t++}}</td>
-                                <td>{{$teacher->tch_id}}</td>
-                                <td>{{$teacher->fname.' '.$teacher->sname}}</td>
-                                <td>{{$teacher->dob}}</td>
-                                <td>{{$teacher->sex}}</td>
-                                <td>{{$teacher->role.' ('.$teacher->role_desc.')'}}</td>
-                                <td>{{$teacher->contact}}</td>
-                                <td class="ryt">
-                                  <form action="{{ action('StudentController@destroy', $teacher->id) }}" method="POST">
-                                    <input type="hidden" name="_method" value="DELETE">
-                                    @csrf
-                                    <button type="submit" name="sub_action" value="trs_del" rel="tooltip" title="Delete User" class="close2" onclick="return confirm('Are you sure you want to delete this record?');"><i class="fa fa-close"></i></button>
-                                  </form>
-                                </td>
-                              </tr>
-                          @endforeach
-                          </tbody>
-                        </table>
-               @else
-                  <p>No Staff Registered Yet</p>
-               @endif
-
-            
-            </div> --}}
 
           </div>
         </div>
@@ -613,9 +568,7 @@
       <div id="printarea" class="modal-content">
           <div class="card card-profile">
             <div class="card-avatar">
-              <a href="#">
-              {{-- <img class="img" src="/storage/members_imgs/{{$fee->student->photo}}" /> --}}
-              </a>
+              <a href="#">              </a>
             </div>
             <div class="card-body">
               <h6 class="card-category text-gray"></h6>
