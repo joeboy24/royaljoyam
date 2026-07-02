@@ -156,7 +156,7 @@ class InventoryPageTest extends TestCase
         $response->assertSee('addItemModal', false);
         $response->assertSee('Add item');
         $response->assertSee('href="/items"', false);
-        $response->assertSee('active2');
+        $this->assertSame(1, substr_count($response->getContent(), 'nav-item active2'));
         $response->assertSee('Widget Alpha');
         $response->assertSee('item-row-' . $item->id, false);
         $response->assertSee('branch-detail-' . $item->id, false);
@@ -168,6 +168,16 @@ class InventoryPageTest extends TestCase
         $response->assertSee('toggleAllBranchDetails', false);
         $response->assertSee('restoreBranchDetailState', false);
         $response->assertSee('inventoryExpandedBranchIds', false);
+    }
+
+    public function test_dash_sidebar_highlights_registry_on_registry_page(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/dashuser');
+
+        $response->assertOk();
+        $this->assertSame(1, substr_count($response->getContent(), 'nav-item active2'));
+        $response->assertSee('href="/dashuser"', false);
+        $response->assertSee('fa fa-archive', false);
     }
 
     public function test_admin_can_add_item_from_inventory_page(): void

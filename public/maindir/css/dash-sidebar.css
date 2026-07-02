@@ -1,0 +1,148 @@
+/* Royal Joyam dashboard sidebar enhancements */
+
+.sidebar {
+  background: linear-gradient(185deg, #1a2530 0%, #293746 45%, #222f3c 100%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
+}
+
+.sidebar .logo.dash-sidebar-brand {
+  padding: 18px 16px 14px;
+  margin: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.sidebar .logo.dash-sidebar-brand:after {
+  display: none;
+}
+
+.sidebar .logo.dash-sidebar-brand .simple-text {
+  display: block;
+  text-align: center;
+  line-height: 1.25;
+  padding: 0;
+  text-transform: none;
+  font-weight: 600;
+}
+
+.dash-sidebar-brand-title {
+  display: block;
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  color: #f5f7fa;
+}
+
+.dash-sidebar-brand-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #00acc1;
+}
+
+.sidebar .sidebar-wrapper.dash-sidebar {
+  padding-top: 6px;
+}
+
+.sidebar .dash-sidebar .nav {
+  margin-top: 10px;
+  padding: 0 10px 20px;
+}
+
+.sidebar .dash-sidebar .nav .nav-item {
+  margin-bottom: 5px;
+}
+
+.sidebar .dash-sidebar .nav .nav-item.active-pro {
+  display: none;
+}
+
+.sidebar .dash-sidebar .nav .nav-item:first-child > a {
+  margin: 0;
+}
+
+.sidebar .dash-sidebar .nav .nav-link {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sidebar .dash-sidebar .nav .nav-link p {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.72);
+  transition: color 0.2s ease;
+}
+
+.sidebar .dash-sidebar .nav .nav-link i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin-right: 12px;
+  float: none;
+  line-height: 1;
+  font-size: 1.05rem;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.65);
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.sidebar .dash-sidebar .nav .nav-item:not(.active2) .nav-link:hover,
+.sidebar .dash-sidebar .nav .nav-item:not(.active2) .nav-link:focus {
+  background: rgba(0, 172, 193, 0.14) !important;
+  transform: translateX(3px);
+  box-shadow: none;
+}
+
+.sidebar .dash-sidebar .nav .nav-item:not(.active2) .nav-link:hover p,
+.sidebar .dash-sidebar .nav .nav-item:not(.active2) .nav-link:hover i {
+  color: #fff !important;
+}
+
+.sidebar .dash-sidebar .nav .nav-item:not(.active2) .nav-link:hover i {
+  background: rgba(0, 172, 193, 0.22);
+}
+
+.sidebar .dash-sidebar .nav .nav-item.active2 .nav-link {
+  background: linear-gradient(90deg, rgba(0, 172, 193, 0.28) 0%, rgba(0, 98, 110, 0.5) 100%) !important;
+  box-shadow: inset 3px 0 0 #00acc1, 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+
+.sidebar .dash-sidebar .nav .nav-item.active2 .nav-link p,
+.sidebar .dash-sidebar .nav .nav-item.active2 .nav-link i {
+  color: #fff !important;
+}
+
+.sidebar .dash-sidebar .nav .nav-item.active2 .nav-link i {
+  background: rgba(0, 172, 193, 0.38);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.sidebar .sidebar-wrapper.dash-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar .sidebar-wrapper.dash-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+}
+
+.sidebar .sidebar-wrapper.dash-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (max-width: 991px) {
+  .sidebar .dash-sidebar .nav .nav-link:hover {
+    transform: none;
+  }
+}
