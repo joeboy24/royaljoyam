@@ -299,7 +299,7 @@
                                           <button type="submit" name="store_action" value="restore_item" class="inventory-row-action-btn inventory-row-action-btn-restore inventory-tip" data-tip="Restore item" onclick="return confirm('Restore this item to inventory?');"><i class="fa fa-reply"></i></button>
                                         </form>
                                       @else
-                                        <button type="button" class="inventory-row-action-btn inventory-row-action-btn-edit item-edit-btn inventory-tip" data-tip="Edit record" data-target="#edit_{{ $item->id }}" onclick="event.stopPropagation(); openItemEditModal('edit_{{ $item->id }}');"><i class="fa fa-pencil"></i></button>
+                                        <button type="button" class="inventory-row-action-btn inventory-row-action-btn-edit item-edit-btn inventory-tip" data-tip="Edit record" data-item-id="{{ $item->id }}" onclick="event.stopPropagation(); openItemEditModal({{ $item->id }});"><i class="fa fa-pencil"></i></button>
                                         <form action="{{ action('ItemsController@update', $item->id) }}" method="POST" class="item-delete-form" onclick="event.stopPropagation()">
                                           @csrf
                                           @method('PUT')
@@ -346,133 +346,6 @@
 
                           </tbody>
                         </table>
-
-                        @unless ($showRecycle)
-                        @foreach ($items as $item)
-                            <div class="modal fade item-edit-modal" id="edit_{{ $item->id }}" tabindex="-1" role="dialog" aria-labelledby="editModalLabel{{ $item->id }}" aria-hidden="true">
-                              <div class="modal-dialog inventory-edit-dialog modal-dialog-centered" role="document">
-                                <div class="modal-content inventory-edit-modal">
-                                  <form action="{{ action('ItemsController@update', $item->id) }}" method="POST" enctype="multipart/form-data" data-item-id="{{ $item->id }}">
-                                    @csrf
-                                    @method('PUT')
-                                    <input type="hidden" name="store_action" value="update_item">
-
-                                    <div class="inventory-edit-header">
-                                      <div class="inventory-edit-header-inner">
-                                        <img class="inventory-edit-thumb" src="/storage/rjv_items/{{ $item->thumb_img }}" alt="{{ $item->name }}" />
-                                        <div class="inventory-edit-header-text">
-                                          <span class="inventory-edit-kicker">Edit item</span>
-                                          <h4 class="inventory-edit-title" id="editModalLabel{{ $item->id }}">{{ $item->name }}</h4>
-                                          <p class="inventory-edit-meta">Item No. {{ $item->item_no }} &middot; Created by {{ $item->user->name }}</p>
-                                        </div>
-                                      </div>
-                                      <button type="button" class="inventory-edit-close" data-dismiss="modal" aria-label="Close">
-                                        <i class="material-icons">close</i>
-                                      </button>
-                                    </div>
-
-                                    <div class="inventory-edit-body">
-                                      <div class="inventory-edit-columns">
-                                        <div class="inventory-edit-col">
-                                          <h6 class="inventory-edit-section-title"><i class="fa fa-info-circle"></i> Details</h6>
-
-                                          <label class="inventory-edit-field">
-                                            <span class="inventory-edit-label">Item name</span>
-                                            <input type="text" class="inventory-edit-input" name="name" placeholder="Item name" value="{{ $item->name }}" required/>
-                                          </label>
-
-                                          <label class="inventory-edit-field">
-                                            <span class="inventory-edit-label">Description</span>
-                                            <textarea class="inventory-edit-input inventory-edit-textarea" rows="3" name="desc" placeholder="Description" required>{{ $item->desc }}</textarea>
-                                          </label>
-
-                                          <label class="inventory-edit-field">
-                                            <span class="inventory-edit-label">Category</span>
-                                            <select name="cat" class="inventory-edit-input inventory-edit-select">
-                                              <option selected>{{ $item->cat }}</option>
-                                              @foreach ($cats as $cat)
-                                                @if ($cat->del != 'yes' && $cat->name != $item->cat)
-                                                  <option>{{ $cat->name }}</option>
-                                                @endif
-                                              @endforeach
-                                            </select>
-                                          </label>
-
-                                          <div class="inventory-edit-field-row">
-                                            <label class="inventory-edit-field">
-                                              <span class="inventory-edit-label">Brand</span>
-                                              <input type="text" class="inventory-edit-input" name="brand" placeholder="Brand" value="{{ $item->brand }}"/>
-                                            </label>
-                                            <label class="inventory-edit-field">
-                                              <span class="inventory-edit-label">Barcode</span>
-                                              <input type="text" class="inventory-edit-input" name="barcode" placeholder="Barcode" value="{{ $item->barcode }}"/>
-                                            </label>
-                                          </div>
-                                        </div>
-
-                                        <div class="inventory-edit-col">
-                                          <h6 class="inventory-edit-section-title"><i class="fa fa-cubes"></i> Stock</h6>
-
-                                          <label class="inventory-edit-field">
-                                            <span class="inventory-edit-label">General quantity</span>
-                                            <input type="number" class="inventory-edit-input" name="qty" id="qty{{ $item->id }}" placeholder="Quantity" value="{{ $item->qty }}" min="0" step="1" oninput="validateBranchQty({{ $item->id }}, {{ count(session('compbranch')) }})" required/>
-                                          </label>
-                                          <p class="inventory-edit-hint" id="branch_status_{{ $item->id }}">Branch totals must not exceed general quantity.</p>
-
-                                          @if (count(session('compbranch')) > 0)
-                                            <div class="inventory-edit-branch-grid">
-                                              @for ($i = 0; $i < count(session('compbranch')); $i++)
-                                                @php
-                                                  $branch = session('compbranch')[$i];
-                                                  $qq = 'q'.($i + 1);
-                                                @endphp
-                                                <label class="inventory-edit-field inventory-edit-field-compact">
-                                                  <span class="inventory-edit-label">{{ $branch->name }} qty</span>
-                                                  <input type="number" class="inventory-edit-input inventory-edit-branch-qty" name="q{{ $i + 1 }}" id="q{{ $i + 1 }}_{{ $item->id }}" placeholder="0" value="{{ $item->$qq }}" min="0" step="1" oninput="validateBranchQty({{ $item->id }}, {{ count(session('compbranch')) }})" required/>
-                                                </label>
-                                              @endfor
-                                            </div>
-                                          @endif
-
-                                          <h6 class="inventory-edit-section-title inventory-edit-section-title-spaced"><i class="fa fa-money"></i> Pricing</h6>
-
-                                          <label class="inventory-edit-field">
-                                            <span class="inventory-edit-label">Base price (Gh₵)</span>
-                                            <input type="number" class="inventory-edit-input" name="price" placeholder="0.00" value="{{ $item->price }}" min="0" step="0.01" required/>
-                                            <span class="inventory-edit-field-hint">Default catalogue price shown in the inventory list.</span>
-                                          </label>
-
-                                          @if (count(session('compbranch')) > 0)
-                                            <div class="inventory-edit-branch-grid">
-                                              @for ($i = 0; $i < count(session('compbranch')); $i++)
-                                                @php
-                                                  $branch = session('compbranch')[$i];
-                                                  $bb = 'b'.($i + 1);
-                                                @endphp
-                                                <label class="inventory-edit-field inventory-edit-field-compact">
-                                                  <span class="inventory-edit-label">{{ $branch->name }} price (Gh₵)</span>
-                                                  <input type="number" class="inventory-edit-input" name="b{{ $i + 1 }}" placeholder="0.00" value="{{ $item->$bb }}" step="0.01" min="0" required/>
-                                                </label>
-                                              @endfor
-                                            </div>
-                                          @endif
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    <div class="inventory-edit-footer">
-                                      <button type="button" class="inventory-edit-btn inventory-edit-btn-muted" data-dismiss="modal">Cancel</button>
-                                      <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary inventory-edit-submit">
-                                        <i class="fa fa-save inventory-edit-submit-icon"></i>
-                                        <span class="inventory-edit-submit-label">Update record</span>
-                                      </button>
-                                    </div>
-                                  </form>
-                                </div>
-                              </div>
-                            </div>
-                        @endforeach
-                        @endunless
 
                         <p class="gray_p">
                           @if ($items->total() > 0)
@@ -606,6 +479,126 @@
             <button type="button" class="inventory-edit-btn inventory-edit-btn-muted" data-dismiss="modal">Cancel</button>
             <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary" name="store_action" value="add_item">
               <i class="fa fa-save"></i> Save item
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade item-edit-modal" id="editItemModal" tabindex="-1" role="dialog" aria-labelledby="editItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog inventory-edit-dialog modal-dialog-centered" role="document">
+      <div class="modal-content inventory-edit-modal">
+        <form id="editItemForm" action="{{ url('/items/0') }}" method="POST" enctype="multipart/form-data" data-item-id="">
+          @csrf
+          @method('PUT')
+          <input type="hidden" name="store_action" value="update_item">
+
+          <div class="inventory-edit-header">
+            <div class="inventory-edit-header-inner">
+              <img class="inventory-edit-thumb" id="editItemThumb" src="/storage/rjv_items/no_image.png" alt="" />
+              <div class="inventory-edit-header-text">
+                <span class="inventory-edit-kicker">Edit item</span>
+                <h4 class="inventory-edit-title" id="editItemModalLabel">Edit item</h4>
+                <p class="inventory-edit-meta" id="editItemMeta">Loading item details...</p>
+              </div>
+            </div>
+            <button type="button" class="inventory-edit-close" data-dismiss="modal" aria-label="Close">
+              <i class="material-icons">close</i>
+            </button>
+          </div>
+
+          <div class="inventory-edit-body" id="editItemBody">
+            <div class="inventory-edit-loading" id="editItemLoading">
+              <i class="fa fa-spinner fa-spin"></i> Loading item...
+            </div>
+
+            <div class="inventory-edit-columns" id="editItemFields" hidden>
+              <div class="inventory-edit-col">
+                <h6 class="inventory-edit-section-title"><i class="fa fa-info-circle"></i> Details</h6>
+
+                <label class="inventory-edit-field">
+                  <span class="inventory-edit-label">Item name</span>
+                  <input type="text" class="inventory-edit-input" id="editItemName" name="name" placeholder="Item name" required/>
+                </label>
+
+                <label class="inventory-edit-field">
+                  <span class="inventory-edit-label">Description</span>
+                  <textarea class="inventory-edit-input inventory-edit-textarea" id="editItemDesc" rows="3" name="desc" placeholder="Description" required></textarea>
+                </label>
+
+                <label class="inventory-edit-field">
+                  <span class="inventory-edit-label">Category</span>
+                  <select name="cat" id="editItemCat" class="inventory-edit-input inventory-edit-select">
+                    @foreach ($cats as $cat)
+                      @if ($cat->del != 'yes')
+                        <option value="{{ $cat->name }}">{{ $cat->name }}</option>
+                      @endif
+                    @endforeach
+                  </select>
+                </label>
+
+                <div class="inventory-edit-field-row">
+                  <label class="inventory-edit-field">
+                    <span class="inventory-edit-label">Brand</span>
+                    <input type="text" class="inventory-edit-input" id="editItemBrand" name="brand" placeholder="Brand"/>
+                  </label>
+                  <label class="inventory-edit-field">
+                    <span class="inventory-edit-label">Barcode</span>
+                    <input type="text" class="inventory-edit-input" id="editItemBarcode" name="barcode" placeholder="Barcode"/>
+                  </label>
+                </div>
+              </div>
+
+              <div class="inventory-edit-col">
+                <h6 class="inventory-edit-section-title"><i class="fa fa-cubes"></i> Stock</h6>
+
+                <label class="inventory-edit-field">
+                  <span class="inventory-edit-label">General quantity</span>
+                  <input type="number" class="inventory-edit-input" name="qty" id="editItemQty" placeholder="Quantity" min="0" step="1" oninput="validateEditBranchQty()" required/>
+                </label>
+                <p class="inventory-edit-hint" id="editBranchStatus">Branch totals must not exceed general quantity.</p>
+
+                @if (count(session('compbranch')) > 0)
+                  <div class="inventory-edit-branch-grid">
+                    @for ($i = 0; $i < count(session('compbranch')); $i++)
+                      @php $branch = session('compbranch')[$i]; @endphp
+                      <label class="inventory-edit-field inventory-edit-field-compact">
+                        <span class="inventory-edit-label">{{ $branch->name }} qty</span>
+                        <input type="number" class="inventory-edit-input inventory-edit-branch-qty" name="q{{ $i + 1 }}" id="edit-q-{{ $i + 1 }}" placeholder="0" min="0" step="1" oninput="validateEditBranchQty()" required/>
+                      </label>
+                    @endfor
+                  </div>
+                @endif
+
+                <h6 class="inventory-edit-section-title inventory-edit-section-title-spaced"><i class="fa fa-money"></i> Pricing</h6>
+
+                <label class="inventory-edit-field">
+                  <span class="inventory-edit-label">Base price (Gh₵)</span>
+                  <input type="number" class="inventory-edit-input" id="editItemPrice" name="price" placeholder="0.00" min="0" step="0.01" required/>
+                  <span class="inventory-edit-field-hint">Default catalogue price shown in the inventory list.</span>
+                </label>
+
+                @if (count(session('compbranch')) > 0)
+                  <div class="inventory-edit-branch-grid">
+                    @for ($i = 0; $i < count(session('compbranch')); $i++)
+                      @php $branch = session('compbranch')[$i]; @endphp
+                      <label class="inventory-edit-field inventory-edit-field-compact">
+                        <span class="inventory-edit-label">{{ $branch->name }} price (Gh₵)</span>
+                        <input type="number" class="inventory-edit-input" name="b{{ $i + 1 }}" id="edit-b-{{ $i + 1 }}" placeholder="0.00" step="0.01" min="0" required/>
+                      </label>
+                    @endfor
+                  </div>
+                @endif
+              </div>
+            </div>
+          </div>
+
+          <div class="inventory-edit-footer">
+            <button type="button" class="inventory-edit-btn inventory-edit-btn-muted" data-dismiss="modal">Cancel</button>
+            <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary inventory-edit-submit" id="editItemSubmit">
+              <i class="fa fa-save inventory-edit-submit-icon"></i>
+              <span class="inventory-edit-submit-label">Update record</span>
             </button>
           </div>
         </form>
@@ -1404,6 +1397,24 @@
     color: #999;
     line-height: 1.35;
   }
+  .inventory-edit-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 220px;
+    color: #78909c;
+    font-size: 14px;
+  }
+  .inventory-edit-body.is-loading .inventory-edit-loading {
+    display: flex;
+  }
+  .inventory-edit-body.is-loading #editItemFields {
+    display: none !important;
+  }
+  #editItemFields[hidden] {
+    display: none !important;
+  }
   .inventory-edit-file-field {
     margin-bottom: 0;
   }
@@ -1508,13 +1519,18 @@
 </style>
 
 <script type="text/javascript">
-  function validateBranchQty(itemId, branchCount) {
-    var generalQty = Number(document.getElementById('qty' + itemId).value || 0);
-    var branchTotal = 0;
-    var status = document.getElementById('branch_status_' + itemId);
+  var INVENTORY_BRANCH_COUNT = {{ count(session('compbranch')) }};
 
-    for (var i = 1; i <= branchCount; i++) {
-      branchTotal += Number(document.getElementById('q' + i + '_' + itemId).value || 0);
+  function validateEditBranchQty() {
+    var generalQty = Number(document.getElementById('editItemQty').value || 0);
+    var branchTotal = 0;
+    var status = document.getElementById('editBranchStatus');
+
+    for (var i = 1; i <= INVENTORY_BRANCH_COUNT; i++) {
+      var branchInput = document.getElementById('edit-q-' + i);
+      if (branchInput) {
+        branchTotal += Number(branchInput.value || 0);
+      }
     }
 
     if (!status) {
@@ -1526,7 +1542,7 @@
     if (branchTotal > generalQty) {
       status.textContent = 'Branch totals exceed general quantity (' + branchTotal + ' / ' + generalQty + ').';
       status.classList.add('is-error');
-    } else if (branchCount > 0) {
+    } else if (INVENTORY_BRANCH_COUNT > 0) {
       status.textContent = 'Branch totals are within general quantity (' + branchTotal + ' / ' + generalQty + ').';
       status.classList.add('is-ok');
     } else {
@@ -1720,28 +1736,125 @@
     updateToggleAllBranchesButton();
   }
 
-  function openItemEditModal(modalId) {
-    var $modal = $('#' + modalId);
-    var form = $modal.find('form').get(0);
-    var branchCount = {{ count(session('compbranch')) }};
+  function setEditItemLoading(isLoading) {
+    var body = document.getElementById('editItemBody');
+    var fields = document.getElementById('editItemFields');
+    var loading = document.getElementById('editItemLoading');
+    var submitBtn = document.getElementById('editItemSubmit');
 
-    $modal.modal('show');
+    if (body) {
+      body.classList.toggle('is-loading', isLoading);
+    }
 
-    if (form) {
-      setEditFormSaving(form, false);
+    if (fields) {
+      fields.hidden = isLoading;
+    }
 
-      var itemId = form.getAttribute('data-item-id');
-      if (itemId) {
-        validateBranchQty(itemId, branchCount);
-      }
+    if (loading) {
+      loading.style.display = isLoading ? 'flex' : 'none';
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = isLoading;
     }
   }
 
-  $(document).on('submit', '.item-edit-modal form', function(e) {
-    var itemId = this.getAttribute('data-item-id');
-    var branchCount = {{ count(session('compbranch')) }};
+  function populateEditItemForm(data) {
+    var form = document.getElementById('editItemForm');
 
-    if (itemId && !validateBranchQty(itemId, branchCount)) {
+    if (!form) {
+      return;
+    }
+
+    form.action = data.update_url;
+    form.setAttribute('data-item-id', data.id);
+
+    document.getElementById('editItemModalLabel').textContent = data.name;
+    document.getElementById('editItemMeta').textContent = 'Item No. ' + data.item_no + ' · Created by ' + data.creator_name;
+    document.getElementById('editItemThumb').src = '/storage/rjv_items/' + data.thumb_img;
+    document.getElementById('editItemThumb').alt = data.name;
+    document.getElementById('editItemName').value = data.name || '';
+    document.getElementById('editItemDesc').value = data.desc || '';
+    document.getElementById('editItemBrand').value = data.brand || '';
+    document.getElementById('editItemBarcode').value = data.barcode || '';
+    document.getElementById('editItemQty').value = data.qty;
+    document.getElementById('editItemPrice').value = data.price;
+
+    var categorySelect = document.getElementById('editItemCat');
+    if (categorySelect) {
+      var hasCategory = false;
+      for (var c = 0; c < categorySelect.options.length; c++) {
+        if (categorySelect.options[c].value === data.cat) {
+          categorySelect.selectedIndex = c;
+          hasCategory = true;
+          break;
+        }
+      }
+
+      if (!hasCategory && data.cat) {
+        var option = document.createElement('option');
+        option.value = data.cat;
+        option.textContent = data.cat;
+        option.selected = true;
+        categorySelect.appendChild(option);
+      }
+    }
+
+    (data.branches || []).forEach(function(branch) {
+      var qtyInput = document.getElementById('edit-q-' + branch.index);
+      var priceInput = document.getElementById('edit-b-' + branch.index);
+
+      if (qtyInput) {
+        qtyInput.value = branch.qty;
+      }
+
+      if (priceInput) {
+        priceInput.value = branch.price;
+      }
+    });
+
+    setEditFormSaving(form, false);
+    validateEditBranchQty();
+  }
+
+  function openItemEditModal(itemId) {
+    var $modal = $('#editItemModal');
+    var form = document.getElementById('editItemForm');
+
+    setEditItemLoading(true);
+    $modal.modal('show');
+
+    fetch('/items/' + itemId + '/edit', {
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      credentials: 'same-origin'
+    })
+      .then(function(response) {
+        if (!response.ok) {
+          throw new Error('Could not load item details.');
+        }
+
+        return response.json();
+      })
+      .then(function(data) {
+        populateEditItemForm(data);
+        setEditItemLoading(false);
+      })
+      .catch(function() {
+        $modal.modal('hide');
+        alert('Could not load item details. Please try again.');
+        setEditItemLoading(false);
+
+        if (form) {
+          setEditFormSaving(form, false);
+        }
+      });
+  }
+
+  $(document).on('submit', '#editItemForm', function(e) {
+    if (!validateEditBranchQty()) {
       e.preventDefault();
       alert('Sum of branch quantities cannot exceed general quantity.');
       return;

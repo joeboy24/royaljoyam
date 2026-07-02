@@ -1171,7 +1171,46 @@ class ItemsController extends Controller
      */
     public function edit($id)
     {
-        //
+        if (auth()->user()->status != 'Administrator') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $item = Item::with('user')->find($id);
+
+        if (!$item || $item->del === 'yes') {
+            return response()->json(['message' => 'Item not found'], 404);
+        }
+
+        $branches = session('compbranch', collect());
+        $branchPayload = [];
+
+        for ($i = 0; $i < count($branches); $i++) {
+            $qField = 'q' . ($i + 1);
+            $bField = 'b' . ($i + 1);
+
+            $branchPayload[] = [
+                'index' => $i + 1,
+                'name' => $branches[$i]->name,
+                'qty' => (int) ($item->$qField ?? 0),
+                'price' => number_format((float) ($item->$bField ?? 0), 2, '.', ''),
+            ];
+        }
+
+        return response()->json([
+            'id' => $item->id,
+            'item_no' => $item->item_no,
+            'name' => $item->name,
+            'desc' => $item->desc,
+            'cat' => $item->cat,
+            'brand' => $item->brand,
+            'barcode' => $item->barcode,
+            'qty' => (int) $item->qty,
+            'price' => number_format((float) $item->price, 2, '.', ''),
+            'thumb_img' => $item->thumb_img ?: 'no_image.png',
+            'creator_name' => $item->user->name ?? 'Unknown',
+            'branches' => $branchPayload,
+            'update_url' => action('ItemsController@update', $item->id),
+        ]);
     }
 
     /**

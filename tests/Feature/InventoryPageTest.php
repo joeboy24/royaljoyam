@@ -160,7 +160,8 @@ class InventoryPageTest extends TestCase
         $response->assertSee('Widget Alpha');
         $response->assertSee('item-row-' . $item->id, false);
         $response->assertSee('branch-detail-' . $item->id, false);
-        $response->assertSee('edit_' . $item->id, false);
+        $response->assertSee('id="editItemModal"', false);
+        $response->assertSee('openItemEditModal(' . $item->id . ')', false);
         $response->assertSee('toggleBranchDetail', false);
         $response->assertSee('Expand all');
         $response->assertSee('toggleAllBranches', false);
@@ -565,16 +566,56 @@ class InventoryPageTest extends TestCase
 
     public function test_inventory_edit_modal_shows_polished_labels(): void
     {
-        $item = $this->createItem(['name' => 'Label Check Item']);
+        $this->createItem(['name' => 'Label Check Item']);
 
         $response = $this->actingAs($this->admin)->get('/items');
 
         $response->assertOk();
+        $response->assertSee('id="editItemModal"', false);
         $response->assertSee('Base price (Gh', false);
         $response->assertSee('Branch A qty', false);
         $response->assertSee('Branch A price (Gh', false);
-        $response->assertSee('id="branch_status_' . $item->id . '"', false);
+        $response->assertSee('id="editBranchStatus"', false);
         $response->assertSee('inventory-edit-submit', false);
+        $response->assertDontSee('id="edit_', false);
+    }
+
+    public function test_inventory_edit_endpoint_returns_json_payload(): void
+    {
+        $item = $this->createItem([
+            'name' => 'JSON Edit Item',
+            'desc' => 'JSON description',
+            'cat' => 'General',
+            'brand' => 'Brand X',
+            'barcode' => 'JSON123',
+            'qty' => '12',
+            'price' => '45.50',
+            'q1' => '5',
+            'q2' => '4',
+            'q3' => '3',
+            'b1' => '45.50',
+            'b2' => '46.00',
+            'b3' => '47.00',
+        ]);
+
+        $response = $this->actingAs($this->admin)->getJson('/items/' . $item->id . '/edit');
+
+        $response->assertOk();
+        $response->assertJsonPath('id', $item->id);
+        $response->assertJsonPath('name', 'JSON Edit Item');
+        $response->assertJsonPath('qty', 12);
+        $response->assertJsonPath('price', '45.50');
+        $response->assertJsonPath('branches.0.qty', 5);
+        $response->assertJsonPath('branches.1.name', 'Branch B');
+    }
+
+    public function test_inventory_edit_endpoint_rejects_deleted_item(): void
+    {
+        $item = $this->createItem(['name' => 'Deleted JSON Item', 'del' => 'yes']);
+
+        $response = $this->actingAs($this->admin)->getJson('/items/' . $item->id . '/edit');
+
+        $response->assertNotFound();
     }
 
     public function test_inventory_page_shows_print_and_export_actions(): void
