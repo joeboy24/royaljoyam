@@ -46,10 +46,11 @@
                 </div>
 
               <div class="card">
-                <div class="card-header card-header-primary">
-                  <h4 class="card-title">Waybill History</h4>
-                  {{-- <p class="card-category">Complete your profile here..</p> --}}
-                </div>
+                <x-dash-page-header
+                  title="Waybill History"
+                  subtitle="View, edit, and distribute saved waybills."
+                  icon="fa fa-table"
+                />
                 <div id="printarea1" class="card-body">
             
                     @if (count($waybills) > 0)

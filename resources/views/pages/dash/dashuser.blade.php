@@ -26,10 +26,11 @@
               {{-- </form> --}}
 
               <div class="card">
-                <div class="card-header card-header-primary">
-                  <h4 class="card-title">Add Stock Item</h4>
-                  <p class="card-category">Complete item profile here..</p>
-                </div>
+                <x-dash-page-header
+                  title="Registry"
+                  subtitle="Register items, users, and categories for stock management."
+                  icon="fa fa-edit"
+                />
                 <div class="card-body">
             
                   <div class="container">

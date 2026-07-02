@@ -20,10 +20,11 @@
                 </div> --}}
 
               <div class="card">
-                <div class="card-header card-header-primary">
-                  <h4 class="card-title">Distribution</h4>
-                  <p class="card-category">Add items to waybill and distribute to branches</p>
-                </div>
+                <x-dash-page-header
+                  title="Distribution"
+                  subtitle="Add items to waybill and distribute to branches."
+                  icon="fa fa-share-alt"
+                />
                 <div id="printarea1" class="card-body">
 
                   <div class="row">

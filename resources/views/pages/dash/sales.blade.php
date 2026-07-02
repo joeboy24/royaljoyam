@@ -148,10 +148,11 @@
                 </div>
 
               <div class="card">
-                <div class="card-header-primary">
-                  <h4 class="card-title">Cart</h4>
-                  {{-- <p class="card-category">Complete your profile here..</p> --}}
-                </div>
+                <x-dash-page-header
+                  title="Sales"
+                  subtitle="Search items, manage your cart, and complete orders."
+                  icon="fa fa-shopping-cart"
+                />
                 <div id="printarea1" class="card-body">
             
                     {{-- @if (count($orders) > 0) --}}
