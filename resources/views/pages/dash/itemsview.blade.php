@@ -207,39 +207,51 @@
                 </div>
 
               <div class="card">
-                <div class="card-header card-header-primary">
-                  <h4 class="card-title">{{ $showRecycle ? 'Recycle Bin' : 'Inventory' }}</h4>
-                  <p class="card-category" style="color: rgba(255,255,255,0.8);">
-                    @if ($showRecycle)
-                      Deleted inventory items can be restored here.
-                    @else
-                      Inventory records are managed separately from registry and configuration.
-                    @endif
-                  </p>
+                <div class="card-header card-header-primary inventory-card-header">
+                  <div class="inventory-card-header-main">
+                    <div class="inventory-card-title-row">
+                      <span class="inventory-card-icon">
+                        <i class="fa {{ $showRecycle ? 'fa-trash' : 'fa-archive' }}"></i>
+                      </span>
+                      <div>
+                        <h4 class="card-title inventory-card-title">{{ $showRecycle ? 'Recycle Bin' : 'Inventory' }}</h4>
+                        <p class="inventory-card-subtitle">
+                          @if ($showRecycle)
+                            Deleted inventory items can be restored here.
+                          @else
+                            Inventory records are managed separately from registry and configuration.
+                          @endif
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  @if (count(session('compbranch')) > 0 && ! $showRecycle)
+                    <div class="inventory-branch-controls inventory-header-actions">
+                      <button type="button" class="inventory-branch-control-btn" id="toggleAllBranches" aria-expanded="false">
+                        <i class="fa fa-angle-double-down"></i>
+                        <span>Expand all</span>
+                      </button>
+                    </div>
+                  @endif
                 </div>
                 <div id="printarea1" class="card-body">
             
                     @if (count($items) > 0)
-                        <!-- @unless ($showRecycle)
-                          <p class="stock-badge-legend mb-3">
-                            <span class="stock-badge stock-badge-ok">In stock</span> (above {{ $lowStockThreshold }})
-                            <span class="stock-badge stock-badge-low">Low stock</span> (1-{{ $lowStockThreshold }})
-                            <span class="stock-badge stock-badge-out">Out of stock</span> (0)
-                          </p>
-                        @endunless -->
-                        <table class="table mt">
-                          <thead class=" text-secondary hideMe">
-                            <th>#</th>
-                            <th>Item No.</th>
-                            <th>Name</th>
-                            {{-- <th>Description</th> --}}
-                            <th>Category</th>
-                            {{-- <th>Barcode</th> --}}
-                            <th>Total Qty.</th>
-                            <th>Base Price (Gh₵)</th>
-                            {{-- <th>Thumbnail</th> --}}
-                            <th>Date</th>
-                            <th class="ryt">Actions</th>
+                        <table class="table inventory-table mt-0">
+                          <thead class="inventory-table-head hideMe">
+                            <tr>
+                              <th>#</th>
+                              <th>Item No.</th>
+                              <th>Name</th>
+                              {{-- <th>Description</th> --}}
+                              <th>Category</th>
+                              {{-- <th>Barcode</th> --}}
+                              <th>Total Qty.</th>
+                              <th>Base Price (Gh₵)</th>
+                              {{-- <th>Thumbnail</th> --}}
+                              <th>Date</th>
+                              <th class="ryt">Actions</th>
+                            </tr>
                           </thead>
                           <tbody id="tb">
 
@@ -917,6 +929,130 @@
     color:rgb(211, 211, 211);
     margin-right: 4px;
   }
+  .inventory-branch-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .inventory-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    padding: 1.5rem 1.875rem 0.75rem 1rem !important;
+    position: relative;
+  }
+  .inventory-card-title-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.875rem;
+  }
+  .inventory-card-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    margin-top: 0.125rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    color: #fff;
+    font-size: 17px;
+    flex-shrink: 0;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+  .inventory-card-header .card-title,
+  .inventory-card-title {
+    margin: 0 0 0.25rem;
+    padding-top: 0.125rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  .inventory-card-subtitle {
+    margin: 0;
+    max-width: 520px;
+    font-size: 0.8125rem;
+    line-height: 1.35;
+    color: rgba(255, 255, 255, 0.82);
+  }
+  .inventory-card-header-main {
+    flex: 1 1 auto;
+    min-width: 220px;
+  }
+  .inventory-header-actions {
+    margin-bottom: 0;
+    flex: 0 0 auto;
+    align-self: center;
+  }
+  .inventory-table {
+    margin-bottom: 0;
+  }
+  .inventory-table-head th {
+    background: #f5f5f5;
+    color: #757575;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.875rem 0.75rem;
+    border-top: none !important;
+    border-bottom: 2px solid #e0e0e0 !important;
+    white-space: nowrap;
+  }
+  .inventory-table-head th.ryt {
+    text-align: right;
+  }
+  .inventory-table tbody td {
+    vertical-align: middle;
+    padding: 0.875rem 0.75rem;
+  }
+  #printarea1.card-body {
+    padding: 0.9375rem 1.875rem;
+  }
+  .inventory-branch-control-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(var(--inv-accent-rgb, 0, 172, 193), 0.22);
+    background: #fff;
+    color: var(--inv-accent, #00acc1);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+  .inventory-header-actions .inventory-branch-control-btn {
+    height: 36px;
+    padding: 0 16px;
+    border-color: rgba(255, 255, 255, 0.38);
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(4px);
+  }
+  .inventory-branch-control-btn:hover {
+    background: rgba(var(--inv-accent-rgb, 0, 172, 193), 0.08);
+    border-color: var(--inv-accent, #00acc1);
+    color: var(--inv-accent-dark, #0097a7);
+  }
+  .inventory-header-actions .inventory-branch-control-btn:hover {
+    background: rgba(255, 255, 255, 0.22);
+    border-color: rgba(255, 255, 255, 0.62);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  }
   .branch-detail-row td {
     padding-top: 0 !important;
     padding-bottom: 12px !important;
@@ -1368,7 +1504,30 @@
     return branchTotal <= generalQty;
   }
 
-  function toggleBranchDetail(itemId) {
+  var INVENTORY_BRANCH_STORAGE_KEY = 'inventoryExpandedBranchIds';
+
+  function getExpandedBranchIds() {
+    try {
+      var stored = sessionStorage.getItem(INVENTORY_BRANCH_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function setExpandedBranchIds(ids) {
+    sessionStorage.setItem(INVENTORY_BRANCH_STORAGE_KEY, JSON.stringify(ids));
+  }
+
+  function isBranchDetailExpanded(itemId) {
+    return getExpandedBranchIds().indexOf(String(itemId)) !== -1;
+  }
+
+  function setBranchDetailExpanded(itemId, expanded, persist) {
+    if (typeof persist === 'undefined') {
+      persist = true;
+    }
+
     var row = document.getElementById('branch-detail-' + itemId);
     var itemRow = document.getElementById('item-row-' + itemId);
     var icon = document.getElementById('branch-icon-' + itemId);
@@ -1376,17 +1535,134 @@
       return;
     }
 
-    var isHidden = row.style.display === 'none' || row.style.display === '';
-
-    row.style.display = isHidden ? 'table-row' : 'none';
+    row.style.display = expanded ? 'table-row' : 'none';
     if (itemRow) {
-      itemRow.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
-      itemRow.classList.toggle('item-row-expanded', isHidden);
+      itemRow.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      itemRow.classList.toggle('item-row-expanded', expanded);
     }
     if (icon) {
-      icon.classList.toggle('fa-chevron-down', !isHidden);
-      icon.classList.toggle('fa-chevron-up', isHidden);
+      icon.classList.toggle('fa-chevron-down', !expanded);
+      icon.classList.toggle('fa-chevron-up', expanded);
     }
+
+    if (!persist) {
+      return;
+    }
+
+    var ids = getExpandedBranchIds();
+    var key = String(itemId);
+    var index = ids.indexOf(key);
+
+    if (expanded && index === -1) {
+      ids.push(key);
+    } else if (!expanded && index !== -1) {
+      ids.splice(index, 1);
+    }
+
+    setExpandedBranchIds(ids);
+  }
+
+  function toggleBranchDetail(itemId) {
+    setBranchDetailExpanded(itemId, !isBranchDetailExpanded(itemId));
+    updateToggleAllBranchesButton();
+  }
+
+  function areAllVisibleBranchesExpanded() {
+    var visibleIds = getVisibleExpandableItemIds();
+
+    if (visibleIds.length === 0) {
+      return false;
+    }
+
+    return visibleIds.every(function(itemId) {
+      return isBranchDetailExpanded(itemId);
+    });
+  }
+
+  function updateToggleAllBranchesButton() {
+    var button = document.getElementById('toggleAllBranches');
+    if (!button) {
+      return;
+    }
+
+    var allExpanded = areAllVisibleBranchesExpanded();
+    var icon = button.querySelector('i');
+    var label = button.querySelector('span');
+
+    if (allExpanded) {
+      if (icon) {
+        icon.className = 'fa fa-angle-double-up';
+      }
+      if (label) {
+        label.textContent = 'Collapse all';
+      }
+      button.setAttribute('aria-expanded', 'true');
+    } else {
+      if (icon) {
+        icon.className = 'fa fa-angle-double-down';
+      }
+      if (label) {
+        label.textContent = 'Expand all';
+      }
+      button.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  function toggleAllBranchDetails() {
+    if (areAllVisibleBranchesExpanded()) {
+      collapseAllBranchDetails();
+    } else {
+      expandAllBranchDetails();
+    }
+
+    updateToggleAllBranchesButton();
+  }
+
+  function getVisibleExpandableItemIds() {
+    var ids = [];
+
+    document.querySelectorAll('#tb tr.item-row-expandable').forEach(function(row) {
+      var itemId = row.getAttribute('data-item-id');
+      if (itemId) {
+        ids.push(String(itemId));
+      }
+    });
+
+    return ids;
+  }
+
+  function expandAllBranchDetails() {
+    getVisibleExpandableItemIds().forEach(function(itemId) {
+      setBranchDetailExpanded(itemId, true, false);
+    });
+
+    var ids = getExpandedBranchIds();
+    getVisibleExpandableItemIds().forEach(function(itemId) {
+      if (ids.indexOf(itemId) === -1) {
+        ids.push(itemId);
+      }
+    });
+    setExpandedBranchIds(ids);
+  }
+
+  function collapseAllBranchDetails() {
+    var visibleIds = {};
+
+    getVisibleExpandableItemIds().forEach(function(itemId) {
+      visibleIds[itemId] = true;
+      setBranchDetailExpanded(itemId, false, false);
+    });
+
+    setExpandedBranchIds(getExpandedBranchIds().filter(function(itemId) {
+      return !visibleIds[itemId];
+    }));
+  }
+
+  function restoreBranchDetailState() {
+    getVisibleExpandableItemIds().forEach(function(itemId) {
+      setBranchDetailExpanded(itemId, isBranchDetailExpanded(itemId), false);
+    });
+    updateToggleAllBranchesButton();
   }
 
   function openItemEditModal(modalId) {
@@ -1409,6 +1685,9 @@
     }
     toggleBranchDetail(this.getAttribute('data-item-id'));
   });
+
+  $('#toggleAllBranches').on('click', toggleAllBranchDetails);
+  restoreBranchDetailState();
 
   $.ajaxSetup({ headers: { 'csrftoken' : '{{ csrf_token() }}' } });
 </script>

@@ -162,6 +162,11 @@ class InventoryPageTest extends TestCase
         $response->assertSee('branch-detail-' . $item->id, false);
         $response->assertSee('edit_' . $item->id, false);
         $response->assertSee('toggleBranchDetail', false);
+        $response->assertSee('Expand all');
+        $response->assertSee('toggleAllBranches', false);
+        $response->assertSee('toggleAllBranchDetails', false);
+        $response->assertSee('restoreBranchDetailState', false);
+        $response->assertSee('inventoryExpandedBranchIds', false);
     }
 
     public function test_admin_can_add_item_from_inventory_page(): void
@@ -334,6 +339,7 @@ class InventoryPageTest extends TestCase
         $response->assertSee('href="' . url('/items') . '"', false);
         $response->assertSee('data-tip="Back to inventory"', false);
         $response->assertSee('Trashed Item');
+        $response->assertDontSee('id="toggleAllBranches"', false);
         $response->assertDontSee('Active Item');
         $response->assertSee('restore_item', false);
     }
