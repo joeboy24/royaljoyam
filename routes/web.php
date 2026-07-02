@@ -31,16 +31,10 @@ Route::get('/test_mode', function () {
 Route::get('/', 'PagesController@index');
 Route::get('/code80', 'Code80Controller@code80');
 Route::get('/expenses', 'PagesController@expenses');
-Route::get('/reports', 'PagesController@reports');
-Route::get('/studentsrecycler', 'PagesController@studentsrecycler');
-
-Route::get('/download', function () {
-    return response()->download('maindir/exfile/student_file_format.xlsx');
-});
+Route::redirect('/reports', '/reporting');
 
 Route::get('/user_profile', 'DashController@userprofile');
 Route::get('/try', 'PagesController@try');
-Route::resource('/fees', 'FeesController');
 
 
 
@@ -48,6 +42,9 @@ Route::resource('/fees', 'FeesController');
 
 
 
+
+Route::redirect('/itemsview', '/items');
+Route::redirect('/stockview', '/items');
 
 Route::get('/runs', 'DashController@runs');
 Route::get('/changedate', 'DashController@changedate');
@@ -55,6 +52,8 @@ Route::get('/deliverer', 'DashController@deliverer');
 Route::get('/dashboard', 'DashController@dashboard');
 Route::get('/config', 'DashController@configurations');
 Route::get('/dashuser', 'DashController@dashuser');
+Route::get('/items/export', 'ItemsController@exportInventory');
+Route::get('/items/print', 'ItemsController@printInventory');
 Route::resource('/items', 'ItemsController');
 Route::resource('/reporting', 'ReportsController');
 Route::resource('/distribution', 'DistributionController');
@@ -76,7 +75,7 @@ Route::get('/debtsreportprinting', function () {
 
 Auth::routes();
 
-Route::get('/home', 'HomeController@index')->name('home');
+Route::redirect('/home', '/dashboard')->name('home');
 Route::get('/orders', 'DashController@orders');
 Route::get('/waybill', 'DashController@waybill');
 Route::get('/waybillview', 'DashController@waybillview');

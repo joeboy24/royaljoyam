@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-sidebar-theme="ocean">
 
 <head> 
   <meta charset="utf-8" />
@@ -14,23 +14,28 @@
   <!-- CSS Files -->
   <link href="/dashdir/css/material-dashboard.css?v=2.1.1" rel="stylesheet" />
   <link rel="stylesheet" href="/maindir/css/style.css">
+  <link rel="stylesheet" href="/maindir/css/dash-sidebar.css?v=12">
+  <link rel="stylesheet" href="/maindir/css/dash-tip.css?v=2">
   {{-- <link rel="stylesheet" href="/dashdir/css/bootstrap.min.css"> --}}
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
 </head>
 
 <body class="">
   <div class="wrapper ">
-    <div class="sidebar" data-color="purple" data-background-color="white" data-image="/dashdir/img/sidebar-1.jpg">
+    <div class="sidebar" data-color="purple" data-background-color="white" data-sidebar-theme="ocean">
       <!--
         Tip 1: You can change the color of the sidebar using: data-color="purple | azure | green | orange | danger"
 
         Tip 2: you can also add an image using data-image tag
       -->
-      <div class="logo">
-        <a href="#" class="simple-text logo-normal">&nbsp;</a>
+      <div class="logo dash-sidebar-brand">
+        <a href="/dashboard" class="simple-text logo-normal">
+          <span class="dash-sidebar-brand-title">Royal Joyam</span>
+          <span class="dash-sidebar-brand-sub">Ventures</span>
+        </a>
       </div>
 
-      @yield('sidebar-wrapper')
+      @include('partials.dash-sidebar')
 
     </div>
     <div class="main-panel">
@@ -142,52 +147,28 @@
         <i class="fa fa-cog fa-2x"> </i>
       </a>
       <ul class="dropdown-menu">
-        <li class="header-title"> Sidebar Filters</li>
-        <li class="adjustments-line">
-          <a href="javascript:void(0)" class="switch-trigger active-color">
-            <div class="badge-colors ml-auto mr-auto">
-              <span class="badge filter badge-purple" data-color="purple"></span>
-              <span class="badge filter badge-azure" data-color="azure"></span>
-              <span class="badge filter badge-green" data-color="green"></span>
-              <span class="badge filter badge-warning" data-color="orange"></span>
-              <span class="badge filter badge-danger" data-color="danger"></span>
-              <span class="badge filter badge-rose active" data-color="rose"></span>
+        <li class="header-title p-8">Sidebar Theme</li>
+        <li class="dash-sidebar-theme-picker">
+          <div class="dash-sidebar-theme-group">
+            <p class="dash-sidebar-theme-group-label">Dark</p>
+            <div class="dash-sidebar-theme-swatches">
+              <button type="button" class="dash-sidebar-theme-swatch dash-tip switch-trigger" data-sidebar-theme-set="slate" data-tip="Slate" aria-label="Slate theme"></button>
+              <button type="button" class="dash-sidebar-theme-swatch dash-tip switch-trigger" data-sidebar-theme-set="deep-teal" data-tip="Deep Teal" aria-label="Deep Teal theme"></button>
+              <button type="button" class="dash-sidebar-theme-swatch dash-tip switch-trigger" data-sidebar-theme-set="midnight" data-tip="Midnight Navy" aria-label="Midnight Navy theme"></button>
+              <button type="button" class="dash-sidebar-theme-swatch dash-tip switch-trigger" data-sidebar-theme-set="graphite" data-tip="Graphite" aria-label="Graphite theme"></button>
+              <button type="button" class="dash-sidebar-theme-swatch dash-tip switch-trigger" data-sidebar-theme-set="ocean" data-tip="Ocean Cyan" aria-label="Ocean Cyan theme"></button>
             </div>
-            <div class="clearfix"></div>
-          </a>
-        </li>
-        <li class="header-title">Images</li>
-        <li class="active">
-          <a class="img-holder switch-trigger" href="javascript:void(0)">
-            <img src="/dashdir/img/sidebar-1.jpg" alt="">
-          </a>
-        </li>
-        <li>
-          <a class="img-holder switch-trigger" href="javascript:void(0)">
-            <img src="/dashdir/img/sidebar-2.jpg" alt="">
-          </a>
-        </li>
-        <li>
-          <a class="img-holder switch-trigger" href="javascript:void(0)">
-            <img src="/dashdir/img/sidebar-3.jpg" alt="">
-          </a>
-        </li>
-        <li>
-          <a class="img-holder switch-trigger" href="javascript:void(0)">
-            <img src="/dashdir/img/sidebar-4.jpg" alt="">
-          </a>
-        </li>
-        <!-- <li class="header-title">Want more components?</li>
-            <li class="button-container">
-                <a href="https://www.creative-tim.com/product/material-dashboard-pro" target="_blank" class="btn btn-warning btn-block">
-                  Get the pro version
-                </a>
-            </li> -->
-        <li class="button-container text-center">
-          <button id="twitter" class="btn btn-round btn-twitter"><i class="fa fa-twitter"></i> &middot; 45</button>
-          <button id="facebook" class="btn btn-round btn-facebook"><i class="fa fa-facebook-f"></i> &middot; 50</button>
-          <br>
-          <br>
+          </div>
+          <div class="dash-sidebar-theme-group">
+            <p class="dash-sidebar-theme-group-label">Light</p>
+            <div class="dash-sidebar-theme-swatches">
+              <button type="button" class="dash-sidebar-theme-swatch dash-tip switch-trigger" data-sidebar-theme-set="blush" data-tip="Blush" aria-label="Blush theme"></button>
+              <button type="button" class="dash-sidebar-theme-swatch dash-tip switch-trigger" data-sidebar-theme-set="rose" data-tip="Rose" aria-label="Rose theme"></button>
+              <button type="button" class="dash-sidebar-theme-swatch dash-tip switch-trigger" data-sidebar-theme-set="coral" data-tip="Coral" aria-label="Coral theme"></button>
+              <button type="button" class="dash-sidebar-theme-swatch dash-tip switch-trigger" data-sidebar-theme-set="sky" data-tip="Sky" aria-label="Sky theme"></button>
+              <button type="button" class="dash-sidebar-theme-swatch dash-tip switch-trigger" data-sidebar-theme-set="mint" data-tip="Mint" aria-label="Mint theme"></button>
+            </div>
+          </div>
         </li>
       </ul>
     </div>
@@ -406,6 +387,59 @@
       });
     });
   </script> --}}
+
+  <script>
+    (function () {
+      var sidebar = document.querySelector('.sidebar');
+      if (!sidebar) {
+        return;
+      }
+
+      var storageKey = 'rjv-sidebar-theme';
+      var legacyThemes = {
+        frost: 'blush',
+        mist: 'rose',
+        pearl: 'coral',
+      };
+      var swatches = document.querySelectorAll('[data-sidebar-theme-set]');
+
+      function normalizeTheme(theme) {
+        return legacyThemes[theme] || theme || 'ocean';
+      }
+
+      function applyTheme(theme) {
+        var nextTheme = normalizeTheme(theme);
+        document.documentElement.setAttribute('data-sidebar-theme', nextTheme);
+        sidebar.setAttribute('data-sidebar-theme', nextTheme);
+
+        swatches.forEach(function (swatch) {
+          var isActive = swatch.getAttribute('data-sidebar-theme-set') === nextTheme;
+          swatch.classList.toggle('is-active', isActive);
+          swatch.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+      }
+
+      applyTheme(normalizeTheme(localStorage.getItem(storageKey) || sidebar.getAttribute('data-sidebar-theme')));
+
+      swatches.forEach(function (swatch) {
+        swatch.addEventListener('click', function (event) {
+          event.stopPropagation();
+          var theme = swatch.getAttribute('data-sidebar-theme-set');
+          localStorage.setItem(storageKey, theme);
+          applyTheme(theme);
+        });
+      });
+
+      document.querySelectorAll('.fixed-plugin .switch-trigger').forEach(function (trigger) {
+        trigger.addEventListener('click', function (event) {
+          if (event.stopPropagation) {
+            event.stopPropagation();
+          }
+        });
+      });
+    })();
+  </script>
+  <script src="/maindir/js/dash-tip.js?v=1"></script>
 </body>
 
 </html>

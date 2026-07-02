@@ -1,84 +1,5 @@
 @extends('layouts.dashlay')
 
-@section('sidebar-wrapper')
-  <div class="sidebar-wrapper">
-    <ul class="nav">
-      <li class="nav-item">
-        <a class="nav-link" href="/dashboard">
-          <i class="material-icons">dashboard</i> 
-          <p>Dashboard</p>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="/config">
-          <i class="fa fa-cogs"></i>
-          <p>Configuration</p>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="/dashuser">
-          <i class="fa fa-edit"></i>
-          <p>Registry</p>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="/waybill">
-          <i class="fa fa-truck"></i>
-          <p>Waybill</p>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="/sales">
-          <i class="fa fa-shopping-basket"></i>
-          <p>Sales</p>
-        </a>
-      </li>
-      <li class="nav-item active2">
-        <a class="nav-link" href="/reporting">
-          <i class="fa fa-file-text"></i>
-          <p>Report</p>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="/closure_page">
-          <i class="fa fa-calendar"></i>
-          <p>Closure</p>
-        </a>
-      </li>
-      <!--li class="nav-item ">
-        <a class="nav-link" href="#">
-          <i class="fa fa-table"></i>
-          <p>Null</p>
-        </a>
-      </li>
-      <li class="nav-item ">
-        <a class="nav-link" href="#">
-          <i class="material-icons">library_books</i>
-          <p>Null</p>
-        </a>
-      </li>
-      <li class="nav-item ">
-        <a class="nav-link" href="#">
-          <i class="fa fa-envelope"></i>
-          <p>Messaging</p>
-        </a>
-      </li>
-      <li class="nav-item ">
-        <a class="nav-link" href="#">
-          <i class="material-icons">bubble_chart</i>
-          <p>Help</p>
-        </a>
-      </li-->
-      <li class="nav-item active-pro ">
-        <a class="nav-link" href="#">
-          <i class=""></i>
-          <p>&nbsp;</p>
-        </a>
-      </li>
-    </ul>
-  </div>  
-@endsection
-
 @section('content')
 
   <!-- End Navbar -->
@@ -89,18 +10,6 @@
 
               @include('inc.messages')
 
-                <div class="form-group row mb-0 hideMe">
-                    <div class="col-md-5 offset-md-0 myTrim">
-                      <div class="input-group no-border">
-                        
-
-                        <form action="{{action('FeesController@store')}}" method="POST">
-                          @csrf
-                        </form>
-
-                      </div>
-                    </div>
-                </div>
 
                 <div class="row">
                   <div class="col-md-12">
@@ -254,19 +163,7 @@
 
 @section('footer')
 
-<script type="text/javascript">
-  $('#search').on('keyup',function(){
-      $value=$(this).val();
-      $.ajax({
-          type : 'get',
-          url : '{{URL::to('/searchfee')}}',
-          data:{'search':$value},
-          success:function(data){
-          $('#tb').html(data);
-          }
-      });
-  })
-</script>
+
 <script type="text/javascript">
   $.ajaxSetup({ headers: { 'csrftoken' : '{{ csrf_token() }}' } });
 </script>

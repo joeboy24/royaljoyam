@@ -37,38 +37,246 @@ class ItemsController extends Controller
      */
     public function index(Request $request)
     {
-        //
-        if(auth()->user()->status != 'Administrator'){
-            return redirect('/dashboard'); 
+        if (auth()->user()->status != 'Administrator') {
+            return redirect('/dashboard');
         }
 
-        $match = ['del' => 'no'];
-        $itemsearch = $request->query('itemsearch');
-        if(!empty($itemsearch)){
-            $items = Item::where($match)->where('name', 'like', '%'.$itemsearch.'%')->orderBy('id', 'desc')->paginate(10);
-        }else{
-            $items = Item::where($match)->orderBy('id', 'desc')->paginate(10);
-        }
+        $filters = $this->resolveInventoryListFilters($request);
+        $itemsQuery = $this->buildInventoryItemsQuery($filters);
+        $match = ['del' => $filters['showRecycle'] ? 'yes' : 'no'];
 
-        // $items = Item::All();
+        $filteredItemCount = (clone $itemsQuery)->count();
+        $grandTotalCount = Item::where($match)->count();
+
+        $items = $itemsQuery->orderBy('id', 'desc')->paginate($filters['perPage'])->appends(
+            $this->inventoryListQueryParams(
+                $filters['itemsearch'],
+                $filters['showRecycle'],
+                $filters['filterCategory'],
+                $filters['filterStock'],
+                $filters['perPage']
+            )
+        );
+
         $ITM = ItemImage::All();
         $cats = Category::All();
-        
-        // $allStudents = Student::where('del', 'no')->get();
-        
-        // $searchquery = request()->query('searchquery');
-        // $students = Student::where('fname', 'LIKE', '%'.$searchquery.'%')->paginate(10);
-        // $std_pop = count($allStudents);
+        $filterCategories = Item::where($match)
+            ->whereNotNull('cat')
+            ->where('cat', '!=', '')
+            ->distinct()
+            ->orderBy('cat')
+            ->pluck('cat');
 
         $pass = [
             'c' => 1,
             'i' => 1,
             'ITM' => $ITM,
             'cats' => $cats,
-            'items' => $items
+            'items' => $items,
+            'itemsearch' => $filters['itemsearch'],
+            'filteredItemCount' => $filteredItemCount,
+            'grandTotalCount' => $grandTotalCount,
+            'showRecycle' => $filters['showRecycle'],
+            'lowStockThreshold' => $filters['lowStockThreshold'],
+            'filterCategory' => $filters['filterCategory'],
+            'filterStock' => $filters['filterStock'],
+            'perPage' => $filters['perPage'],
+            'filterCategories' => $filterCategories,
+            'inventoryListQuery' => $this->inventoryListQueryParams(
+                $filters['itemsearch'],
+                $filters['showRecycle'],
+                $filters['filterCategory'],
+                $filters['filterStock'],
+                $filters['perPage']
+            ),
         ];
-        // return $items;
+
         return view('pages.dash.itemsview')->with($pass);
+    }
+
+    public function exportInventory(Request $request)
+    {
+        if (auth()->user()->status != 'Administrator') {
+            return redirect('/dashboard');
+        }
+
+        $filters = $this->resolveInventoryListFilters($request);
+        $items = $this->buildInventoryItemsQuery($filters)->orderBy('id', 'desc')->get();
+        $branches = session('compbranch');
+        $threshold = $filters['lowStockThreshold'];
+        $filename = ($filters['showRecycle'] ? 'inventory-recycle-' : 'inventory-').date('Y-m-d-His').'.csv';
+
+        return response()->streamDownload(function () use ($items, $branches, $threshold) {
+            $handle = fopen('php://output', 'w');
+            $headers = [
+                'Item No',
+                'Name',
+                'Category',
+                'Brand',
+                'Barcode',
+                'General Qty',
+                'Stock Status',
+                'Base Price (Gh)',
+                'Date',
+            ];
+
+            foreach ($branches as $branch) {
+                $headers[] = $branch->name.' Qty';
+            }
+
+            fputcsv($handle, $headers);
+
+            foreach ($items as $item) {
+                $row = [
+                    $item->item_no,
+                    $item->name,
+                    $item->cat,
+                    $item->brand,
+                    $item->barcode,
+                    $item->qty,
+                    $item->stockBadgeLabel($threshold),
+                    number_format((float) $item->price, 2, '.', ''),
+                    $item->created_at ? \Carbon\Carbon::parse($item->created_at)->format('d M Y') : '',
+                ];
+
+                for ($i = 0; $i < count($branches); $i++) {
+                    $field = 'q'.($i + 1);
+                    $row[] = $item->$field ?? 0;
+                }
+
+                fputcsv($handle, $row);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    public function printInventory(Request $request)
+    {
+        if (auth()->user()->status != 'Administrator') {
+            return redirect('/dashboard');
+        }
+
+        $filters = $this->resolveInventoryListFilters($request);
+        $items = $this->buildInventoryItemsQuery($filters)->orderBy('id', 'desc')->get();
+
+        return view('pages.invoice.inventoryprint', [
+            'items' => $items,
+            'company' => Company::find(1),
+            'filterSummary' => $this->inventoryFilterSummary($filters),
+            'filteredItemCount' => $items->count(),
+            'lowStockThreshold' => $filters['lowStockThreshold'],
+            'showRecycle' => $filters['showRecycle'],
+        ]);
+    }
+
+    private function resolveInventoryListFilters(Request $request): array
+    {
+        $showRecycle = $request->query('recycle') === '1';
+        $filterStock = (string) $request->query('stock', '');
+
+        if (!in_array($filterStock, ['low', 'has_branch'], true)) {
+            $filterStock = '';
+        }
+
+        return [
+            'showRecycle' => $showRecycle,
+            'lowStockThreshold' => Item::LOW_STOCK_THRESHOLD,
+            'itemsearch' => trim((string) $request->query('itemsearch', '')),
+            'filterCategory' => trim((string) $request->query('category', '')),
+            'filterStock' => $filterStock,
+            'perPage' => $this->allowedInventoryPerPage((int) $request->query('per_page', 10)),
+            'branchCount' => count(session('compbranch')),
+        ];
+    }
+
+    private function buildInventoryItemsQuery(array $filters)
+    {
+        $match = ['del' => $filters['showRecycle'] ? 'yes' : 'no'];
+        $itemsQuery = Item::where($match);
+
+        if ($filters['itemsearch'] !== '') {
+            $itemsQuery->where('name', 'like', '%'.$filters['itemsearch'].'%');
+        }
+
+        if ($filters['filterCategory'] !== '') {
+            $itemsQuery->where('cat', $filters['filterCategory']);
+        }
+
+        if (!$filters['showRecycle'] && $filters['filterStock'] !== '') {
+            $this->applyInventoryStockFilter(
+                $itemsQuery,
+                $filters['filterStock'],
+                $filters['lowStockThreshold'],
+                $filters['branchCount']
+            );
+        }
+
+        return $itemsQuery;
+    }
+
+    private function inventoryFilterSummary(array $filters): string
+    {
+        $parts = [];
+
+        if ($filters['showRecycle']) {
+            $parts[] = 'Recycle bin';
+        }
+
+        if ($filters['itemsearch'] !== '') {
+            $parts[] = 'Search: '.$filters['itemsearch'];
+        }
+
+        if ($filters['filterCategory'] !== '') {
+            $parts[] = 'Category: '.$filters['filterCategory'];
+        }
+
+        if ($filters['filterStock'] === 'low') {
+            $parts[] = 'Low stock only';
+        } elseif ($filters['filterStock'] === 'has_branch') {
+            $parts[] = 'Has branch stock';
+        }
+
+        return count($parts) > 0 ? implode(' · ', $parts) : 'All items';
+    }
+
+    private function allowedInventoryPerPage(int $perPage): int
+    {
+        return in_array($perPage, [10, 25, 50], true) ? $perPage : 10;
+    }
+
+    private function applyInventoryStockFilter($query, string $filterStock, int $lowStockThreshold, int $branchCount): void
+    {
+        if ($filterStock === 'low') {
+            $query->whereRaw('(qty + 0) <= ?', [$lowStockThreshold]);
+            return;
+        }
+
+        if ($filterStock === 'has_branch' && $branchCount > 0) {
+            $query->where(function ($subQuery) use ($branchCount) {
+                for ($i = 1; $i <= $branchCount; $i++) {
+                    $subQuery->orWhereRaw('(q' . $i . ' + 0) > 0');
+                }
+            });
+        }
+    }
+
+    private function inventoryListQueryParams(
+        string $itemsearch,
+        bool $showRecycle,
+        string $filterCategory,
+        string $filterStock,
+        int $perPage
+    ): array {
+        return array_filter([
+            'itemsearch' => $itemsearch !== '' ? $itemsearch : null,
+            'recycle' => $showRecycle ? '1' : null,
+            'category' => $filterCategory !== '' ? $filterCategory : null,
+            'stock' => $filterStock !== '' ? $filterStock : null,
+            'per_page' => $perPage !== 10 ? $perPage : null,
+        ]);
     }
 
     /**
@@ -189,11 +397,6 @@ class ItemsController extends Controller
                             # code...
                             return redirect('/sales')->with('error', 'Oops..! Define price for this item before purchase');
                         }
-                        // Available Qty for q1, q2, q3....
-                        $avQty = $avQty - $qty;
-                        // Available Qty main 
-                        $mainQty = $mainQty - $qty;
-
                         $matchThese = ['user_id' => auth()->user()->id, 'name' => $name];
                         $results = Cart::where($matchThese)->get();
                         
@@ -212,12 +415,6 @@ class ItemsController extends Controller
                                 'unit_price' => $sp,
                                 'tot' => $qty*$sp,
                             ]);
-
-                            // Update qty in stock
-                            $qtyUp = Item::find($it_id);
-                            $qtyUp->qty = $mainQty;
-                            $qtyUp->$q = $avQty;
-                            $qtyUp->save();
 
                             return redirect('/sales'); 
                             // return redirect('/sales')->with('success', $name.' added Successfully');
@@ -286,6 +483,7 @@ class ItemsController extends Controller
 
                 case 'add_item':
 
+                    $returnTo = $request->input('return_to') === 'items' ? '/items' : '/dashuser';
                     $it_no = 'MT'.date('dis');
                     $name = $request->input('name');
                     $barcode = $request->input('barcode');
@@ -295,19 +493,20 @@ class ItemsController extends Controller
 
 
                     if (count($results) > 0){
-                        return redirect('/dashuser')->with('error', 'Oops..! Item already exist');
+                        return redirect($returnTo)->with('error', 'Oops..! Item already exist');
                     }else{
-                        
+                        $Id = null;
+
                         try {
                             
                             $im = new ItemImage;
                             $im->item_id = $it_no;
                             $im->save();
 
-
-                            $im_search = ItemImage::where('item_id', $it_no)->first();
-                            $Id = $im_search->id;
+                            $Id = $im->id;
                             //return redirect('/dashuser')->with('success', $a);
+
+                            $filenameToStore = 'no_image.png';
 
                             if($request->hasFile('items')){
 
@@ -338,20 +537,17 @@ class ItemsController extends Controller
                                     $c++;
                                 }
                                 
-                            }else{
-                                $filenameToStore = 'no_image.png';
-                                $tmpFile = '';
-                                //exit;
                             }
                 
 
                         } catch (\Throwable $th) {
-                            $im2 = ItemImage::find($Id);
-                            $im2->delete();
-                            return redirect('/dashuser')->with('error', 'Ooops..! Unhandled Error ');
+                            if ($Id) {
+                                ItemImage::find($Id)?->delete();
+                            }
+                            return redirect($returnTo)->with('error', 'Ooops..! Unhandled Error ');
                         }
 
-                        $full = ItemImage::latest('id')->first();
+                        $full = ItemImage::find($Id);
 
                         try {
                             $cp = $request->input('price');
@@ -386,9 +582,9 @@ class ItemsController extends Controller
                             $im3->save();
                             
 
-                            return redirect('/dashuser')->with('success', 'Item successfully added');
+                            return redirect($returnTo)->with('success', 'Item successfully added');
                         } catch(\Throwable $th){
-                            return redirect('/dashuser')->with('error', 'Oops..! Unhandled Error! ');
+                            return redirect($returnTo)->with('error', 'Oops..! Unhandled Error! ');
                         }
                         
                     }
@@ -397,15 +593,8 @@ class ItemsController extends Controller
 
                 case 'update_item':
 
-                    try {
-                        $item->del = 'yes';
-                        $item->save();
-                        return redirect('/itemsview')->with('success', 'Item successfully deleted');
-                    } catch(Exception $ex){
-                        return redirect('/itemsview')->with('error', 'Oops..! Unhandled Error!');
-                    }      
+                    return redirect('/items')->with('error', 'Item update should be handled through the stock update form');
 
-                        
                 break;
 
                 case 'admi_config':
@@ -484,98 +673,6 @@ class ItemsController extends Controller
                         
                     }
                     
-                break;
-
-                case 'admi_create_std':
-
-                        try {
-
-                            if($request->hasFile('std_img')){
-                                //get filename with ext
-                                $filenameWithExt = $request->file('std_img')->getClientOriginalName();
-                                //get filename
-                                $filename = pathinfo($filenameWithExt, PATHINFO_FILENAME);
-                                //get file ext
-                                $fileExt = $request->file('std_img')->getClientOriginalExtension();
-                                //filename to store
-                                $filenameToStore = $request->input('fname').'_'.time().'.'.$fileExt;
-                                //upload path
-                                $path = $request->file('std_img')->storeAs('public/std_imgs', $filenameToStore);
-                            }else{
-                                $filenameToStore = 'noimage.png';
-                            }
-
-                            $company = Company::Find(1);
-                            $calc = Student::latest('id')->first();
-                            // $calc = Student::count('id');
-                            $calc = substr($calc->std_id, 4);
-                            $final = date('Y').($calc + 1);
-
-                            $std_insert = Student::firstOrCreate(
-                                ['std_id' => $final,
-                                'user_id' => auth()->user()->id, 
-                                'fname' => $fname, 
-                                'sname' => $sname, 
-                                'dob' => $dob,  
-                                'sex' => $request->input('sex'), 
-                                'class' => $request->input('std_cls'), 
-                                'guardian' => $request->input('guardian'),  
-                                'contact' => $request->input('contact'), 
-                                'email' => $request->input('email'), 
-                                'residence' => $request->input('residence'), 
-                                'bill' => $request->input('bill_total'), 
-                                'photo' => $filenameToStore]
-                            );
-            
-                            $get_id = Student::latest('id')->first();
-                            $get_id = $get_id->id;
-                    
-                            // $fee->student_id = $calc + 1;
-                            $fee->student_id = $get_id;
-                            $fee->user_id = auth()->user()->id;
-                            $fee->fullname = $fname.' '.$sname;
-                            $fee->class = $request->input('std_cls');
-                            $fee->term = $company->ac_term;
-                            $fee->year = $company->ac_year;
-                            
-                            $fee->save();
-
-                            return redirect('/addstudent')->with('success', $fname.'`s details successfully added');
-
-                        }catch(Exception $ex) {
-                            $ex2 = $ex->getMessage();
-                            $ex2 = substr($ex2,0,100).'.....!';
-                            return redirect('/addstudent')->with('error', 'Ooops..! Unhandled Error --> Invalid information provided. Check input(Class / Date of Birth / Add Items To Bill)');
-                           
-                        }
-                    
-                break;
-
-                case 'update_student':
-
-                    //$student = Student::find($id);
-                    $fname = $request->input('fname');
-                    $sname = $request->input('sname');
-    
-    
-                    try {
-                        if($request->hasFile('std_img')){
-                            //get filename with ext
-                            $filenameWithExt = $request->file('std_img')->getClientOriginalName();
-                            //get filename
-                            $filename = pathinfo($filenameWithExt, PATHINFO_FILENAME);
-                            //get file ext
-                            $fileExt = $request->file('std_img')->getClientOriginalExtension();
-                            //filename to store
-                            $filenameToStore = $fname.'_'.time().'.'.$fileExt;
-                            //upload path
-                            $path = $request->file('std_img')->storeAs('public/std_imgs', $filenameToStore);
-        
-                            return redirect('/dashboard')->with('success', $fname.'`s details successfully updated');
-                        }
-                    } catch (Exception $ex) {
-                        return redirect('/addstudent')->with('error', 'Ooops..! Unhandled Error');
-                    }
                 break;
 
                 case 'add_waybill':
@@ -1031,17 +1128,8 @@ class ItemsController extends Controller
 
             }
         
-        }catch(Exception $e) {
-            //echo 'Message: ' .$e->getMessage();
-
-            switch ($request->input('store_action')) {
-
-                case 'admi_create_trs':
-                    return redirect('/dashboard')->with('error', 'Ooops..! Unhandled Error');
-                break;
-
-            }
-
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'Oops..! Something went wrong while processing that request.');
         }
     }
 
@@ -1083,7 +1171,46 @@ class ItemsController extends Controller
      */
     public function edit($id)
     {
-        //
+        if (auth()->user()->status != 'Administrator') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $item = Item::with('user')->find($id);
+
+        if (!$item || $item->del === 'yes') {
+            return response()->json(['message' => 'Item not found'], 404);
+        }
+
+        $branches = session('compbranch', collect());
+        $branchPayload = [];
+
+        for ($i = 0; $i < count($branches); $i++) {
+            $qField = 'q' . ($i + 1);
+            $bField = 'b' . ($i + 1);
+
+            $branchPayload[] = [
+                'index' => $i + 1,
+                'name' => $branches[$i]->name,
+                'qty' => (int) ($item->$qField ?? 0),
+                'price' => number_format((float) ($item->$bField ?? 0), 2, '.', ''),
+            ];
+        }
+
+        return response()->json([
+            'id' => $item->id,
+            'item_no' => $item->item_no,
+            'name' => $item->name,
+            'desc' => $item->desc,
+            'cat' => $item->cat,
+            'brand' => $item->brand,
+            'barcode' => $item->barcode,
+            'qty' => (int) $item->qty,
+            'price' => number_format((float) $item->price, 2, '.', ''),
+            'thumb_img' => $item->thumb_img ?: 'no_image.png',
+            'creator_name' => $item->user->name ?? 'Unknown',
+            'branches' => $branchPayload,
+            'update_url' => action('ItemsController@update', $item->id),
+        ]);
     }
 
     /**
@@ -1119,96 +1246,57 @@ class ItemsController extends Controller
 
             case 'update_item':
 
-                $qtySum = $request->input('q1') + $request->input('q2') + $request->input('q3');
-                // if($qtySum != $request->input('qty')){
-                //     # code...
-                //     return redirect('/items')->with('error', 'Oops..! Sum of branch quantities should be equal to Total Quantity.');
-                // }
-
                 $item = Item::find($id);
-                // try {
 
-                    $itemAudit = ItemAudit::firstOrCreate([
-                        'item_no' => $item->item_no,
-                        'user_id' => auth()->user()->id,
-                        'name' => $item->name,
-                        'desc' => $item->desc,
-                        'cat' => $item->cat,
-                        'brand' => $item->brand,
-                        'barcode' => $item->barcode,
-                        'qty' => $item->qty,
-                        'q1' => $item->q1,
-                        'q2' => $item->q2,
-                        'q3' => $item->q3,
-                        'q4' => $item->q4,
-                        'q5' => $item->q5,
-                        'q6' => $item->q6,
-                        'q7' => $item->q7,
-                        'price' => $item->price,
-                        'cost_price' => $item->price,
-                        'b1' => $item->b1,
-                        'b2' => $item->b2,
-                        'b3' => $item->b3,
-                        'b4' => $item->b4,
-                        'b5' => $item->b5,
-                        'b6' => $item->b6,
-                        'b7' => $item->b7,
-                    ]);
-                    
-                    $item->name = $request->input('name');
+                if (!$item) {
+                    return redirect('/items')->with('error', 'Item not found');
+                }
+
+                try {
+                    $generalQty = max(0, (int) $request->input('qty', 0));
+                    $branchQtyTotal = 0;
+                    $branchCount = count(session('compbranch'));
+
+                    $basePriceInput = $request->input('price');
+                    if (!is_numeric($basePriceInput) || (float) $basePriceInput < 0) {
+                        return redirect('/items')->with('error', 'Enter a valid base price (0 or greater).');
+                    }
+                    $basePrice = number_format((float) $basePriceInput, 2, '.', '');
+
+                    for ($i = 1; $i <= $branchCount; $i++) {
+                        $qq = 'q' . $i;
+                        $bb = 'b' . $i;
+                        $qtyValue = max(0, (int) $request->input($qq, 0));
+                        $branchPriceInput = $request->input($bb, 0);
+
+                        if (!is_numeric($branchPriceInput) || (float) $branchPriceInput < 0) {
+                            return redirect('/items')->with('error', 'Enter valid branch prices (0 or greater).');
+                        }
+
+                        $branchQtyTotal += $qtyValue;
+                        $item->$qq = $qtyValue;
+                        $item->$bb = number_format((float) $branchPriceInput, 2, '.', '');
+                    }
+
+                    if ($branchQtyTotal > $generalQty) {
+                        return redirect('/items')->with('error', 'Sum of branch quantities cannot be greater than general quantity.');
+                    }
+
+                    $item->name = trim($request->input('name', ''));
                     $item->desc = $request->input('desc');
                     $item->cat = $request->input('cat');
                     $item->brand = $request->input('brand');
                     $item->barcode = $request->input('barcode');
-                    $item->qty = $request->input('qty');
-                    $item->price = $request->input('price');
-                    $item->cost_price = $request->input('price');
+                    $item->qty = $generalQty;
+                    $item->price = $basePrice;
+                    $item->cost_price = $basePrice;
                     $item->save();
 
-                    for ($i=0; $i < count(session('compbranch')); $i++) { 
-                        $qq = 'q'.$i + 1;
-                        $bb = 'b'.$i + 1;
-                        $item->$qq = $request->input($qq);
-                        $item->$bb = $request->input($bb);
-                        $item->save();
-                    }
-                    $item = '';
+                    return redirect('/items')->with('success', 'Record successfully updated');
+                } catch (Exception $ex) {
+                    return redirect('/items')->with('error', 'Oops..! Unhandled Error! ');
+                }
 
-
-                    $item = Item::find($id);
-                    $itemAudit = ItemAudit::firstOrCreate([
-                        'item_no' => $item->item_no,
-                        'user_id' => auth()->user()->id,
-                        'name' => $item->name,
-                        'desc' => $item->desc,
-                        'cat' => $item->cat,
-                        'brand' => $item->brand,
-                        'barcode' => $item->barcode,
-                        'qty' => $item->qty,
-                        'q1' => $item->q1,
-                        'q2' => $item->q2,
-                        'q3' => $item->q3,
-                        'q4' => $item->q4,
-                        'q5' => $item->q5,
-                        'q6' => $item->q6,
-                        'q7' => $item->q7,
-                        'price' => $item->price,
-                        'cost_price' => $item->price,
-                        'b1' => $item->b1,
-                        'b2' => $item->b2,
-                        'b3' => $item->b3,
-                        'b4' => $item->b4,
-                        'b5' => $item->b5,
-                        'b6' => $item->b6,
-                        'b7' => $item->b7,
-                    ]);
-
-                    return redirect(url()->previous())->with('success', 'Record successfully updated');
-                // } catch(Exception $ex){
-                //     return redirect('/items')->with('error', 'Oops..! Unhandled Error! ');
-                // }      
-
-                    
             break;
 
             case 'del_waybil':
@@ -1223,6 +1311,10 @@ class ItemsController extends Controller
             case 'del_item':
 
                 $item = Item::find($id);
+                if (!$item) {
+                    return redirect('/items')->with('error', 'Item not found');
+                }
+
                 try {
                     $item->del = 'yes';
                     $item->save();
@@ -1232,6 +1324,23 @@ class ItemsController extends Controller
                 }      
 
                     
+            break;
+
+            case 'restore_item':
+
+                $item = Item::find($id);
+                if (!$item) {
+                    return redirect('/items?recycle=1')->with('error', 'Item not found');
+                }
+
+                try {
+                    $item->del = 'no';
+                    $item->save();
+                    return redirect('/items?recycle=1')->with('success', 'Item successfully restored');
+                } catch(Exception $ex){
+                    return redirect('/items?recycle=1')->with('error', 'Oops..! Unhandled Error!');
+                }
+
             break;
 
             case 'update_sales':
@@ -1350,31 +1459,29 @@ class ItemsController extends Controller
             break;
 
             case 'del_cart':
+            case 'cart_del':
 
                 $cart = Cart::find($id);
-                $cart_qty = $cart->qty;
-                $it_id = $cart->item_id;
 
-                // Get item id
-                $uId = auth()->user()->bv;
-                $q = 'q'.$uId;
-
-                $item = Item::find($it_id);
-                $item_qty = $item->qty + $cart_qty;
-                $avb_qty = $item->$q + $cart_qty;
-
+                if (!$cart) {
+                    return redirect(url()->previous())->with('error', 'Cart item not found');
+                }
 
                 try {
-                    $item->qty = $item_qty;
-                    $item->$q = $avb_qty;
-                    $item->save();
-                    $cart->delete();
-                    return redirect('/sales')->with('success', 'Item successfully deleted');
-                } catch(Exception $ex){
-                    return redirect('/sales')->with('error', 'Oops..! Unhandled Error!');
-                }      
+                    $item = Item::find($cart->item_id);
 
-                    
+                    if ($item) {
+                        $item->restoreCartStockReservation(auth()->user()->bv, (int) $cart->qty);
+                    }
+
+                    $cartName = $cart->name;
+                    $cart->delete();
+
+                    return redirect(url()->previous())->with('success', $cartName . ' deleted successfully');
+                } catch (Exception $ex) {
+                    return redirect(url()->previous())->with('error', 'Oops..! Unhandled Error!');
+                }
+
             break;
 
             case 'print_invoice':
@@ -1541,18 +1648,9 @@ class ItemsController extends Controller
                 return redirect(url()->previous())->with('success', 'Record deletion successfull');
             break;
 
-            case 'cart_del':
-                $cart = Cart::find($id);
-                // Reduce stock
-                $itm = Item::where('id', $cart->item_id)->first();
-                $bvv = 'q'.auth()->user()->bv;
-                $itm->$bvv = $itm->$bvv + $cart->qty;
-                $itm->save();
-                $cart->delete();
-                return redirect(url()->previous())->with('success', $cart->name.' deleted successfully');
-            break;
-
         }
+
+        return redirect('/items')->with('error', 'Unknown update action.');
     }
 
     /**

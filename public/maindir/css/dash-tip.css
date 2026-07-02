@@ -1,0 +1,55 @@
+/* Reusable dashboard tooltip (data-tip attribute) */
+
+.dash-tip-layer {
+  --dash-tip-bg: #1a4a52;
+  position: fixed;
+  z-index: 2147483000;
+  padding: 6px 11px;
+  border-radius: 8px;
+  background: var(--dash-tip-bg);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.1s ease, visibility 0.1s ease;
+}
+
+.dash-tip-layer.is-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.dash-tip-layer::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+}
+
+.dash-tip-layer:not(.dash-tip-layer--bottom)::after {
+  top: 100%;
+  border-top-color: var(--dash-tip-bg);
+}
+
+.dash-tip-layer.dash-tip-layer--bottom::after {
+  bottom: 100%;
+  border-bottom-color: var(--dash-tip-bg);
+}
+
+.dash-tip:hover,
+.dash-tip:focus-visible {
+  z-index: 1;
+}
+
+.fixed-plugin .dropdown-menu,
+.fixed-plugin .adjustments-line,
+.fixed-plugin .dash-sidebar-theme-swatches {
+  overflow: visible;
+}

@@ -9,7 +9,6 @@ use App\Models\Company;
 use App\Models\Category;
 use App\Models\CompanyBranch;
 use Session;
-use Auth;
 
 class load_auth
 {
@@ -22,53 +21,32 @@ class load_auth
      */
     public function handle(Request $request, Closure $next)
     {
-        // if (Session::get('https') != 'https'){
-        //     Session::put('https', 'https');
-        //     return redirect('https://rjv.pivoapps.net');
-        // }
-
         if (auth()->user()->del == 'yes') {
             auth()->logout();
+
             return redirect('/')->with('error', 'Oops..! Access Denied');
         }
-        // if (Auth::check()) {
-        // }else {
 
-            $cl = Closures::where('month', date('Y-m-01'))->latest()->first();
-            Session::put('cl', $cl);
-            if ($cl == '' && auth()->user()->status != 'Administrator') {
-                Session::put('sales_permit', 0);
-            }else {
-                Session::put('sales_permit', 1);
-            }
-            
+        $cl = Closures::where('month', date('Y-m-01'))->latest()->first();
+        Session::put('cl', $cl);
+        if ($cl == '' && auth()->user()->status != 'Administrator') {
+            Session::put('sales_permit', 0);
+        } else {
+            Session::put('sales_permit', 1);
+        }
 
-            $b1 = CompanyBranch::where('tag', 1)->first();
-            $b2 = CompanyBranch::where('tag', 2)->first();
-            $b3 = CompanyBranch::where('tag', 3)->first();
-            $b4 = CompanyBranch::where('tag', 4)->first();
-            $b5 = CompanyBranch::where('tag', 5)->first();
+        $branchLabels = ['A', 'B', 'C', 'D', 'E'];
+        for ($tag = 1; $tag <= 5; $tag++) {
+            $branch = CompanyBranch::where('tag', $tag)->first();
+            $name = $branch ? $branch->name : '';
+            Session::put('branch_'.$tag, $name);
+            Session::put('branch_'.$branchLabels[$tag - 1], $name);
+        }
 
-            Session::put('branch_A', $b1->name);
-            Session::put('branch_B', $b2->name);
-            Session::put('branch_C', $b3->name);
-            Session::put('branch_D', $b4->name);
-            Session::put('branch_E', $b5->name);
+        Session::put('cats', Category::all());
+        Session::put('company', Company::find(1));
+        Session::put('compbranch', CompanyBranch::all());
 
-            Session::put('branch_1', $b1->name);
-            Session::put('branch_2', $b2->name);
-            Session::put('branch_3', $b3->name);
-            Session::put('branch_4', $b4->name);
-            Session::put('branch_5', $b5->name);
-            
-            $cats = Category::All();
-            $company = Company::find(1);
-            $branch = CompanyBranch::all();
-
-            Session::put('cats', $cats);
-            Session::put('company', $company);
-            Session::put('compbranch', $branch);
-            return $next($request);
-        // }
+        return $next($request);
     }
 }

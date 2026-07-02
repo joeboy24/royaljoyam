@@ -372,66 +372,7 @@
         </section-->
         <!--================ Recent Area  =================-->
 
-
-
-        <div class="modal fade homelog" id="checkRes" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title" id="exampleModalLabel"><i class="fa fa-user"></i>&nbsp;&nbsp;&nbsp;{{ __('Login') }}</h5>
-                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                  </button>
-                </div>
-                <div class="modal-body">
-                  
-
-
-                        <div class="row justify-content-center">
-                            <div class="col-md-10">
-                    
-                                    <div class="card-body">
-                                        <form method="POST" action="">
-                                            @csrf
-                    
-                                            <div class="form-group row">
-                                                <label for="pass" class="col-md-4 col-form-label text-md-right">Student Id</label>
-                                                <div class="col-md-7">
-                                                    <input type="text" class="form-control" name="name" value="202112" placeholder="Type Student Id Here!." required/>
-                                                </div>
-                                            </div>
-
-                                            <div class="form-group row">
-                                                <label for="pass" class="col-md-4 col-form-label text-md-right">Access Code</label>
-                                                <div class="col-md-7">
-                                                    <input id="pass" type="password" class="form-control" value="Ex7721372A7T" required autofocus>
-                    
-                                                    {{-- @if ($errors->has('email'))
-                                                        <span class="invalid-feedback" role="alert">
-                                                        </span>
-                                                    @endif --}}
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="modal-footer">
-                                                <a href="/resultcheck" class="btn btn-info"><i class="fa fa-folder-open"></i> &nbsp; Login</a>
-                                              </div>
-                    
-                                        </form>
-                                    </div>
-                            </div>
-                        </div>
-                    
-
-
-                    
-
-                </div>
-              </div>
-            </div>
-        </div>
-
   
 @endsection
         
-     
+      
