@@ -1411,31 +1411,29 @@ class ItemsController extends Controller
             break;
 
             case 'del_cart':
+            case 'cart_del':
 
                 $cart = Cart::find($id);
-                $cart_qty = $cart->qty;
-                $it_id = $cart->item_id;
 
-                // Get item id
-                $uId = auth()->user()->bv;
-                $q = 'q'.$uId;
-
-                $item = Item::find($it_id);
-                $item_qty = $item->qty + $cart_qty;
-                $avb_qty = $item->$q + $cart_qty;
-
+                if (!$cart) {
+                    return redirect(url()->previous())->with('error', 'Cart item not found');
+                }
 
                 try {
-                    $item->qty = $item_qty;
-                    $item->$q = $avb_qty;
-                    $item->save();
-                    $cart->delete();
-                    return redirect('/sales')->with('success', 'Item successfully deleted');
-                } catch(Exception $ex){
-                    return redirect('/sales')->with('error', 'Oops..! Unhandled Error!');
-                }      
+                    $item = Item::find($cart->item_id);
 
-                    
+                    if ($item) {
+                        $item->restoreCartStockReservation(auth()->user()->bv, (int) $cart->qty);
+                    }
+
+                    $cartName = $cart->name;
+                    $cart->delete();
+
+                    return redirect(url()->previous())->with('success', $cartName . ' deleted successfully');
+                } catch (Exception $ex) {
+                    return redirect(url()->previous())->with('error', 'Oops..! Unhandled Error!');
+                }
+
             break;
 
             case 'print_invoice':
@@ -1600,17 +1598,6 @@ class ItemsController extends Controller
                 $sp->del = 'yes';
                 $sp->save();
                 return redirect(url()->previous())->with('success', 'Record deletion successfull');
-            break;
-
-            case 'cart_del':
-                $cart = Cart::find($id);
-                // Reduce stock
-                $itm = Item::where('id', $cart->item_id)->first();
-                $bvv = 'q'.auth()->user()->bv;
-                $itm->$bvv = $itm->$bvv + $cart->qty;
-                $itm->save();
-                $cart->delete();
-                return redirect(url()->previous())->with('success', $cart->name.' deleted successfully');
             break;
 
         }

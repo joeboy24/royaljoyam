@@ -19,7 +19,7 @@ use App\Models\CompanyBranch;
 use App\Models\OrderReturn;
 use App\Models\Wbdistribution;
 use Exception;
-use Session;
+use Illuminate\Support\Facades\Session;
 use DateTime;
 
 class DashController extends Controller
@@ -263,18 +263,15 @@ class DashController extends Controller
             $uid = auth()->user()->id;
             $ubv = auth()->user()->bv;
             $carts = Cart::where('user_id', $uid)->get();
-            $q = 'q'.$ubv;
             if(count($carts) > 0){
                 foreach ($carts as $cart) {
                     # code...
 
                     $item = Item::find($cart->item_id);
-                    $oq = $item->qty;
-                    $obq = $item->$q;
-                    // return $obq;
-                    $item->qty = $oq + $cart->qty;
-                    $item->$q = $obq + $cart->qty;
-                    $item->save();
+
+                    if ($item) {
+                        $item->restoreCartStockReservation($ubv, (int) $cart->qty);
+                    }
 
                     // Empty specific user/branch cart
                     $cart_del = Cart::find($cart->id);

@@ -35,6 +35,53 @@ class Item extends Model
         };
     }
 
+    public function branchQtyTotal(int $maxBranches = 7): int
+    {
+        $total = 0;
+
+        for ($i = 1; $i <= $maxBranches; $i++) {
+            $total += max(0, (int) ($this->{'q' . $i} ?? 0));
+        }
+
+        return $total;
+    }
+
+    public function branchQtyColumn(int|string $branchId): string
+    {
+        return 'q' . $branchId;
+    }
+
+    public function restoreCartStockReservation(int|string $branchId, int $qty): void
+    {
+        if ($qty <= 0) {
+            return;
+        }
+
+        $column = $this->branchQtyColumn($branchId);
+        $this->qty = (int) $this->qty + $qty;
+        $this->$column = max(0, (int) ($this->$column ?? 0)) + $qty;
+        $this->save();
+    }
+
+    public function needsGeneralQtyRepair(): bool
+    {
+        $generalQty = (int) $this->qty;
+
+        return $generalQty < 0 || $generalQty < $this->branchQtyTotal();
+    }
+
+    public function repairGeneralQty(): bool
+    {
+        if (!$this->needsGeneralQtyRepair()) {
+            return false;
+        }
+
+        $this->qty = max($this->branchQtyTotal(), 0);
+        $this->save();
+
+        return true;
+    }
+
     public function user(){
         return $this->belongsTo('App\Models\User');
     }

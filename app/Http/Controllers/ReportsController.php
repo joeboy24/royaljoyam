@@ -17,7 +17,7 @@ use App\Models\SalesHistory;
 use App\Models\SalesPayment;
 use App\Models\CompanyBranch;
 use Exception;
-use Session;
+use Illuminate\Support\Facades\Session;
 use DateTime;
 
 class ReportsController extends Controller
@@ -640,12 +640,12 @@ class ReportsController extends Controller
                 'order_date' => $sh->created_at,
             ]);
 
-            $new_qty = 'q'.$sh->user_bv;
-
             // Save to OrderReturn
             $item = Item::find($sh->item_id);
-            $item->$new_qty = $item->$new_qty + $sh->qty;
-            $item->save();
+
+            if ($item) {
+                $item->restoreCartStockReservation($sh->user_bv, (int) $sh->qty);
+            }
 
             // Delete from SalesHistory
             $sh->delete();
