@@ -100,7 +100,6 @@
                   <div class="col-md-5 offset-md-0 myTrim">
 
                     <form style="width: 400px" method="GET" action="{{ url('/items') }}">
-                      @csrf
                       <div class="input-group no-border">
                         {{-- <input type="text" value="" class="form-control search_field" id="search" name="search" placeholder="Search Records...">
                         <button type="submit" class="btn btn-white btn-round my_bt">
@@ -108,14 +107,14 @@
                           <div class="ripple-container"></div>
                         </button> --}}
 
-                          <input type="search" value="" class="form-control search_field" id="itemsearch" name="itemsearch" placeholder="Search Records...">
+                          <input type="search" value="{{ $itemsearch }}" class="form-control search_field" id="itemsearch" name="itemsearch" placeholder="Search Records...">
                            
-                          <button type="submit" class="btn btn-white btn-round my_bt">
+                          <button type="submit" class="btn btn-white btn-round my_bt" title="Search">
                             <i class="material-icons">search</i>
                             <div class="ripple-container"></div>
                           </button>
 
-                          <a href="/items" class="refresh_a"><button type="submit" class="btn btn-success btn-round" id="mb">
+                          <a href="/items" class="refresh_a" title="Clear search"><button type="button" class="btn btn-success btn-round" id="mb">
                             <i class="fa fa-refresh"></i>
                             <div class="ripple-container"></div>
                           </button></a>
@@ -124,12 +123,12 @@
                     </form>
                       
                   </div>
-                  <div class="col-md-7 offset-md-0 myTrim">
+                  <div class="col-md-7 offset-md-0 myTrim inventory-toolbar-actions">
                     <button type="button" class="btn btn-info pull-right" data-toggle="modal" data-target="#addItemModal" title="Add Item">
                       <i class="fa fa-plus"></i> Add Item
                     </button>
                     <a href="#"><button type="button" class="btn btn-white pull-right" title="Recycle Bin"><i class="fa fa-trash"></i></button></a>
-                    <a href="/dashuser"><button type="button" class="btn btn-white pull-right" title="Registry"><i class="fa fa-edit"></i></button></a>
+                    <a href="/dashuser"><button type="button" class="btn btn-white pull-right" title="Registry"><i class="fa fa-arrow-left"></i></button></a>
                   </div>
 
                 </div>
@@ -342,7 +341,19 @@
                           @endif
                         @endforeach
 
-                        <p>Total : <b style="color: #000000">{{count($items)}}</b></p>
+                        <p class="gray_p">
+                          @if ($items->total() > 0)
+                            @if ($itemsearch !== '')
+                              Showing <b>{{ $items->firstItem() }}-{{ $items->lastItem() }}</b> of <b>{{ $items->total() }}</b> {{ $items->total() === 1 ? 'match' : 'matches' }} ({{ $totalItemCount }} total items)
+                            @else
+                              Showing <b>{{ $items->firstItem() }}-{{ $items->lastItem() }}</b> of <b>{{ $items->total() }}</b> items
+                            @endif
+                          @elseif ($itemsearch !== '')
+                            No matches for <b>"{{ $itemsearch }}"</b> ({{ $totalItemCount }} total items)
+                          @else
+                            <b>0</b> items
+                          @endif
+                        </p>
 
                         {{-- {{ Auth::user()->name }}
                         {{ auth()->user()->email }}
@@ -355,14 +366,20 @@
                           <p>{{$item->name}} - {{$item->itemimage->item_id}}</p>
                         @endforeach--}}
 
-                         {{ $items->appends(['itemsearch' => request()->query('itemsearch')])->links() }} 
+                         {{ $items->links() }} 
 
                         <div style="height: 30px">
                         </div>
       
 
                     @else
-                      <p>No Records Found</p>
+                      <p class="gray_p">
+                        @if ($itemsearch !== '')
+                          No matches for <b>"{{ $itemsearch }}"</b> ({{ $totalItemCount }} total items)
+                        @else
+                          <b>0</b> items
+                        @endif
+                      </p>
                     @endif
                     
                 </div>
@@ -444,6 +461,9 @@
 @section('footer')
 
 <style>
+  .inventory-toolbar-actions .btn.pull-right {
+    margin-left: 8px;
+  }
   .item-row-expandable {
     cursor: pointer;
   }

@@ -215,8 +215,34 @@ class InventoryPageTest extends TestCase
         $response = $this->actingAs($this->admin)->get('/items?itemsearch=Alpha');
 
         $response->assertOk();
+        $response->assertSee('value="Alpha"', false);
         $response->assertSee('Alpha Widget');
         $response->assertDontSee('Beta Gadget');
+        $response->assertSeeText('1 match');
+        $response->assertSeeText('2 total items');
+    }
+
+    public function test_inventory_search_with_no_matches_shows_zero_match_summary(): void
+    {
+        $this->createItem(['name' => 'Alpha Widget']);
+
+        $response = $this->actingAs($this->admin)->get('/items?itemsearch=Missing');
+
+        $response->assertOk();
+        $response->assertSee('value="Missing"', false);
+        $response->assertSee('No matches for');
+        $response->assertSee('1 total items');
+    }
+
+    public function test_inventory_list_shows_total_item_count_without_search(): void
+    {
+        $this->createItem(['name' => 'One']);
+        $this->createItem(['name' => 'Two']);
+
+        $response = $this->actingAs($this->admin)->get('/items');
+
+        $response->assertOk();
+        $response->assertSeeText('Showing 1-2 of 2 items');
     }
 
     public function test_admin_can_update_item_from_inventory_page(): void

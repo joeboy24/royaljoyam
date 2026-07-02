@@ -43,12 +43,17 @@ class ItemsController extends Controller
         }
 
         $match = ['del' => 'no'];
-        $itemsearch = $request->query('itemsearch');
-        if(!empty($itemsearch)){
-            $items = Item::where($match)->where('name', 'like', '%'.$itemsearch.'%')->orderBy('id', 'desc')->paginate(10);
-        }else{
-            $items = Item::where($match)->orderBy('id', 'desc')->paginate(10);
+        $itemsearch = trim((string) $request->query('itemsearch', ''));
+        $totalItemCount = Item::where($match)->count();
+        $itemsQuery = Item::where($match);
+
+        if ($itemsearch !== '') {
+            $itemsQuery->where('name', 'like', '%'.$itemsearch.'%');
         }
+
+        $items = $itemsQuery->orderBy('id', 'desc')->paginate(10)->appends([
+            'itemsearch' => $itemsearch !== '' ? $itemsearch : null,
+        ]);
 
         // $items = Item::All();
         $ITM = ItemImage::All();
@@ -59,7 +64,9 @@ class ItemsController extends Controller
             'i' => 1,
             'ITM' => $ITM,
             'cats' => $cats,
-            'items' => $items
+            'items' => $items,
+            'itemsearch' => $itemsearch,
+            'totalItemCount' => $totalItemCount,
         ];
         // return $items;
         return view('pages.dash.itemsview')->with($pass);
