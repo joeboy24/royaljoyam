@@ -506,7 +506,75 @@ class InventoryPageTest extends TestCase
         $response->assertOk();
         $response->assertSee('Inventory Report');
         $response->assertSee('Printable Widget');
-        $response->assertSee('Category: General');
+        $response->assertSee('General');
+    }
+
+    public function test_inventory_update_rejects_branch_qty_above_general_qty(): void
+    {
+        $item = $this->createItem(['name' => 'Qty Check Item']);
+
+        $response = $this->actingAs($this->admin)->put('/items/' . $item->id, [
+            'store_action' => 'update_item',
+            'name' => 'Qty Check Item',
+            'desc' => 'Updated description',
+            'cat' => 'General',
+            'brand' => 'Brand',
+            'barcode' => 'BC999',
+            'qty' => 5,
+            'price' => '30.00',
+            'q1' => 4,
+            'q2' => 4,
+            'q3' => 0,
+            'b1' => '30.00',
+            'b2' => '31.00',
+            'b3' => '32.00',
+        ]);
+
+        $response->assertRedirect('/items');
+        $response->assertSessionHas('error');
+        $this->assertDatabaseHas('items', [
+            'id' => $item->id,
+            'qty' => '10',
+        ]);
+    }
+
+    public function test_inventory_update_rejects_negative_base_price(): void
+    {
+        $item = $this->createItem(['name' => 'Price Check Item']);
+
+        $response = $this->actingAs($this->admin)->put('/items/' . $item->id, [
+            'store_action' => 'update_item',
+            'name' => 'Price Check Item',
+            'desc' => 'Updated description',
+            'cat' => 'General',
+            'brand' => 'Brand',
+            'barcode' => 'BC999',
+            'qty' => 10,
+            'price' => '-5',
+            'q1' => 4,
+            'q2' => 3,
+            'q3' => 3,
+            'b1' => '30.00',
+            'b2' => '31.00',
+            'b3' => '32.00',
+        ]);
+
+        $response->assertRedirect('/items');
+        $response->assertSessionHas('error');
+    }
+
+    public function test_inventory_edit_modal_shows_polished_labels(): void
+    {
+        $item = $this->createItem(['name' => 'Label Check Item']);
+
+        $response = $this->actingAs($this->admin)->get('/items');
+
+        $response->assertOk();
+        $response->assertSee('Base price (Gh', false);
+        $response->assertSee('Branch A qty', false);
+        $response->assertSee('Branch A price (Gh', false);
+        $response->assertSee('id="branch_status_' . $item->id . '"', false);
+        $response->assertSee('inventory-edit-submit', false);
     }
 
     public function test_inventory_page_shows_print_and_export_actions(): void

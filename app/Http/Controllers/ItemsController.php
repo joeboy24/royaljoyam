@@ -506,6 +506,8 @@ class ItemsController extends Controller
                             $Id = $im->id;
                             //return redirect('/dashuser')->with('success', $a);
 
+                            $filenameToStore = 'no_image.png';
+
                             if($request->hasFile('items')){
 
                                 // $this->validate($request, [
@@ -535,10 +537,6 @@ class ItemsController extends Controller
                                     $c++;
                                 }
                                 
-                            }else{
-                                $filenameToStore = 'no_image.png';
-                                $tmpFile = '';
-                                //exit;
                             }
                 
 
@@ -1218,30 +1216,41 @@ class ItemsController extends Controller
                 try {
                     $generalQty = max(0, (int) $request->input('qty', 0));
                     $branchQtyTotal = 0;
+                    $branchCount = count(session('compbranch'));
 
-                    for ($i = 1; $i <= count(session('compbranch')); $i++) {
+                    $basePriceInput = $request->input('price');
+                    if (!is_numeric($basePriceInput) || (float) $basePriceInput < 0) {
+                        return redirect('/items')->with('error', 'Enter a valid base price (0 or greater).');
+                    }
+                    $basePrice = number_format((float) $basePriceInput, 2, '.', '');
+
+                    for ($i = 1; $i <= $branchCount; $i++) {
                         $qq = 'q' . $i;
                         $bb = 'b' . $i;
                         $qtyValue = max(0, (int) $request->input($qq, 0));
-                        $priceValue = $request->input($bb, 0);
+                        $branchPriceInput = $request->input($bb, 0);
+
+                        if (!is_numeric($branchPriceInput) || (float) $branchPriceInput < 0) {
+                            return redirect('/items')->with('error', 'Enter valid branch prices (0 or greater).');
+                        }
 
                         $branchQtyTotal += $qtyValue;
                         $item->$qq = $qtyValue;
-                        $item->$bb = $priceValue;
+                        $item->$bb = number_format((float) $branchPriceInput, 2, '.', '');
                     }
 
                     if ($branchQtyTotal > $generalQty) {
-                        return redirect('/items')->with('error', 'Oops..! Sum of branch quantities cannot be greater than General Quantity.');
+                        return redirect('/items')->with('error', 'Sum of branch quantities cannot be greater than general quantity.');
                     }
 
-                    $item->name = $request->input('name');
+                    $item->name = trim($request->input('name', ''));
                     $item->desc = $request->input('desc');
                     $item->cat = $request->input('cat');
                     $item->brand = $request->input('brand');
                     $item->barcode = $request->input('barcode');
                     $item->qty = $generalQty;
-                    $item->price = $request->input('price');
-                    $item->cost_price = $request->input('price');
+                    $item->price = $basePrice;
+                    $item->cost_price = $basePrice;
                     $item->save();
 
                     return redirect('/items')->with('success', 'Record successfully updated');
@@ -1601,6 +1610,8 @@ class ItemsController extends Controller
             break;
 
         }
+
+        return redirect('/items')->with('error', 'Unknown update action.');
     }
 
     /**

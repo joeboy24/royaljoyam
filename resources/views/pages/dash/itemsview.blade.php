@@ -355,6 +355,7 @@
                                   <form action="{{ action('ItemsController@update', $item->id) }}" method="POST" enctype="multipart/form-data" data-item-id="{{ $item->id }}">
                                     @csrf
                                     @method('PUT')
+                                    <input type="hidden" name="store_action" value="update_item">
 
                                     <div class="inventory-edit-header">
                                       <div class="inventory-edit-header-inner">
@@ -414,9 +415,9 @@
 
                                           <label class="inventory-edit-field">
                                             <span class="inventory-edit-label">General quantity</span>
-                                            <input type="number" class="inventory-edit-input" name="qty" id="qty{{ $item->id }}" placeholder="Quantity" value="{{ $item->qty }}" min="0" oninput="validateBranchQty({{ $item->id }}, {{ count(session('compbranch')) }})" required/>
+                                            <input type="number" class="inventory-edit-input" name="qty" id="qty{{ $item->id }}" placeholder="Quantity" value="{{ $item->qty }}" min="0" step="1" oninput="validateBranchQty({{ $item->id }}, {{ count(session('compbranch')) }})" required/>
                                           </label>
-                                          <p class="inventory-edit-hint" id="branch_status_{{ $item->id }}">Branch totals must not exceed the general quantity.</p>
+                                          <p class="inventory-edit-hint" id="branch_status_{{ $item->id }}">Branch totals must not exceed general quantity.</p>
 
                                           @if (count(session('compbranch')) > 0)
                                             <div class="inventory-edit-branch-grid">
@@ -426,8 +427,8 @@
                                                   $qq = 'q'.($i + 1);
                                                 @endphp
                                                 <label class="inventory-edit-field inventory-edit-field-compact">
-                                                  <span class="inventory-edit-label">{{ $branch->name }}</span>
-                                                  <input type="number" class="inventory-edit-input" name="q{{ $i + 1 }}" id="q{{ $i + 1 }}_{{ $item->id }}" placeholder="Qty" value="{{ $item->$qq }}" min="0" oninput="validateBranchQty({{ $item->id }}, {{ count(session('compbranch')) }})" required/>
+                                                  <span class="inventory-edit-label">{{ $branch->name }} qty</span>
+                                                  <input type="number" class="inventory-edit-input inventory-edit-branch-qty" name="q{{ $i + 1 }}" id="q{{ $i + 1 }}_{{ $item->id }}" placeholder="0" value="{{ $item->$qq }}" min="0" step="1" oninput="validateBranchQty({{ $item->id }}, {{ count(session('compbranch')) }})" required/>
                                                 </label>
                                               @endfor
                                             </div>
@@ -436,8 +437,9 @@
                                           <h6 class="inventory-edit-section-title inventory-edit-section-title-spaced"><i class="fa fa-money"></i> Pricing</h6>
 
                                           <label class="inventory-edit-field">
-                                            <span class="inventory-edit-label">Cost price (Gh₵)</span>
-                                            <input type="text" class="inventory-edit-input" name="price" placeholder="Price" value="{{ $item->price }}" required/>
+                                            <span class="inventory-edit-label">Base price (Gh₵)</span>
+                                            <input type="number" class="inventory-edit-input" name="price" placeholder="0.00" value="{{ $item->price }}" min="0" step="0.01" required/>
+                                            <span class="inventory-edit-field-hint">Default catalogue price shown in the inventory list.</span>
                                           </label>
 
                                           @if (count(session('compbranch')) > 0)
@@ -448,8 +450,8 @@
                                                   $bb = 'b'.($i + 1);
                                                 @endphp
                                                 <label class="inventory-edit-field inventory-edit-field-compact">
-                                                  <span class="inventory-edit-label">{{ $branch->name }} price</span>
-                                                  <input type="number" class="inventory-edit-input" name="b{{ $i + 1 }}" placeholder="Price" value="{{ $item->$bb }}" step="0.01" min="0" required/>
+                                                  <span class="inventory-edit-label">{{ $branch->name }} price (Gh₵)</span>
+                                                  <input type="number" class="inventory-edit-input" name="b{{ $i + 1 }}" placeholder="0.00" value="{{ $item->$bb }}" step="0.01" min="0" required/>
                                                 </label>
                                               @endfor
                                             </div>
@@ -460,8 +462,9 @@
 
                                     <div class="inventory-edit-footer">
                                       <button type="button" class="inventory-edit-btn inventory-edit-btn-muted" data-dismiss="modal">Cancel</button>
-                                      <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary" name="store_action" value="update_item">
-                                        <i class="fa fa-save"></i> Update record
+                                      <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary inventory-edit-submit">
+                                        <i class="fa fa-save inventory-edit-submit-icon"></i>
+                                        <span class="inventory-edit-submit-label">Update record</span>
                                       </button>
                                     </div>
                                   </form>
@@ -1388,6 +1391,19 @@
     font-size: 12px;
     color: #888;
   }
+  .inventory-edit-hint.is-ok {
+    color: #2e7d32;
+  }
+  .inventory-edit-hint.is-error {
+    color: #c62828;
+  }
+  .inventory-edit-field-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: 11px;
+    color: #999;
+    line-height: 1.35;
+  }
   .inventory-edit-file-field {
     margin-bottom: 0;
   }
@@ -1462,6 +1478,12 @@
     background: var(--inv-accent-dark, #0097a7);
     color: #fff;
   }
+  .inventory-edit-btn-primary:disabled,
+  .inventory-edit-btn-primary.is-saving {
+    opacity: 0.72;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
   @media (max-width: 767px) {
     .inventory-edit-dialog {
       max-width: 100%;
@@ -1499,15 +1521,42 @@
       return branchTotal <= generalQty;
     }
 
+    status.classList.remove('is-ok', 'is-error');
+
     if (branchTotal > generalQty) {
-      status.textContent = 'Branch totals exceed General Quantity.';
-      status.style.color = '#d9534f';
+      status.textContent = 'Branch totals exceed general quantity (' + branchTotal + ' / ' + generalQty + ').';
+      status.classList.add('is-error');
+    } else if (branchCount > 0) {
+      status.textContent = 'Branch totals are within general quantity (' + branchTotal + ' / ' + generalQty + ').';
+      status.classList.add('is-ok');
     } else {
-      status.textContent = 'Branch totals are within General Quantity.';
-      status.style.color = '#28a745';
+      status.textContent = 'Branch totals must not exceed general quantity.';
     }
 
     return branchTotal <= generalQty;
+  }
+
+  function setEditFormSaving(form, isSaving) {
+    var submitBtn = form.querySelector('.inventory-edit-submit');
+
+    if (!submitBtn) {
+      return;
+    }
+
+    var icon = submitBtn.querySelector('.inventory-edit-submit-icon');
+    var label = submitBtn.querySelector('.inventory-edit-submit-label');
+
+    submitBtn.disabled = isSaving;
+    submitBtn.classList.toggle('is-saving', isSaving);
+    submitBtn.setAttribute('aria-busy', isSaving ? 'true' : 'false');
+
+    if (icon) {
+      icon.className = isSaving ? 'fa fa-spinner fa-spin inventory-edit-submit-icon' : 'fa fa-save inventory-edit-submit-icon';
+    }
+
+    if (label) {
+      label.textContent = isSaving ? 'Saving...' : 'Update record';
+    }
   }
 
   var INVENTORY_BRANCH_STORAGE_KEY = 'inventoryExpandedBranchIds';
@@ -1672,7 +1721,20 @@
   }
 
   function openItemEditModal(modalId) {
-    $('#' + modalId).modal('show');
+    var $modal = $('#' + modalId);
+    var form = $modal.find('form').get(0);
+    var branchCount = {{ count(session('compbranch')) }};
+
+    $modal.modal('show');
+
+    if (form) {
+      setEditFormSaving(form, false);
+
+      var itemId = form.getAttribute('data-item-id');
+      if (itemId) {
+        validateBranchQty(itemId, branchCount);
+      }
+    }
   }
 
   $(document).on('submit', '.item-edit-modal form', function(e) {
@@ -1681,8 +1743,11 @@
 
     if (itemId && !validateBranchQty(itemId, branchCount)) {
       e.preventDefault();
-      alert('Sum of branch quantities cannot exceed General Quantity.');
+      alert('Sum of branch quantities cannot exceed general quantity.');
+      return;
     }
+
+    setEditFormSaving(this, true);
   });
 
   $('#tb').on('click', 'tr.item-row-expandable', function(e) {
