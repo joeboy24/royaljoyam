@@ -153,11 +153,58 @@ class InventoryPageTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Inventory');
+        $response->assertSee('addItemModal', false);
+        $response->assertSee('Add Item');
+        $response->assertSee('href="/items"', false);
+        $response->assertSee('active2');
         $response->assertSee('Widget Alpha');
         $response->assertSee('item-row-' . $item->id, false);
         $response->assertSee('branch-detail-' . $item->id, false);
         $response->assertSee('edit_' . $item->id, false);
         $response->assertSee('toggleBranchDetail', false);
+    }
+
+    public function test_admin_can_add_item_from_inventory_page(): void
+    {
+        $response = $this->actingAs($this->admin)->post('/items', [
+            'store_action' => 'add_item',
+            'return_to' => 'items',
+            'name' => 'New Inventory Item',
+            'desc' => 'Added from inventory page',
+            'cat' => 'General',
+            'brand' => 'Test Brand',
+            'barcode' => 'NEW001',
+            'qty' => 5,
+            'price' => '19.99',
+        ]);
+
+        $response->assertRedirect('/items');
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('items', [
+            'name' => 'New Inventory Item',
+            'qty' => '5',
+            'price' => '19.99',
+            'del' => 'no',
+        ]);
+    }
+
+    public function test_add_item_from_inventory_page_rejects_duplicate_names(): void
+    {
+        $this->createItem(['name' => 'Duplicate Name']);
+
+        $response = $this->actingAs($this->admin)->post('/items', [
+            'store_action' => 'add_item',
+            'return_to' => 'items',
+            'name' => 'Duplicate Name',
+            'desc' => 'Another item',
+            'cat' => 'General',
+            'qty' => 1,
+            'price' => '10.00',
+        ]);
+
+        $response->assertRedirect('/items');
+        $response->assertSessionHas('error');
     }
 
     public function test_inventory_search_filters_by_item_name(): void

@@ -15,10 +15,16 @@
           <p>Configuration</p>
         </a>
       </li>
-      <li class="nav-item active2">
+      <li class="nav-item">
         <a class="nav-link" href="/dashuser">
           <i class="fa fa-edit"></i>
           <p>Registry</p>
+        </a>
+      </li>
+      <li class="nav-item active2">
+        <a class="nav-link" href="/items">
+          <i class="fa fa-archive"></i>
+          <p>Inventory</p>
         </a>
       </li>
       <li class="nav-item">
@@ -119,8 +125,11 @@
                       
                   </div>
                   <div class="col-md-7 offset-md-0 myTrim">
-                    <a href="#"><button type="submit" class="btn btn-white pull-right" title="Recycle Bin"><i class="fa fa-trash"></i></button></a>
-                    <a href="/dashuser"><button type="submit" class="btn btn-white pull-right" ><i class="fa fa-arrow-left"></i></button></a>
+                    <button type="button" class="btn btn-info pull-right" data-toggle="modal" data-target="#addItemModal" title="Add Item">
+                      <i class="fa fa-plus"></i> Add Item
+                    </button>
+                    <a href="#"><button type="button" class="btn btn-white pull-right" title="Recycle Bin"><i class="fa fa-trash"></i></button></a>
+                    <a href="/dashuser"><button type="button" class="btn btn-white pull-right" title="Registry"><i class="fa fa-edit"></i></button></a>
                   </div>
 
                 </div>
@@ -362,6 +371,71 @@
           </div>
         </div>
 
+  </div>
+
+  <div class="modal fade" id="addItemModal" tabindex="-1" role="dialog" aria-labelledby="addItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modtop" role="document">
+      <div class="modal-content">
+        <form action="{{ action('ItemsController@store') }}" method="POST" enctype="multipart/form-data">
+          @csrf
+          <input type="hidden" name="return_to" value="items">
+
+          <div class="modal-header">
+            <h5 class="modal-title" id="addItemModalLabel"><i class="fa fa-plus-circle"></i>&nbsp;&nbsp; Add Stock Item</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <div class="form-group">
+              <input type="text" class="form-control" name="name" placeholder="Item Name" required/>
+            </div>
+
+            <div class="form-group">
+              <textarea name="desc" class="form-control" rows="3" placeholder="Item Description" required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">Category</label>
+              <select name="cat" class="form-control" required>
+                @foreach ($cats as $cat)
+                  @if ($cat->del != 'yes')
+                    <option>{{ $cat->name }}</option>
+                  @endif
+                @endforeach
+              </select>
+            </div>
+
+            <div class="form-group">
+              <input type="text" class="form-control" name="brand" placeholder="Brand / Manufacturer"/>
+            </div>
+
+            <div class="form-group">
+              <input type="text" class="form-control" name="barcode" placeholder="Barcode"/>
+            </div>
+
+            <div class="form-group">
+              <input type="number" class="form-control" min="0" name="qty" placeholder="Quantity" required/>
+            </div>
+
+            <div class="form-group">
+              <input type="number" class="form-control" min="0" step="0.01" name="price" placeholder="Cost Price" required/>
+            </div>
+
+            <div class="form-group">
+              <label class="upfiles">Upload Image(s):</label>
+              <input type="file" name="items[]" multiple>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-info" name="store_action" value="add_item"><i class="fa fa-save"></i> &nbsp; Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 
 

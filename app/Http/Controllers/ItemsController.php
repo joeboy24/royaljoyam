@@ -269,6 +269,7 @@ class ItemsController extends Controller
 
                 case 'add_item':
 
+                    $returnTo = $request->input('return_to') === 'items' ? '/items' : '/dashuser';
                     $it_no = 'MT'.date('dis');
                     $name = $request->input('name');
                     $barcode = $request->input('barcode');
@@ -278,18 +279,17 @@ class ItemsController extends Controller
 
 
                     if (count($results) > 0){
-                        return redirect('/dashuser')->with('error', 'Oops..! Item already exist');
+                        return redirect($returnTo)->with('error', 'Oops..! Item already exist');
                     }else{
-                        
+                        $Id = null;
+
                         try {
                             
                             $im = new ItemImage;
                             $im->item_id = $it_no;
                             $im->save();
 
-
-                            $im_search = ItemImage::where('item_id', $it_no)->first();
-                            $Id = $im_search->id;
+                            $Id = $im->id;
                             //return redirect('/dashuser')->with('success', $a);
 
                             if($request->hasFile('items')){
@@ -329,12 +329,13 @@ class ItemsController extends Controller
                 
 
                         } catch (\Throwable $th) {
-                            $im2 = ItemImage::find($Id);
-                            $im2->delete();
-                            return redirect('/dashuser')->with('error', 'Ooops..! Unhandled Error ');
+                            if ($Id) {
+                                ItemImage::find($Id)?->delete();
+                            }
+                            return redirect($returnTo)->with('error', 'Ooops..! Unhandled Error ');
                         }
 
-                        $full = ItemImage::latest('id')->first();
+                        $full = ItemImage::find($Id);
 
                         try {
                             $cp = $request->input('price');
@@ -369,9 +370,9 @@ class ItemsController extends Controller
                             $im3->save();
                             
 
-                            return redirect('/dashuser')->with('success', 'Item successfully added');
+                            return redirect($returnTo)->with('success', 'Item successfully added');
                         } catch(\Throwable $th){
-                            return redirect('/dashuser')->with('error', 'Oops..! Unhandled Error! ');
+                            return redirect($returnTo)->with('error', 'Oops..! Unhandled Error! ');
                         }
                         
                     }
@@ -915,7 +916,7 @@ class ItemsController extends Controller
 
             }
         
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             return redirect()->back()->with('error', 'Oops..! Something went wrong while processing that request.');
         }
     }
