@@ -638,4 +638,16 @@ class InventoryPageTest extends TestCase
         $response->assertSee('data-tip="Print list"', false);
         $response->assertSee('data-tip="Export CSV"', false);
     }
+
+    public function test_dashboard_renders_styled_home_tiles(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/dashboard');
+
+        $response->assertOk();
+        $response->assertSee('dash-home-grid', false);
+        $response->assertSee('Welcome back, admin.test', false);
+        $response->assertSee('href="/items"', false);
+        $response->assertSee('dash-home-card--inventory', false);
+        $response->assertSee('/maindir/css/dash-dashboard.css', false);
+    }
 }

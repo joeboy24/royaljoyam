@@ -2,135 +2,105 @@
 @extends('layouts.dashlay')
 
 @section('content')
-    
-  <div class="content">
-        <div class="container-fluid">
 
-          @include('inc.messages')
-          <div class="cols_cont">
+  <div class="content dash-home-content">
+    <div class="container-fluid">
 
-            <div class="col_60">
+      @include('inc.messages')
 
-              <a href="/config" class="myA">
-                <div class="card card-stats">
-                  
-                  <i class="fa fa-cogs myIcon"></i>
+      @php
+        $companyName = optional(session('company'))->name ?? 'Royal Joyam Ventures';
+        $dashTiles = [
+          [
+            'url' => '/config',
+            'icon' => 'fa-cogs',
+            'title' => 'Configuration',
+            'desc' => 'Administrator setup and system options',
+            'modifier' => '',
+          ],
+          [
+            'url' => '/dashuser',
+            'icon' => 'fa-edit',
+            'title' => 'Registry',
+            'desc' => 'Register users, items, and categories',
+            'modifier' => '',
+          ],
+          [
+            'url' => '/items',
+            'icon' => 'fa-archive',
+            'title' => 'Inventory',
+            'desc' => 'View stock, search, filters, and reports',
+            'modifier' => 'inventory',
+          ],
+          [
+            'url' => '/waybill',
+            'icon' => 'fa-truck',
+            'title' => 'Waybill',
+            'desc' => 'Waybill and distribution management',
+            'modifier' => '',
+          ],
+          [
+            'url' => '/sales',
+            'icon' => 'fa-shopping-basket',
+            'title' => 'Sales',
+            'desc' => 'Manage sales and transaction records',
+            'modifier' => '',
+          ],
+          [
+            'url' => '/reporting',
+            'icon' => 'fa-file-text',
+            'title' => 'Reports',
+            'desc' => 'Sales, stock, debts, and other reports',
+            'modifier' => '',
+          ],
+          [
+            'url' => '/expenses',
+            'icon' => 'fa-money',
+            'title' => 'Expenditure',
+            'desc' => 'Track and manage business expenses',
+            'modifier' => '',
+          ],
+          [
+            'url' => '/closure_page',
+            'icon' => 'fa-calendar',
+            'title' => 'Closure',
+            'desc' => 'Daily closure and end-of-day tasks',
+            'modifier' => '',
+          ],
+        ];
+      @endphp
 
-                  <h3 class='config'>Configuration</h3>
-                  
-                  <div class="card-footer">
-                    <div class="stats">Administrator Setup
-                    </div>
-                  </div>
-                </div>
-              </a>
-            </div>
+      <header class="dash-home-header">
+        <p class="dash-home-kicker">Dashboard</p>
+        <h1 class="dash-home-title">Welcome back, {{ auth()->user()->name }}</h1>
+        <p class="dash-home-subtitle">{{ $companyName }} · {{ now()->format('l, d M Y') }}</p>
+      </header>
 
-            <div class="col_60">
+      <nav class="dash-home-grid" aria-label="Dashboard modules">
+        @foreach ($dashTiles as $tile)
+          <a
+            href="{{ $tile['url'] }}"
+            class="dash-home-card{{ $tile['modifier'] !== '' ? ' dash-home-card--' . $tile['modifier'] : '' }}"
+          >
+            <span class="dash-home-card-icon" aria-hidden="true">
+              <i class="fa {{ $tile['icon'] }}"></i>
+            </span>
+            <span class="dash-home-card-body">
+              <h3>{{ $tile['title'] }}</h3>
+              <p>{{ $tile['desc'] }}</p>
+            </span>
+            <span class="dash-home-card-arrow" aria-hidden="true">
+              <i class="fa fa-angle-right"></i>
+            </span>
+          </a>
+        @endforeach
+      </nav>
 
-              <a href="/dashuser" class="myA">
-                <div class="card card-stats">
-                  
-                  <i class="fa fa-edit myIcon"></i>
-
-                  <h3 class='config'>Registry</h3>
-                  
-                  <div class="card-footer">
-                    <div class="stats">Register User, Items/Categories...
-                    </div>
-                  </div>
-                </div>
-              </a>
-            </div>
-
-            <div class="col_60">
-
-              <a href="/waybill" class="myA">
-                <div class="card card-stats">
-                  
-                  <i class="fa fa-truck myIcon"></i>
-
-                  <h3 class='config'>Waybill</h3>
-                  
-                  <div class="card-footer">
-                    <div class="stats">Waybill info. Management
-                    </div>
-                  </div>
-                </div>
-              </a>
-            </div>
-
-            <div class="col_60">
-
-              <a href="/sales" class="myA">
-                <div class="card card-stats">
-                
-                  <i class="fa fa-shopping-basket myIcon"></i>
-  
-                  <h3 class='config'>Sales</h3>
-                  
-                  <div class="card-footer">
-                    <div class="stats">Manage Sales & Records
-                    </div>
-                  </div>
-                </div>
-              </a>
-            </div>
-
-            <div class="col_60">
-              <a href="/reporting" class="myA">
-                <div class="card card-stats">
-                  
-                  <i class="fa fa-file-text myIcon"></i>
-
-                  <h3 class='config'>Reports</h3>
-                  
-                  <div class="card-footer">
-                    <div class="stats">Manage Report System
-                    </div>
-                  </div>
-                </div>
-              </a>
-            </div>
-
-            <div class="col_60">
-
-              <a href="/expenses" class="myA">
-                <div class="card card-stats">
-                  
-                  <i class="fa fa-money myIcon"></i>
-
-                  <h3 class='config'>Expenditure</h3>
-                  
-                  <div class="card-footer">
-                    <div class="stats">Manage Expenses here.
-                    </div>
-                  </div>
-                </div>
-              </a>
-            </div>
-
-            <div class="col_60">
-
-              <a href="/closure_page" class="myA">
-                <div class="card card-stats">
-                  
-                  <i class="fa fa-calendar myIcon"></i>
-
-                  <h3 class='config'>Closure</h3>
-                  
-                  <div class="card-footer">
-                    <div class="stats">Manage Closure here.
-                    </div>
-                  </div>
-                </div>
-              </a>
-            </div>
-
-
-          </div>
-
-        </div>
+    </div>
   </div>
 
+@endsection
+
+@section('footer')
+  <link rel="stylesheet" href="/maindir/css/dash-dashboard.css?v=4">
 @endsection

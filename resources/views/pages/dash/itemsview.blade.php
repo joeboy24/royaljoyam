@@ -104,20 +104,20 @@
                   </div>
                   <div class="col-md-4 offset-md-0 myTrim inventory-toolbar-actions">
                     <div class="inventory-actions-group">
-                      <a href="{{ $showRecycle ? url('/items') : url('/dashuser') }}" class="inventory-action-btn inventory-action-btn-icon inventory-tip" data-tip="{{ $showRecycle ? 'Back to inventory' : 'Registry' }}">
+                      <a href="{{ $showRecycle ? url('/items') : url('/dashuser') }}" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="{{ $showRecycle ? 'Back to inventory' : 'Registry' }}">
                         <i class="fa fa-arrow-left"></i>
                       </a>
-                      <a href="{{ url('/items/print?' . http_build_query($inventoryListQuery)) }}" target="_blank" rel="noopener" class="inventory-action-btn inventory-action-btn-icon inventory-tip" data-tip="Print list">
+                      <a href="{{ url('/items/print?' . http_build_query($inventoryListQuery)) }}" target="_blank" rel="noopener" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Print list">
                         <i class="fa fa-print"></i>
                       </a>
-                      <a href="{{ url('/items/export?' . http_build_query($inventoryListQuery)) }}" class="inventory-action-btn inventory-action-btn-icon inventory-tip" data-tip="Export CSV">
+                      <a href="{{ url('/items/export?' . http_build_query($inventoryListQuery)) }}" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Export CSV">
                         <i class="fa fa-download"></i>
                       </a>
                       @unless ($showRecycle)
-                        <a href="{{ url('/items?recycle=1') }}" class="inventory-action-btn inventory-action-btn-icon inventory-tip" data-tip="Recycle bin">
+                        <a href="{{ url('/items?recycle=1') }}" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Recycle bin">
                           <i class="fa fa-trash"></i>
                         </a>
-                        <button type="button" class="inventory-action-btn inventory-action-btn-primary inventory-tip" data-tip="Add a new stock item" data-toggle="modal" data-target="#addItemModal">
+                        <button type="button" class="inventory-action-btn inventory-action-btn-primary dash-tip" data-tip="Add a new stock item" data-toggle="modal" data-target="#addItemModal">
                           <i class="fa fa-plus"></i>
                           <span>Add item</span>
                         </button>
@@ -211,14 +211,14 @@
                                         <form action="{{ action('ItemsController@update', $item->id) }}" method="POST" class="item-restore-form" onclick="event.stopPropagation()">
                                           @csrf
                                           @method('PUT')
-                                          <button type="submit" name="store_action" value="restore_item" class="inventory-row-action-btn inventory-row-action-btn-restore inventory-tip" data-tip="Restore item" onclick="return confirm('Restore this item to inventory?');"><i class="fa fa-reply"></i></button>
+                                          <button type="submit" name="store_action" value="restore_item" class="inventory-row-action-btn inventory-row-action-btn-restore dash-tip" data-tip="Restore item" onclick="return confirm('Restore this item to inventory?');"><i class="fa fa-reply"></i></button>
                                         </form>
                                       @else
-                                        <button type="button" class="inventory-row-action-btn inventory-row-action-btn-edit item-edit-btn inventory-tip" data-tip="Edit record" data-item-id="{{ $item->id }}" onclick="event.stopPropagation(); openItemEditModal({{ $item->id }});"><i class="fa fa-pencil"></i></button>
+                                        <button type="button" class="inventory-row-action-btn inventory-row-action-btn-edit item-edit-btn dash-tip" data-tip="Edit record" data-item-id="{{ $item->id }}" onclick="event.stopPropagation(); openItemEditModal({{ $item->id }});"><i class="fa fa-pencil"></i></button>
                                         <form action="{{ action('ItemsController@update', $item->id) }}" method="POST" class="item-delete-form" onclick="event.stopPropagation()">
                                           @csrf
                                           @method('PUT')
-                                          <button type="submit" name="store_action" value="del_item" class="inventory-row-action-btn inventory-row-action-btn-delete inventory-tip" data-tip="Delete item" onclick="return confirm('Are you sure you want to delete selected item?');"><i class="fa fa-close"></i></button>
+                                          <button type="submit" name="store_action" value="del_item" class="inventory-row-action-btn inventory-row-action-btn-delete dash-tip" data-tip="Delete item" onclick="return confirm('Are you sure you want to delete selected item?');"><i class="fa fa-close"></i></button>
                                         </form>
                                       @endif
                                     </div>
@@ -533,6 +533,13 @@
     --inv-accent: #00acc1;
     --inv-accent-dark: #0097a7;
     --inv-accent-rgb: 0, 172, 193;
+  }
+  .card .card-header-primary.inventory-card-header {
+    background: linear-gradient(
+      90deg,
+      var(--dash-header-from, #00acc1) 0%,
+      var(--dash-header-to, #0097a7) 100%
+    ) !important;
   }
   .inventory-filter-row {
     display: flex;
@@ -1060,53 +1067,6 @@
   }
   #tb td.item-row-actions {
     overflow: visible;
-  }
-  .inventory-tip {
-    position: relative;
-  }
-  .inventory-tip::after {
-    content: attr(data-tip);
-    position: absolute;
-    bottom: calc(100% + 9px);
-    left: 50%;
-    transform: translateX(-50%) translateY(3px);
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    padding: 6px 11px;
-    border-radius: 8px;
-    background: #1a4a52;
-    color: #fff;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    line-height: 1.2;
-    white-space: nowrap;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
-    transition: opacity 0.1s ease, transform 0.1s ease, visibility 0.1s ease;
-    z-index: 2000;
-  }
-  .inventory-tip::before {
-    content: '';
-    position: absolute;
-    bottom: calc(100% + 3px);
-    left: 50%;
-    transform: translateX(-50%) translateY(3px);
-    border: 5px solid transparent;
-    border-top-color: #1a4a52;
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition: opacity 0.1s ease, transform 0.1s ease, visibility 0.1s ease;
-    z-index: 2000;
-  }
-  .inventory-tip:hover::after,
-  .inventory-tip:focus-visible::after,
-  .inventory-tip:hover::before,
-  .inventory-tip:focus-visible::before {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(-50%) translateY(0);
   }
 
   .inventory-edit-dialog {

@@ -1,0 +1,195 @@
+/* Royal Joyam dashboard home */
+
+.dash-home-content {
+  --dash-accent: #00acc1;
+  --dash-accent-dark: #0097a7;
+  --dash-accent-rgb: 0, 172, 193;
+  padding-top: 20px;
+  padding-bottom: 40px;
+}
+
+.dash-home-header {
+  margin-bottom: 28px;
+  padding: 22px 26px;
+  background: linear-gradient(135deg, #ffffff 0%, #f3fafb 55%, #e8f6f8 100%);
+  border: 1px solid rgba(var(--dash-accent-rgb), 0.16);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(var(--dash-accent-rgb), 0.08);
+}
+
+.dash-home-kicker {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dash-accent);
+}
+
+.dash-home-title {
+  margin: 0 0 6px;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #1a2530;
+  line-height: 1.25;
+}
+
+.dash-home-subtitle {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #5f727a;
+}
+
+.dash-home-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.dash-home-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-height: 156px;
+  padding: 32px 24px;
+  background: #fff;
+  border: 1px solid rgba(var(--dash-accent-rgb), 0.12);
+  border-radius: 14px;
+  color: inherit;
+  text-decoration: none !important;
+  box-shadow: 0 2px 10px rgba(26, 37, 48, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.dash-home-card:hover,
+.dash-home-card:focus {
+  transform: translateY(-3px);
+  border-color: rgba(var(--dash-accent-rgb), 0.35);
+  box-shadow: 0 8px 24px rgba(var(--dash-accent-rgb), 0.14);
+  color: inherit;
+  text-decoration: none !important;
+  outline: none;
+}
+
+.dash-home-card-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: linear-gradient(
+    135deg,
+    rgba(var(--dash-accent-rgb), 0.16) 0%,
+    rgba(var(--dash-accent-rgb), 0.08) 100%
+  );
+  color: var(--dash-accent);
+  font-size: 1.65rem;
+}
+
+.dash-home-card-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.dash-home-card-body h3 {
+  margin: 0 0 10px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1a2530;
+}
+
+.dash-home-card-body p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: #607580;
+}
+
+.dash-home-card-arrow {
+  flex-shrink: 0;
+  align-self: center;
+  margin-left: auto;
+  color: rgba(var(--dash-accent-rgb), 0.4);
+  font-size: 1.25rem;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.dash-home-card:hover .dash-home-card-arrow,
+.dash-home-card:focus .dash-home-card-arrow {
+  color: var(--dash-accent);
+  transform: translateX(3px);
+}
+
+.dash-home-card--inventory .dash-home-card-icon {
+  background: linear-gradient(135deg, rgba(var(--dash-accent-rgb), 0.22) 0%, rgba(var(--dash-accent-rgb), 0.1) 100%);
+  color: var(--dash-accent-dark);
+}
+
+@media (max-width: 1400px) {
+  .dash-home-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1100px) {
+  .dash-home-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dash-home-card {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: center;
+    min-height: 188px;
+    padding: 28px 20px;
+    gap: 14px;
+  }
+
+  .dash-home-card-body {
+    flex: none;
+    width: 100%;
+  }
+
+  .dash-home-card-body h3 {
+    margin-bottom: 8px;
+  }
+
+  .dash-home-card-arrow {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .dash-home-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .dash-home-card {
+    min-height: 172px;
+    padding: 24px 16px;
+  }
+}
+
+@media (max-width: 575px) {
+  .dash-home-header {
+    padding: 18px 16px;
+  }
+
+  .dash-home-title {
+    font-size: 1.45rem;
+  }
+
+  .dash-home-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .dash-home-card {
+    min-height: 0;
+    padding: 26px 20px;
+  }
+}
