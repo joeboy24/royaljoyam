@@ -192,6 +192,12 @@
                       <a href="{{ $showRecycle ? url('/items') : url('/dashuser') }}" class="inventory-action-btn inventory-action-btn-icon inventory-tip" data-tip="{{ $showRecycle ? 'Back to inventory' : 'Registry' }}">
                         <i class="fa fa-arrow-left"></i>
                       </a>
+                      <a href="{{ url('/items/print?' . http_build_query($inventoryListQuery)) }}" target="_blank" rel="noopener" class="inventory-action-btn inventory-action-btn-icon inventory-tip" data-tip="Print list">
+                        <i class="fa fa-print"></i>
+                      </a>
+                      <a href="{{ url('/items/export?' . http_build_query($inventoryListQuery)) }}" class="inventory-action-btn inventory-action-btn-icon inventory-tip" data-tip="Export CSV">
+                        <i class="fa fa-download"></i>
+                      </a>
                       @unless ($showRecycle)
                         <a href="{{ url('/items?recycle=1') }}" class="inventory-action-btn inventory-action-btn-icon inventory-tip" data-tip="Recycle bin">
                           <i class="fa fa-trash"></i>

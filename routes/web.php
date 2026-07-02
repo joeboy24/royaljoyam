@@ -52,6 +52,8 @@ Route::get('/deliverer', 'DashController@deliverer');
 Route::get('/dashboard', 'DashController@dashboard');
 Route::get('/config', 'DashController@configurations');
 Route::get('/dashuser', 'DashController@dashuser');
+Route::get('/items/export', 'ItemsController@exportInventory');
+Route::get('/items/print', 'ItemsController@printInventory');
 Route::resource('/items', 'ItemsController');
 Route::resource('/reporting', 'ReportsController');
 Route::resource('/distribution', 'DistributionController');

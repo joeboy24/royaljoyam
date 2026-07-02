@@ -440,7 +440,7 @@ class InventoryPageTest extends TestCase
         $response->assertOk();
         $response->assertSee('Sized Item 0');
         $response->assertSee('Sized Item 10');
-        $response->assertDontSee('page=2', false);
+        $response->assertDontSee('href="http://localhost/items?page=2', false);
     }
 
     public function test_inventory_filters_persist_in_pagination_links(): void
@@ -480,5 +480,43 @@ class InventoryPageTest extends TestCase
         $pageTwo = $this->actingAs($this->admin)->get('/items?page=2');
         $pageTwo->assertOk();
         $pageTwo->assertSee('Paginated Item 0');
+    }
+
+    public function test_admin_can_export_inventory_csv(): void
+    {
+        $this->createItem(['name' => 'CSV Alpha', 'cat' => 'General']);
+        $this->createItem(['name' => 'CSV Beta', 'cat' => 'General']);
+
+        $response = $this->actingAs($this->admin)->get('/items/export?itemsearch=Alpha');
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'text/csv; charset=UTF-8');
+        $content = $response->streamedContent();
+        $this->assertStringContainsString('CSV Alpha', $content);
+        $this->assertStringNotContainsString('CSV Beta', $content);
+        $this->assertStringContainsString('Stock Status', $content);
+    }
+
+    public function test_admin_can_open_inventory_print_view(): void
+    {
+        $this->createItem(['name' => 'Printable Widget', 'cat' => 'General']);
+
+        $response = $this->actingAs($this->admin)->get('/items/print?category=General');
+
+        $response->assertOk();
+        $response->assertSee('Inventory Report');
+        $response->assertSee('Printable Widget');
+        $response->assertSee('Category: General');
+    }
+
+    public function test_inventory_page_shows_print_and_export_actions(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/items');
+
+        $response->assertOk();
+        $response->assertSee('/items/print?', false);
+        $response->assertSee('/items/export?', false);
+        $response->assertSee('data-tip="Print list"', false);
+        $response->assertSee('data-tip="Export CSV"', false);
     }
 }

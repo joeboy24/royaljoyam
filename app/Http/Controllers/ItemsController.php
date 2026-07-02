@@ -37,46 +37,27 @@ class ItemsController extends Controller
      */
     public function index(Request $request)
     {
-        //
-        if(auth()->user()->status != 'Administrator'){
-            return redirect('/dashboard'); 
+        if (auth()->user()->status != 'Administrator') {
+            return redirect('/dashboard');
         }
 
-        $showRecycle = $request->query('recycle') === '1';
-        $lowStockThreshold = Item::LOW_STOCK_THRESHOLD;
-        $match = ['del' => $showRecycle ? 'yes' : 'no'];
-        $itemsearch = trim((string) $request->query('itemsearch', ''));
-        $filterCategory = trim((string) $request->query('category', ''));
-        $filterStock = (string) $request->query('stock', '');
-        $perPage = $this->allowedInventoryPerPage((int) $request->query('per_page', 10));
-        $branchCount = count(session('compbranch'));
-
-        if (!in_array($filterStock, ['low', 'has_branch'], true)) {
-            $filterStock = '';
-        }
-
-        $itemsQuery = Item::where($match);
-
-        if ($itemsearch !== '') {
-            $itemsQuery->where('name', 'like', '%'.$itemsearch.'%');
-        }
-
-        if ($filterCategory !== '') {
-            $itemsQuery->where('cat', $filterCategory);
-        }
-
-        if (!$showRecycle && $filterStock !== '') {
-            $this->applyInventoryStockFilter($itemsQuery, $filterStock, $lowStockThreshold, $branchCount);
-        }
+        $filters = $this->resolveInventoryListFilters($request);
+        $itemsQuery = $this->buildInventoryItemsQuery($filters);
+        $match = ['del' => $filters['showRecycle'] ? 'yes' : 'no'];
 
         $filteredItemCount = (clone $itemsQuery)->count();
         $grandTotalCount = Item::where($match)->count();
 
-        $items = $itemsQuery->orderBy('id', 'desc')->paginate($perPage)->appends(
-            $this->inventoryListQueryParams($itemsearch, $showRecycle, $filterCategory, $filterStock, $perPage)
+        $items = $itemsQuery->orderBy('id', 'desc')->paginate($filters['perPage'])->appends(
+            $this->inventoryListQueryParams(
+                $filters['itemsearch'],
+                $filters['showRecycle'],
+                $filters['filterCategory'],
+                $filters['filterStock'],
+                $filters['perPage']
+            )
         );
 
-        // $items = Item::All();
         $ITM = ItemImage::All();
         $cats = Category::All();
         $filterCategories = Item::where($match)
@@ -92,18 +73,173 @@ class ItemsController extends Controller
             'ITM' => $ITM,
             'cats' => $cats,
             'items' => $items,
-            'itemsearch' => $itemsearch,
+            'itemsearch' => $filters['itemsearch'],
             'filteredItemCount' => $filteredItemCount,
             'grandTotalCount' => $grandTotalCount,
-            'showRecycle' => $showRecycle,
-            'lowStockThreshold' => $lowStockThreshold,
-            'filterCategory' => $filterCategory,
-            'filterStock' => $filterStock,
-            'perPage' => $perPage,
+            'showRecycle' => $filters['showRecycle'],
+            'lowStockThreshold' => $filters['lowStockThreshold'],
+            'filterCategory' => $filters['filterCategory'],
+            'filterStock' => $filters['filterStock'],
+            'perPage' => $filters['perPage'],
             'filterCategories' => $filterCategories,
+            'inventoryListQuery' => $this->inventoryListQueryParams(
+                $filters['itemsearch'],
+                $filters['showRecycle'],
+                $filters['filterCategory'],
+                $filters['filterStock'],
+                $filters['perPage']
+            ),
         ];
-        // return $items;
+
         return view('pages.dash.itemsview')->with($pass);
+    }
+
+    public function exportInventory(Request $request)
+    {
+        if (auth()->user()->status != 'Administrator') {
+            return redirect('/dashboard');
+        }
+
+        $filters = $this->resolveInventoryListFilters($request);
+        $items = $this->buildInventoryItemsQuery($filters)->orderBy('id', 'desc')->get();
+        $branches = session('compbranch');
+        $threshold = $filters['lowStockThreshold'];
+        $filename = ($filters['showRecycle'] ? 'inventory-recycle-' : 'inventory-').date('Y-m-d-His').'.csv';
+
+        return response()->streamDownload(function () use ($items, $branches, $threshold) {
+            $handle = fopen('php://output', 'w');
+            $headers = [
+                'Item No',
+                'Name',
+                'Category',
+                'Brand',
+                'Barcode',
+                'General Qty',
+                'Stock Status',
+                'Base Price (Gh)',
+                'Date',
+            ];
+
+            foreach ($branches as $branch) {
+                $headers[] = $branch->name.' Qty';
+            }
+
+            fputcsv($handle, $headers);
+
+            foreach ($items as $item) {
+                $row = [
+                    $item->item_no,
+                    $item->name,
+                    $item->cat,
+                    $item->brand,
+                    $item->barcode,
+                    $item->qty,
+                    $item->stockBadgeLabel($threshold),
+                    number_format((float) $item->price, 2, '.', ''),
+                    $item->created_at ? \Carbon\Carbon::parse($item->created_at)->format('d M Y') : '',
+                ];
+
+                for ($i = 0; $i < count($branches); $i++) {
+                    $field = 'q'.($i + 1);
+                    $row[] = $item->$field ?? 0;
+                }
+
+                fputcsv($handle, $row);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    public function printInventory(Request $request)
+    {
+        if (auth()->user()->status != 'Administrator') {
+            return redirect('/dashboard');
+        }
+
+        $filters = $this->resolveInventoryListFilters($request);
+        $items = $this->buildInventoryItemsQuery($filters)->orderBy('id', 'desc')->get();
+
+        return view('pages.invoice.inventoryprint', [
+            'items' => $items,
+            'company' => Company::find(1),
+            'filterSummary' => $this->inventoryFilterSummary($filters),
+            'filteredItemCount' => $items->count(),
+            'lowStockThreshold' => $filters['lowStockThreshold'],
+            'showRecycle' => $filters['showRecycle'],
+        ]);
+    }
+
+    private function resolveInventoryListFilters(Request $request): array
+    {
+        $showRecycle = $request->query('recycle') === '1';
+        $filterStock = (string) $request->query('stock', '');
+
+        if (!in_array($filterStock, ['low', 'has_branch'], true)) {
+            $filterStock = '';
+        }
+
+        return [
+            'showRecycle' => $showRecycle,
+            'lowStockThreshold' => Item::LOW_STOCK_THRESHOLD,
+            'itemsearch' => trim((string) $request->query('itemsearch', '')),
+            'filterCategory' => trim((string) $request->query('category', '')),
+            'filterStock' => $filterStock,
+            'perPage' => $this->allowedInventoryPerPage((int) $request->query('per_page', 10)),
+            'branchCount' => count(session('compbranch')),
+        ];
+    }
+
+    private function buildInventoryItemsQuery(array $filters)
+    {
+        $match = ['del' => $filters['showRecycle'] ? 'yes' : 'no'];
+        $itemsQuery = Item::where($match);
+
+        if ($filters['itemsearch'] !== '') {
+            $itemsQuery->where('name', 'like', '%'.$filters['itemsearch'].'%');
+        }
+
+        if ($filters['filterCategory'] !== '') {
+            $itemsQuery->where('cat', $filters['filterCategory']);
+        }
+
+        if (!$filters['showRecycle'] && $filters['filterStock'] !== '') {
+            $this->applyInventoryStockFilter(
+                $itemsQuery,
+                $filters['filterStock'],
+                $filters['lowStockThreshold'],
+                $filters['branchCount']
+            );
+        }
+
+        return $itemsQuery;
+    }
+
+    private function inventoryFilterSummary(array $filters): string
+    {
+        $parts = [];
+
+        if ($filters['showRecycle']) {
+            $parts[] = 'Recycle bin';
+        }
+
+        if ($filters['itemsearch'] !== '') {
+            $parts[] = 'Search: '.$filters['itemsearch'];
+        }
+
+        if ($filters['filterCategory'] !== '') {
+            $parts[] = 'Category: '.$filters['filterCategory'];
+        }
+
+        if ($filters['filterStock'] === 'low') {
+            $parts[] = 'Low stock only';
+        } elseif ($filters['filterStock'] === 'has_branch') {
+            $parts[] = 'Has branch stock';
+        }
+
+        return count($parts) > 0 ? implode(' · ', $parts) : 'All items';
     }
 
     private function allowedInventoryPerPage(int $perPage): int
