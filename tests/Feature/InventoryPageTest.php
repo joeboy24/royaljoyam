@@ -355,6 +355,35 @@ class InventoryPageTest extends TestCase
         ]);
     }
 
+    public function test_inventory_shows_stock_status_badges(): void
+    {
+        $this->createItem(['name' => 'Full Stock', 'qty' => '10']);
+        $this->createItem(['name' => 'Low Stock', 'qty' => '3']);
+        $this->createItem(['name' => 'Empty Stock', 'qty' => '0']);
+
+        $response = $this->actingAs($this->admin)->get('/items');
+
+        $response->assertOk();
+        $response->assertSee('stock-badge-legend', false);
+        $response->assertSee('In stock');
+        $response->assertSee('Low stock');
+        $response->assertSee('Out of stock');
+        $response->assertSee('stock-badge-ok', false);
+        $response->assertSee('stock-badge-low', false);
+        $response->assertSee('stock-badge-out', false);
+    }
+
+    public function test_recycle_bin_does_not_show_stock_badge_legend(): void
+    {
+        $this->createItem(['name' => 'Trashed Item', 'del' => 'yes', 'qty' => '0']);
+
+        $response = $this->actingAs($this->admin)->get('/items?recycle=1');
+
+        $response->assertOk();
+        $response->assertDontSee('<p class="stock-badge-legend', false);
+        $response->assertSee('Out of stock');
+    }
+
     public function test_inventory_pagination_links_appear_when_more_than_ten_items(): void
     {
         for ($i = 0; $i < 11; $i++) {

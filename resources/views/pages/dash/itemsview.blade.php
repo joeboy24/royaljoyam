@@ -152,6 +152,13 @@
                 <div id="printarea1" class="card-body">
             
                     @if (count($items) > 0)
+                        <!-- @unless ($showRecycle)
+                          <p class="stock-badge-legend mb-3">
+                            <span class="stock-badge stock-badge-ok">In stock</span> (above {{ $lowStockThreshold }})
+                            <span class="stock-badge stock-badge-low">Low stock</span> (1-{{ $lowStockThreshold }})
+                            <span class="stock-badge stock-badge-out">Out of stock</span> (0)
+                          </p>
+                        @endunless -->
                         <table class="table mt">
                           <thead class=" text-secondary hideMe">
                             <th>#</th>
@@ -190,7 +197,10 @@
                                   {{-- <td>{{$item->desc}}</td> --}}
                                   <td>{{$item->cat}}</td>
                                   {{-- <td>{{$item->barcode}}</td> --}}
-                                  <td><b style="font-weight: 600">{{ $item->qty }}</b></td>
+                                  <td>
+                                    <b style="font-weight: 600">{{ $item->qty }}</b>
+                                    <span class="stock-badge stock-badge-{{ $item->stockLevel($lowStockThreshold) }}">{{ $item->stockBadgeLabel($lowStockThreshold) }}</span>
+                                  </td>
                                   <td><b style="font-weight: 600">{{ number_format((float) $item->price, 2) }}</b></td>
                                   {{-- <td>{{$item->thumb_img}}</td> --}}
                                   <td>{{ $item->created_at ? \Carbon\Carbon::parse($item->created_at)->format('d M Y') : '—' }}</td>
@@ -479,6 +489,37 @@
 <style>
   .inventory-toolbar-actions .btn.pull-right {
     margin-left: 8px;
+  }
+  .stock-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.2;
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-left: 6px;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .stock-badge-ok {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+  .stock-badge-low {
+    background: #fff8e1;
+    color: #f57f17;
+  }
+  .stock-badge-out {
+    background: #ffebee;
+    color: #c62828;
+  }
+  .stock-badge-legend {
+    font-size: 12px;
+    color: #666;
+  }
+  .stock-badge-legend .stock-badge {
+    font-size: 11px;
+    padding: 4px 12px;
   }
   .item-row-expandable {
     cursor: pointer;

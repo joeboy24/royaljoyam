@@ -43,6 +43,7 @@ class ItemsController extends Controller
         }
 
         $showRecycle = $request->query('recycle') === '1';
+        $lowStockThreshold = Item::LOW_STOCK_THRESHOLD;
         $match = ['del' => $showRecycle ? 'yes' : 'no'];
         $itemsearch = trim((string) $request->query('itemsearch', ''));
         $totalItemCount = Item::where($match)->count();
@@ -70,6 +71,7 @@ class ItemsController extends Controller
             'itemsearch' => $itemsearch,
             'totalItemCount' => $totalItemCount,
             'showRecycle' => $showRecycle,
+            'lowStockThreshold' => $lowStockThreshold,
         ];
         // return $items;
         return view('pages.dash.itemsview')->with($pass);
