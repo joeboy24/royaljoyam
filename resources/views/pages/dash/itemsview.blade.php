@@ -128,8 +128,8 @@
 
               <div class="card">
                 <div class="card-header card-header-primary">
-                  <h4 class="card-title">Stock View</h4>
-                  {{-- <p class="card-category">Complete your profile here..</p> --}}
+                  <h4 class="card-title">Inventory</h4>
+                  <p class="card-category" style="color: rgba(255,255,255,0.8);">Inventory records are managed separately from registry and configuration.</p>
                 </div>
                 <div id="printarea1" class="card-body">
             

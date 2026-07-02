@@ -442,9 +442,10 @@
                 <div class="card-body">
                   
                   <div class="form-group inputHold">
-                    <a href="/items"><button type="submit" class="btn btn-secondary" data-toggle="modal" data-target="#view_items"><i class="fa fa-folder-open"></i> &nbsp; Stock View</button></a>
+                    <a href="/items"><button type="submit" class="btn btn-secondary" data-toggle="modal" data-target="#view_items"><i class="fa fa-archive"></i> &nbsp; Inventory</button></a>
                     <button type="submit" class="btn btn-secondary" data-toggle="modal" data-target="#view_users"><i class="fa fa-folder-open"></i> &nbsp; View All Users</button>
                   </div>
+                  <p class="small_p" style="margin-top: -10px;">Inventory is managed separately from registry users and configuration.</p>
                   
                 </div>
               </div>
