@@ -1048,6 +1048,10 @@ class ItemsController extends Controller
             case 'del_item':
 
                 $item = Item::find($id);
+                if (!$item) {
+                    return redirect('/items')->with('error', 'Item not found');
+                }
+
                 try {
                     $item->del = 'yes';
                     $item->save();
