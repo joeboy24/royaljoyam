@@ -142,7 +142,7 @@
                             <th>Category</th>
                             {{-- <th>Barcode</th> --}}
                             <th>Total Qty.</th>
-                            <th>Price (Gh₵)</th>
+                            <th>Base Price (Gh₵)</th>
                             {{-- <th>Thumbnail</th> --}}
                             <th>Date Created</th>
                             <th class="ryt">Actions</th>
@@ -152,251 +152,187 @@
                             @foreach ($items as $item)
 
                               @if ($item->del == 'no')
-                                
-                                @if ($c%2==0)
-                                  <tr class="rowColour"><td>{{$c++}}</td>
-                                @else
-                                  <tr><td>{{$c++}}</td>
-                                @endif
+                                @php $rowClass = ($c % 2 == 0) ? 'rowColour' : ''; @endphp
+                                <tr class="{{ trim($rowClass . (count(session('compbranch')) > 0 ? ' item-row-expandable' : '')) }}"
+                                    @if (count(session('compbranch')) > 0)
+                                    id="item-row-{{ $item->id }}"
+                                    data-item-id="{{ $item->id }}"
+                                    aria-expanded="false"
+                                    aria-controls="branch-detail-{{ $item->id }}"
+                                    @endif
+                                >
+                                  <td>
+                                    @if (count(session('compbranch')) > 0)
+                                      <i class="fa fa-chevron-down item-row-chevron" id="branch-icon-{{ $item->id }}"></i>
+                                    @endif
+                                    {{ $c++ }}
+                                  </td>
                                   <td>{{$item->item_no}}<br><p class="small_p">{{$item->thumb_img}}</p></td>
                                   <td>{{$item->name}}</td>
                                   {{-- <td>{{$item->desc}}</td> --}}
                                   <td>{{$item->cat}}</td>
                                   {{-- <td>{{$item->barcode}}</td> --}}
-                                  <td><b style="font-weight: 600">
-                                          {{$item->qty}}
-                                          {{-- {{$item->q1 + $item->q2 + $item->q3 + $item->q4 + $item->q5}} --}}
-                                      </b>
-                                    @for ($i = 0; $i < count(session('compbranch')); $i++)
-                                      <input type="hidden" value="{{$q = 'q'.$i+1}}">
-                                      @if ($item->$q != 0 || $item->$q != '')
-                                      / {{$item->$q}}
-                                      @endif
-                                    @endfor
-                                  </td>
-                                  <td><b style="font-weight: 600">{{$item->price}}</b>
-                                    @for ($i = 0; $i < count(session('compbranch')); $i++)
-                                      <input type="hidden" value="{{$b = 'b'.$i+1}}">
-                                      @if ($item->$b != 0 || $item->$b != '')
-                                      / {{$item->$b}}
-                                      @endif
-                                    @endfor
-                                  </td>
+                                  <td><b style="font-weight: 600">{{ $item->qty }}</b></td>
+                                  <td><b style="font-weight: 600">{{ number_format((float) $item->price, 2) }}</b></td>
                                   {{-- <td>{{$item->thumb_img}}</td> --}}
                                   <td>{{$item->created_at}}</td>
-                                  <td class="ryt">
-                                    
-                                    <form action="{{ action('ItemsController@update', $item->id) }}" method="POST" enctype="multipart/form-data">
-                                      <input type="hidden" name="_method" value="PUT">
+                                  <td class="ryt item-row-actions">
+                                    <form action="{{ action('ItemsController@update', $item->id) }}" method="POST" class="item-delete-form" onclick="event.stopPropagation()">
                                       @csrf
-
+                                      @method('PUT')
                                       <button type="submit" name="store_action" value="del_item" rel="tooltip" title="Delete Item" class="close2" onclick="return confirm('Are you sure you want to delete selected item?');"><i class="fa fa-close"></i></button>
-                                      <button type="button" data-toggle="modal" data-target="#edit_{{ $item->id }}" title="Edit Record" class="print_black">&nbsp;<i class="fa fa-pencil"></i>&nbsp;</button>
-                                      
-
-                                      <div class="modal fade" id="edit_{{$item->id}}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                        <div class="modal-dialog modtop" role="document">
-                                          <div class="modal-content">
-                                              
-                                              <div class="card card-profile">
-                                                <div class="card-avatar">
-                                                  <a href="#pablo">
-                                                  <img class="img" src="/storage/rjv_items/{{$item->thumb_img}}" />
-                                                  </a>
-                                                </div>
-                                                <div class="card-body">
-                                                  <h4 class="card-category text-gray">Item N0: {{$item->item_no}}&nbsp;</h4>
-                                                  <h6 class="card-title">Created by: {{$item->user->name}}</h6>
-
-
-
-
-                                                  <table class="user_view_tbl">
-                                                    <tbody>
-
-                                                      <tr class="tbl_tr"><td class="tl">Item Name</td><td class="tr">
-                                                        <div class="form-group">
-                                                          <input type="text" class="form-control" name="name" placeholder="Item Name" value="{{$item->name}}" required/>
-                                                        </div>
-                                                      </td></tr>
-
-                                                      <tr class="tbl_tr"><td class="tl">Description</td><td class="tr">
-                                                        <div class="form-group">
-                                                          <textarea type="text" class="form-control" rows="4" name="desc" placeholder="Description" required>{{$item->desc}}</textarea>
-                                                        </div>
-                                                      </td></tr>
-
-                                                      <tr class="tbl_tr"><td class="tl">Category</td><td class="tr">
-                                                        <div class="form-group">
-                                                          <select name="cat" class="form-control" id="cat">
-                                                            <option selected>{{$item->cat}}</option>
-                                                            @if(count($cats) > 0)
-                                                            @foreach ($cats as $cat)
-                                                              @if($cat->del != 'yes')
-                                                                <option>{{$cat->name}}</option>
-                                                              @endif
-                                                            @endforeach
-                                                          @endif
-                                                          </select>
-                                                        </div>
-                                                      </td></tr>
-
-                                                      <tr class="tbl_tr"><td class="tl">Brand</td><td class="tr">
-                                                        <div class="form-group">
-                                                          <input type="text" class="form-control" name="brand" placeholder="Brand" value="{{$item->brand}}"/>
-                                                        </div>
-                                                      </td></tr>
-
-                                                      <tr class="tbl_tr"><td class="tl">Barcode</td><td class="tr">
-                                                        <div class="form-group">
-                                                          <input type='text' class="form-control" placeholder="Barcode" name="barcode" value="{{$item->barcode}}"/>
-                                                        </div>
-                                                      </td></tr>
-
-                                                      <tr class="tbl_tr"><td class="tl"><b>Gen. Quantity</b></td><td class="tr">
-                                                        <div class="form-group">
-                                                          <input type="number" class="form-control" name="qty" id="qty{{$item->id}}" placeholder="Quantity" value="{{$item->qty}}" min="0" oninput="validateBranchQty{{$item->id}}()" required/>
-                                                        </div>
-                                                        <p class="small_p" id="branch_status_{{$item->id}}">Branch totals must not exceed the General Quantity.</p>
-                                                      </td></tr>
-
-                                                      @for ($i = 0; $i < count(session('compbranch')); $i++)
-                                                        <tr class="tbl_tr"><td class="tl">Branch {{$i+1}} Qty.</td><td class="tr">
-                                                          <div class="form-group">
-                                                            <input type="hidden" value="{{$qq = 'q'.$i+1}}">
-                                                            <input type="number" class="form-control" name="q{{$i+1}}" id="q{{$i+1}}_{{$item->id}}" placeholder="Quantity" value="{{$item->$qq}}" min="0" oninput="validateBranchQty{{$item->id}}()" required/>
-                                                          </div>
-                                                        </td></tr>
-                                                      @endfor
-
-                                                      {{-- <tr class="tbl_tr"><td class="tl">Branch 2 Qty.</td><td class="tr">
-                                                        <div class="form-group">
-                                                          <input type="number" class="form-control" name="q2" id="q2{{$item->id}}" placeholder="Quantity" value="{{$item->q2}}" onchange="qty_sum{{$item->id}}()" required/>
-                                                        </div>
-                                                      </td></tr>
-
-                                                      <tr class="tbl_tr"><td class="tl">Branch 3 Qty.</td><td class="tr">
-                                                        <div class="form-group">
-                                                          <input type="number" class="form-control" name="q3" id="q3{{$item->id}}" placeholder="Quantity" value="{{$item->q3}}" onchange="qty_sum{{$item->id}}()" required/>
-                                                        </div>
-                                                      </td></tr> --}}
-
-                                                      <tr class="tbl_tr"><td class="tl"><b>Cost Price</b></td><td class="tr">
-                                                        <div class="form-group">
-                                                          <input type="text" class="form-control" name="price" placeholder="Price" value="{{$item->price}}" required/>
-                                                        </div>
-                                                      </td></tr>
-
-                                                      @for ($i = 0; $i < count(session('compbranch')); $i++)
-                                                        <tr class="tbl_tr"><td class="tl">Branch {{$i+1}} Price.</td><td class="tr">
-                                                          <div class="form-group">
-                                                            <input type="hidden" value="{{$bb = 'b'.$i+1}}">
-                                                            <input type="number" class="form-control" name="b{{$i+1}}" placeholder="Price" value="{{$item->$bb}}" required/>
-                                                          </div>
-                                                        </td></tr>
-                                                      @endfor
-
-                                                      {{-- <tr class="tbl_tr"><td class="tl">Branch {{$i+1}} Price.</td><td class="tr">
-                                                        <div class="form-group">
-                                                          <input type="number" class="form-control" name="b{{$i+1}}" placeholder="Price" value="{{$item->bb}}" required/>
-                                                        </div>
-                                                      </td></tr>
-
-                                                      <tr class="tbl_tr"><td class="tl">Branch 2 Price.</td><td class="tr">
-                                                        <div class="form-group">
-                                                          <input type="number" class="form-control" name="b2" placeholder="Price" value="{{$item->b2}}" required/>
-                                                        </div>
-                                                      </td></tr>
-
-                                                      <tr class="tbl_tr"><td class="tl">Branch 3 Price.</td><td class="tr">
-                                                        <div class="form-group">
-                                                          <input type="number" class="form-control" name="b3" placeholder="Price" value="{{$item->b3}}" required/>
-                                                        </div>
-                                                      </td></tr> --}}
-
-                                                      {{-- <tr class="tbl_tr"><td class="tl">Thumbnail</td><td class="tr">
-                                                        <div class="form-group">
-                                                          <input type="text" class="form-control" name="thumb_img" placeholder="Thumbnail" value="{{$item->thumb_img}}"/>
-                                                        </div>
-                                                      </td></tr> --}}
-                                                      
-                                                      
-                                                      {{-- <tr class="tbl_tr"><td class="tl">Image(s)</td><td class="tr">
-                                                        
-                                                        <div class="tmb_hold">
-                                                          
-                                                            <div class="row">
-                                                                @for ($i = 1; $i < 5; $i++)
-                                                                  <p style="display: none">{{$img = 'img'.$i}}<p>
-
-                                                                    <div class="column cl">
-                                                                      <img src="/storage/ss_imgs/{{$item->itemimage->$img}}" onclick="setValue{{$i}}()">
-                                                                    </div>
-
-                                                                        <script>
-                                                                          function setValue{{$i}}() {
-                                                                            // var imgVal = document.getElementById('imgVal{{$i}}').value
-
-                                                                            var newval = document.getElementById('imgVal{{$i}}').value
-                                                                            document.getElementById('tb_img').value = newval;
-                                                                            alert('Click Working {{$i}} '+newval);
-                                                                          }
-                                                                        </script>
-
-                                                                @endfor
-                                                            </div>
-
-                                                      </td></tr> --}}
-
-                                                        {{-- <input type="hidden" name="photo" value="{{$item->photo}}"/> --}}
-
-                                                    </tbody>
-                                                  </table>
-
-
-                                                                   
-
-                                                </div>
-                                              </div>
-                                              
-                                              <div class="modal-footer">
-                                                <button type="submit" class="btn btn-info" name="store_action" value="update_item"><i class="fa fa-save"></i> &nbsp; Update Record</button>
-                                              </div>
-
-                                          </div>
-                                    
-                                        </div>
-                                      </div>
-
-                                    </form>                  
-                                    
+                                    </form>
+                                    <button type="button" title="Edit Record" class="print_black item-edit-btn" data-target="#edit_{{ $item->id }}" onclick="event.stopPropagation(); openItemEditModal('edit_{{ $item->id }}');">&nbsp;<i class="fa fa-pencil"></i>&nbsp;</button>
                                   </td>
                                 </tr>
 
-                                <script type="text/javascript">
-                                  function validateBranchQty{{$item->id}}() {
-                                    let generalQty = Number(document.getElementById('qty{{$item->id}}').value || 0);
-                                    let branchTotal = 0;
-                                    @for ($i = 0; $i < count(session('compbranch')); $i++)
-                                      branchTotal += Number(document.getElementById('q{{$i+1}}_{{$item->id}}').value || 0);
-                                    @endfor
-                                    let status = document.getElementById('branch_status_{{$item->id}}');
-                                    if (branchTotal > generalQty) {
-                                      status.textContent = 'Branch totals exceed General Quantity.';
-                                      status.style.color = '#d9534f';
-                                    } else {
-                                      status.textContent = 'Branch totals are within General Quantity.';
-                                      status.style.color = '#28a745';
-                                    }
-                                  }
-                                </script>
-                              
+                                @if (count(session('compbranch')) > 0)
+                                <tr class="branch-detail-row" id="branch-detail-{{ $item->id }}" style="display: none;">
+                                  <td colspan="8">
+                                    <table class="table table-sm branch-breakdown-table mb-0">
+                                      <thead>
+                                        <tr>
+                                          <th>Branch</th>
+                                          <th>Qty</th>
+                                          <th>Price (Gh₵)</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        @for ($i = 0; $i < count(session('compbranch')); $i++)
+                                          @php
+                                            $branch = session('compbranch')[$i];
+                                            $qField = 'q'.($i + 1);
+                                            $bField = 'b'.($i + 1);
+                                            $branchQty = (int) ($item->$qField ?? 0);
+                                            $branchPrice = $item->$bField ?? 0;
+                                          @endphp
+                                          <tr>
+                                            <td>{{ $branch->name }}</td>
+                                            <td class="{{ $branchQty === 0 ? 'branch-qty-zero' : '' }}">{{ $branchQty }}</td>
+                                            <td>{{ ($branchPrice !== '' && $branchPrice != 0) ? number_format((float) $branchPrice, 2) : '—' }}</td>
+                                          </tr>
+                                        @endfor
+                                      </tbody>
+                                    </table>
+                                  </td>
+                                </tr>
+                                @endif
+
                               @endif
 
                             @endforeach
 
                           </tbody>
                         </table>
+
+                        @foreach ($items as $item)
+                          @if ($item->del == 'no')
+                            <div class="modal fade item-edit-modal" id="edit_{{ $item->id }}" tabindex="-1" role="dialog" aria-labelledby="editModalLabel{{ $item->id }}" aria-hidden="true">
+                              <div class="modal-dialog modtop" role="document">
+                                <div class="modal-content">
+                                  <form action="{{ action('ItemsController@update', $item->id) }}" method="POST" enctype="multipart/form-data" data-item-id="{{ $item->id }}">
+                                    @csrf
+                                    @method('PUT')
+
+                                    <div class="card card-profile">
+                                      <div class="card-avatar">
+                                        <img class="img" src="/storage/rjv_items/{{ $item->thumb_img }}" alt="{{ $item->name }}" />
+                                      </div>
+                                      <div class="card-body">
+                                        <h4 class="card-category text-gray">Item No: {{ $item->item_no }}</h4>
+                                        <h6 class="card-title">Created by: {{ $item->user->name }}</h6>
+
+                                        <table class="user_view_tbl">
+                                          <tbody>
+                                            <tr class="tbl_tr"><td class="tl">Item Name</td><td class="tr">
+                                              <div class="form-group">
+                                                <input type="text" class="form-control" name="name" placeholder="Item Name" value="{{ $item->name }}" required/>
+                                              </div>
+                                            </td></tr>
+
+                                            <tr class="tbl_tr"><td class="tl">Description</td><td class="tr">
+                                              <div class="form-group">
+                                                <textarea class="form-control" rows="4" name="desc" placeholder="Description" required>{{ $item->desc }}</textarea>
+                                              </div>
+                                            </td></tr>
+
+                                            <tr class="tbl_tr"><td class="tl">Category</td><td class="tr">
+                                              <div class="form-group">
+                                                <select name="cat" class="form-control">
+                                                  <option selected>{{ $item->cat }}</option>
+                                                  @foreach ($cats as $cat)
+                                                    @if ($cat->del != 'yes' && $cat->name != $item->cat)
+                                                      <option>{{ $cat->name }}</option>
+                                                    @endif
+                                                  @endforeach
+                                                </select>
+                                              </div>
+                                            </td></tr>
+
+                                            <tr class="tbl_tr"><td class="tl">Brand</td><td class="tr">
+                                              <div class="form-group">
+                                                <input type="text" class="form-control" name="brand" placeholder="Brand" value="{{ $item->brand }}"/>
+                                              </div>
+                                            </td></tr>
+
+                                            <tr class="tbl_tr"><td class="tl">Barcode</td><td class="tr">
+                                              <div class="form-group">
+                                                <input type="text" class="form-control" placeholder="Barcode" name="barcode" value="{{ $item->barcode }}"/>
+                                              </div>
+                                            </td></tr>
+
+                                            <tr class="tbl_tr"><td class="tl"><b>Gen. Quantity</b></td><td class="tr">
+                                              <div class="form-group">
+                                                <input type="number" class="form-control" name="qty" id="qty{{ $item->id }}" placeholder="Quantity" value="{{ $item->qty }}" min="0" oninput="validateBranchQty({{ $item->id }}, {{ count(session('compbranch')) }})" required/>
+                                              </div>
+                                              <p class="small_p" id="branch_status_{{ $item->id }}">Branch totals must not exceed the General Quantity.</p>
+                                            </td></tr>
+
+                                            @for ($i = 0; $i < count(session('compbranch')); $i++)
+                                              @php
+                                                $branch = session('compbranch')[$i];
+                                                $qq = 'q'.($i + 1);
+                                              @endphp
+                                              <tr class="tbl_tr"><td class="tl">{{ $branch->name }} Qty.</td><td class="tr">
+                                                <div class="form-group">
+                                                  <input type="number" class="form-control" name="q{{ $i + 1 }}" id="q{{ $i + 1 }}_{{ $item->id }}" placeholder="Quantity" value="{{ $item->$qq }}" min="0" oninput="validateBranchQty({{ $item->id }}, {{ count(session('compbranch')) }})" required/>
+                                                </div>
+                                              </td></tr>
+                                            @endfor
+
+                                            <tr class="tbl_tr"><td class="tl"><b>Cost Price</b></td><td class="tr">
+                                              <div class="form-group">
+                                                <input type="text" class="form-control" name="price" placeholder="Price" value="{{ $item->price }}" required/>
+                                              </div>
+                                            </td></tr>
+
+                                            @for ($i = 0; $i < count(session('compbranch')); $i++)
+                                              @php
+                                                $branch = session('compbranch')[$i];
+                                                $bb = 'b'.($i + 1);
+                                              @endphp
+                                              <tr class="tbl_tr"><td class="tl">{{ $branch->name }} Price</td><td class="tr">
+                                                <div class="form-group">
+                                                  <input type="number" class="form-control" name="b{{ $i + 1 }}" placeholder="Price" value="{{ $item->$bb }}" step="0.01" min="0" required/>
+                                                </div>
+                                              </td></tr>
+                                            @endfor
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    </div>
+
+                                    <div class="modal-footer">
+                                      <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                      <button type="submit" class="btn btn-info" name="store_action" value="update_item"><i class="fa fa-save"></i> &nbsp; Update Record</button>
+                                    </div>
+                                  </form>
+                                </div>
+                              </div>
+                            </div>
+                          @endif
+                        @endforeach
+
                         <p>Total : <b style="color: #000000">{{count($items)}}</b></p>
 
                         {{-- {{ Auth::user()->name }}
@@ -433,7 +369,120 @@
 
 @section('footer')
 
+<style>
+  .item-row-expandable {
+    cursor: pointer;
+  }
+  .item-row-expandable:hover {
+    background-color: rgba(156, 39, 176, 0.06) !important;
+  }
+  .item-row-expanded {
+    background-color: rgba(156, 39, 176, 0.08) !important;
+  }
+  .item-row-chevron {
+    font-size: 11px;
+    color:rgb(211, 211, 211);
+    margin-right: 4px;
+  }
+  .branch-detail-row td {
+    padding-top: 0 !important;
+    padding-bottom: 12px !important;
+    border-top: none !important;
+    border-bottom: 1px solid rgb(231, 231, 231) !important;
+    background: #fff !important;
+  }
+  .branch-breakdown-table {
+    background: transparent;
+    border-radius: 0;
+  }
+  .branch-breakdown-table th,
+  .branch-breakdown-table td {
+    background: transparent !important;
+    border-top: none;
+  }
+  .branch-breakdown-table th {
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+  }
+  .branch-breakdown-table td {
+    font-size: 13px;
+  }
+  .branch-qty-zero {
+    color: #999;
+  }
+  .item-row-actions .item-delete-form {
+    display: inline;
+  }
+</style>
+
 <script type="text/javascript">
+  function validateBranchQty(itemId, branchCount) {
+    var generalQty = Number(document.getElementById('qty' + itemId).value || 0);
+    var branchTotal = 0;
+    var status = document.getElementById('branch_status_' + itemId);
+
+    for (var i = 1; i <= branchCount; i++) {
+      branchTotal += Number(document.getElementById('q' + i + '_' + itemId).value || 0);
+    }
+
+    if (!status) {
+      return branchTotal <= generalQty;
+    }
+
+    if (branchTotal > generalQty) {
+      status.textContent = 'Branch totals exceed General Quantity.';
+      status.style.color = '#d9534f';
+    } else {
+      status.textContent = 'Branch totals are within General Quantity.';
+      status.style.color = '#28a745';
+    }
+
+    return branchTotal <= generalQty;
+  }
+
+  function toggleBranchDetail(itemId) {
+    var row = document.getElementById('branch-detail-' + itemId);
+    var itemRow = document.getElementById('item-row-' + itemId);
+    var icon = document.getElementById('branch-icon-' + itemId);
+    if (!row) {
+      return;
+    }
+
+    var isHidden = row.style.display === 'none' || row.style.display === '';
+
+    row.style.display = isHidden ? 'table-row' : 'none';
+    if (itemRow) {
+      itemRow.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+      itemRow.classList.toggle('item-row-expanded', isHidden);
+    }
+    if (icon) {
+      icon.classList.toggle('fa-chevron-down', !isHidden);
+      icon.classList.toggle('fa-chevron-up', isHidden);
+    }
+  }
+
+  function openItemEditModal(modalId) {
+    $('#' + modalId).modal('show');
+  }
+
+  $(document).on('submit', '.item-edit-modal form', function(e) {
+    var itemId = this.getAttribute('data-item-id');
+    var branchCount = {{ count(session('compbranch')) }};
+
+    if (itemId && !validateBranchQty(itemId, branchCount)) {
+      e.preventDefault();
+      alert('Sum of branch quantities cannot exceed General Quantity.');
+    }
+  });
+
+  $('#tb').on('click', 'tr.item-row-expandable', function(e) {
+    if ($(e.target).closest('.item-row-actions').length) {
+      return;
+    }
+    toggleBranchDetail(this.getAttribute('data-item-id'));
+  });
+
   $.ajaxSetup({ headers: { 'csrftoken' : '{{ csrf_token() }}' } });
 </script>
 
