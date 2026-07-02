@@ -2,279 +2,279 @@
 
 @section('content')
 
-  <!-- End Navbar -->
   <div class="content">
-        <div class="container-fluid">
-          <div class="row">
-            <div class="col-md-11">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-md-11">
 
-              @include('inc.messages')
+          @include('inc.messages')
 
-                <div class="form-group row mb-0 hideMe">
+          <div class="form-group row mb-0 hideMe">
+            <div class="col-md-8 offset-md-0 myTrim">
+              <form method="GET" action="{{ url('/waybillview') }}" class="inventory-filter-form">
+                <div class="inventory-filter-row">
+                  <div class="inventory-search-panel">
+                    <div class="inventory-search-heading">
+                      <span class="inventory-search-label">
+                        <i class="material-icons">search</i>
+                        Search
+                        @if ($waybillsearch !== '')
+                          <span class="inventory-search-active-dot" title="Search active"></span>
+                        @endif
+                      </span>
+                    </div>
 
-                  <div class="col-md-5 offset-md-0 myTrim">
+                    <div class="inventory-search-controls">
+                      <label class="inventory-search-field">
+                        <span class="inventory-search-field-icon"><i class="fa fa-search"></i></span>
+                        <input type="search" value="{{ $waybillsearch }}" class="inventory-search-input" id="waybillsearch" name="waybillsearch" placeholder="Company, bill no., stock no., driver...">
+                      </label>
 
-                    <form style="width: 400px" method="GET" action="{{ url('/waybillview') }}">
-                      <div class="input-group no-border">
-                        {{-- <input type="text" value="" class="form-control search_field" id="search" name="search" placeholder="Search Records...">
-                        <button type="submit" class="btn btn-white btn-round my_bt">
-                          <i class="material-icons">search</i>
-                          <div class="ripple-container"></div>
-                        </button> --}}
+                      <button type="submit" class="inventory-search-btn inventory-search-btn-primary" title="Search">
+                        <i class="material-icons">search</i>
+                        <span>Search</span>
+                      </button>
 
-                          <input type="search" value="" class="form-control search_field" id="waybillsearch" name="waybillsearch" placeholder="Search Waybill...">
-                          
-                          <button type="submit" class="btn btn-white btn-round my_bt">
-                            <i class="material-icons">search</i>
-                            <div class="ripple-container"></div>
-                          </button>
-
-                          <a href="/waybillview" class="refresh_a"><button type="submit" class="btn btn-success btn-round" id="mb">
-                            <i class="fa fa-refresh"></i>
-                            <div class="ripple-container"></div>
-                          </button></a>
-                          
-                      </div>
-                    </form>
-                      
+                      <a href="/waybillview" class="inventory-search-btn inventory-search-btn-clear" title="Clear search">
+                        <i class="fa fa-refresh"></i>
+                        <span>Clear</span>
+                      </a>
+                    </div>
                   </div>
-                  <div class="col-md-7 offset-md-0 myTrim">
-                    <a href="#"><button type="submit" class="btn btn-white pull-right" title="Recycle Bin"><i class="fa fa-trash"></i></button></a>
-                    <a href="/waybill"><button type="submit" class="btn btn-white pull-right" ><i class="fa fa-arrow-left"></i></button></a>
-                  </div>
-
                 </div>
+              </form>
+            </div>
 
-              <div class="card">
-                <x-dash-page-header
-                  title="Waybill History"
-                  subtitle="View, edit, and distribute saved waybills."
-                  icon="fa fa-table"
-                />
-                <div id="printarea1" class="card-body">
-            
-                    @if (count($waybills) > 0)
-                        <table class="table mt">
-                          <thead class=" text-secondary hideMe">
-                            <th>#</th>
-                            <th>Stock No.</th>
-                            <th>Company</th>
-                            {{-- <th>Address / Contact</th> --}}
-                            <th>Driver</th>
-                            <th>Bill No.</th>
-                            <th>Weight</th>
-                            <th>Pieces</th>
-                            <th>Qty.</th>
-                            <th>Status</th>
-                            <th>Delivery Date</th>
-                            <th class="ryt actsize">Actions</th>
-                          </thead>
-                          <tbody id="tb">
-
-                            @foreach ($waybills as $waybill)
-
-                              @if ($waybill->del == 'no')
-                                
-                                @if ($c%2==0)
-                                  <tr class="rowColour">
-                                @else
-                                  <tr>
-                                @endif
-                                  <td>{{$c++}}</td>
-                                  <td>{{$waybill->stock_no}}<br><p class="small_p">User: {{$waybill->user->name}}</p></td>
-                                  {{-- <td>{{$waybill->comp_name}}</td> --}}
-                                  <td>{{$waybill->comp_name.', '.$waybill->comp_add}}<br><p class="small_p">{{$waybill->comp_contact}}</p></td>
-                                  <td>{{$waybill->drv_name}}<br>{{$waybill->drv_contact}}<br><p class="small_p">{{$waybill->vno}}</p></td>
-                                  {{-- <td>{{number_format($waybill->)}}</td> --}}
-                                  <td>{{$waybill->bill_no}}</td>
-                                  <td>{{$waybill->weight}}</td>
-                                  <td>{{$waybill->nop}}</td>
-                                  <td>{{$waybill->tot_qty}}</td>
-                                  <td>
-                                    @if ($waybill->status == 'Delivered')
-                                      <p class="delivered"><i class="fa fa-check"></i>&nbsp;&nbsp;Deliv...</p>
-                                    @else
-                                      <p class="pending"><i class="fa fa-warning"></i>&nbsp;&nbsp;Pending</p> 
-                                    @endif
-                                  </td>
-                                  <td>{{date('M. d, Y', strtotime($waybill->del_date))}}</td>
-
-                                  <td class="ryt">
-                                    
-                                    <form action="{{ action('ItemsController@update', $waybill->id) }}" method="POST">
-                                      <input type="hidden" name="_method" value="PUT">
-                                      @csrf
-
-                                      <a href="" class="my_trash green color10" data-toggle="modal" rel="tooltip" title="Edit Record" data-target="#edit_{{$waybill->id}}"><i class="fa fa-pencil"></i></a>
-                                      {{-- <button type="button" class="view2" rel="tooltip" title="View Record" data-toggle="modal" data-target="#{{$waybill->id}}"><i class="fa fa-folder-open"></i></button>
-                                       --}}
-                                      <a href="/distribution/{{$waybill->id}}" class="my_trash bg3 color10" rel="tooltip" title="Distribute"><i class="fa fa-share-alt"></i></a>
-                                      <button name="store_action" value="del_waybil" rel="tooltip" title="Delete Waybil" class="icon_btn color6" title="Distribute" onclick="return confirm('Are you sure you want to delete record?');"><i class="fa fa-trash"></i></button>
-                                      {{-- <a type="submit" name="store_action" value="del_item" rel="tooltip" title="Delete Item" class="my_trash bg6 color8" onclick="return confirm('Are you sure you want to delete record?');"><i class="fa fa-trash"></i></a> --}}
-                                    
-
-                                      <div class="modal fade" id="edit_{{$waybill->id}}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                        <div class="modal-dialog modtop" role="document">
-                                          <div class="modal-content">
-                                              
-                                              <div class="card card-profile">
-                                                <div class="card-body">
-                                                  
-                                                  <div class="row justify-content-center">
-
-                                                      <div class="col-md-6 cl">
-                                                        <div style="height:30px"></div>
-                                                        
-                                                        <p>Sender Info. / From:</p>
-                                                        <div class="my_panel">
-                                                          <div class="input_div">
-                                                              <p>Company Name: </p>
-                                                              <input type="text" name="comp_name" value="{{$waybill->comp_name}}" required/>
-                                                          </div>
-                              
-                                                          <div class="input_div">
-                                                              <p>Address: </p>
-                                                              <textarea name="comp_add" rows="4" required>{{$waybill->comp_add}}</textarea>
-                                                          </div>
-                              
-                                                          <div class="input_div">
-                                                              <p>Contact: </p>
-                                                              <input type="text" name="comp_contact" value="{{$waybill->comp_contact}}" required/>
-                                                          </div>
-                                                        </div>
-                              
-                                                        <p>Dispatch Driver</p>
-                                                        <div class="my_panel">
-                                                          <div class="input_div">
-                                                              <p>Driver's Name: </p>
-                                                              <input type="text" name="drv_name" value="{{$waybill->drv_name}}" required/>
-                                                          </div>
-                              
-                                                          <div class="input_div">
-                                                              <p>Contact: </p>
-                                                              <input type="text" name="drv_contact" value="{{$waybill->drv_contact}}" required/>
-                                                          </div>
-                              
-                                                          <div class="input_div">
-                                                              <p>Vehicle Reg. No: </p>
-                                                              <input type="text" name="vno" value="{{$waybill->vno}}" required/>
-                                                          </div>
-                                                        </div>   
-                              
-                                                      </div>
-                                                
-                                                      <div class="col-md-6">
-                                                        <div style="height:60px"></div>
-                              
-                                                        <div class="input_div">
-                                                            <p>Waybill No.: </p>
-                                                            <input type="text" min="0" name="bill_no" value="{{$waybill->bill_no}}" required/>
-                                                        </div>
-                              
-                                                        <div class="input_div">
-                                                            <p>Weight of Package: </p>
-                                                            <input type="text" name="weight" value="{{$waybill->weight}}"/>
-                                                        </div>
-                              
-                                                        <div class="input_div">
-                                                            <p>No. of Pieces: </p>
-                                                            <input type="text" name="nop" value="{{$waybill->nop}}"/>
-                                                        </div>
-                              
-                                                        <div class="input_div">
-                                                            <p>Total Quantity: </p>
-                                                            <input type="text" name="tot_qty" value="{{$waybill->tot_qty}}"/>
-                                                        </div>
-                              
-                                                        <div class="input_div">
-                                                            <p>Delivery Date: </p>
-                                                            <input type="date" placeholder="DD/MM/YYY" name="del_date" value="{{$waybill->del_date}}"/>
-                                                        </div>
-                              
-                                                        <div class="input_div">
-                                                          <p>Status: </p>
-                                                          <select name="status">
-                                                            <option selected>{{$waybill->status}}</option>
-                                                            <option>Pending</option>
-                                                            <option>Delivered</option>
-                                                          </select>
-                                                        </div>
-                                                      
-                                                      </div>
-                                              
-                              
-                                                    </div>                 
-
-                                                </div>
-                                              </div>
-                                              
-                                              <div class="modal-footer">
-                                                <button type="submit" class="btn btn-info" name="store_action" value="update_waybill"><i class="fa fa-save"></i> &nbsp; Update Record</button>
-                                              </div>
-
-                                          </div>
-                                    
-                                        </div>
-                                      </div>
-
-                                    </form>                  
-                                    
-                                  </td>
-                                </tr>
-
-                                {{-- <div id="disnone">
-                                  @if (($c-1)%2==0)
-                                    <tr class="rowColour">
-                                  @else
-                                    <tr>
-                                  @endif
-                                    <td></td>
-                                    <td><p class="gray_p">1</p></td>
-                                    <td><p class="gray_p">Safe Sack</p></td>
-                                    <td><p class="gray_p">200</p></td>
-                                  </tr>
-                                </div> --}}
-                              
-                              @endif
-
-                            @endforeach
-
-                          </tbody>
-                        </table>
-                        <p>Total: <b style="color: #000000">{{count($waybills)}}</b></p>
-
-                        {{-- {{ Auth::user()->name }}
-                        {{ auth()->user()->email }}
-
-                        @foreach ($ITM as $IT)
-                          <p>{{$IT->item_id}} - {{$IT->item->name}}</p>
-                        @endforeach
-
-                        @foreach ($waybills as $waybill)
-                          <p>{{$waybill->name}} - {{$waybill->itemimage->item_id}}</p>
-                        @endforeach --}}
-
-                         {{ $waybills->appends(['waybillsearch' => request()->query('waybillsearch')])->links() }}
-
-                        <div style="height: 30px">
-                        </div>
-      
-
-                    @else
-                      <p>No Records Found</p>
-                    @endif
-                </div>
+            <div class="col-md-4 offset-md-0 myTrim inventory-toolbar-actions">
+              <div class="inventory-actions-group">
+                <a href="/waybill" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Create waybill">
+                  <i class="fa fa-arrow-left"></i>
+                </a>
+                <a href="/waybill" class="inventory-action-btn inventory-action-btn-primary dash-tip" data-tip="New waybill">
+                  <i class="fa fa-plus"></i>
+                  <span>New waybill</span>
+                </a>
               </div>
             </div>
           </div>
+
+          <div class="card">
+            <x-dash-page-header
+              title="Waybill History"
+              subtitle="View, edit, and distribute saved waybills."
+              icon="fa fa-table"
+            />
+
+            <div id="printarea1" class="card-body">
+              @if ($waybills->total() > 0)
+                <div class="table-responsive">
+                  <table class="table mt">
+                    <thead class="text-secondary hideMe">
+                      <tr>
+                        <th>#</th>
+                        <th>Stock No.</th>
+                        <th>Company</th>
+                        <th>Driver</th>
+                        <th>Bill No.</th>
+                        <th>Weight</th>
+                        <th>Pieces</th>
+                        <th>Qty.</th>
+                        <th>Status</th>
+                        <th>Delivery Date</th>
+                        <th class="ryt actsize">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tb">
+                      @foreach ($waybills as $waybill)
+                        <tr @class(['rowColour' => $c % 2 === 0])>
+                          <td>{{ $c++ }}</td>
+                          <td>
+                            {{ $waybill->stock_no }}
+                            <p class="waybill-table-meta">User: {{ $waybill->user->name }}</p>
+                          </td>
+                          <td>
+                            {{ $waybill->comp_name }}, {{ $waybill->comp_add }}
+                            <p class="waybill-table-meta">{{ $waybill->comp_contact }}</p>
+                          </td>
+                          <td>
+                            {{ $waybill->drv_name }}<br>{{ $waybill->drv_contact }}
+                            <p class="waybill-table-meta">{{ $waybill->vno }}</p>
+                          </td>
+                          <td>{{ $waybill->bill_no }}</td>
+                          <td>{{ $waybill->weight ?: '—' }}</td>
+                          <td>{{ $waybill->nop ?: '—' }}</td>
+                          <td>{{ $waybill->tot_qty ?: '—' }}</td>
+                          <td>
+                            <x-waybill-status-badge :status="$waybill->status" />
+                          </td>
+                          <td>{{ $waybill->formattedDeliveryDate() }}</td>
+                          <td class="ryt">
+                            <form action="{{ action('ItemsController@update', $waybill->id) }}" method="POST" class="waybill-row-actions">
+                              @csrf
+                              <input type="hidden" name="_method" value="PUT">
+
+                              <button type="button" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-toggle="modal" data-target="#edit_{{ $waybill->id }}" title="Edit waybill" data-tip="Edit">
+                                <i class="fa fa-pencil"></i>
+                              </button>
+
+                              <a href="/distribution/{{ $waybill->id }}" class="inventory-action-btn inventory-action-btn-icon dash-tip" title="Distribute" data-tip="Distribute">
+                                <i class="fa fa-share-alt"></i>
+                              </a>
+
+                              <button type="submit" name="store_action" value="del_waybil" class="inventory-action-btn inventory-action-btn-icon dash-tip" title="Delete waybill" data-tip="Delete" onclick="return confirm('Are you sure you want to delete this waybill?');">
+                                <i class="fa fa-trash"></i>
+                              </button>
+                            </form>
+
+                            <div class="modal fade waybill-edit-modal" id="edit_{{ $waybill->id }}" tabindex="-1" role="dialog" aria-labelledby="editWaybillLabel_{{ $waybill->id }}" aria-hidden="true">
+                              <div class="modal-dialog inventory-edit-dialog modal-dialog-centered" role="document">
+                                <div class="modal-content inventory-edit-modal">
+                                  <form action="{{ action('ItemsController@update', $waybill->id) }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="_method" value="PUT">
+
+                                    <div class="inventory-edit-header">
+                                      <div class="inventory-edit-header-inner">
+                                        <span class="inventory-edit-thumb inventory-edit-thumb-placeholder" aria-hidden="true">
+                                          <i class="fa fa-truck"></i>
+                                        </span>
+                                        <div class="inventory-edit-header-text">
+                                          <span class="inventory-edit-kicker">Edit waybill</span>
+                                          <h4 class="inventory-edit-title" id="editWaybillLabel_{{ $waybill->id }}">{{ $waybill->bill_no }}</h4>
+                                          <p class="inventory-edit-meta">{{ $waybill->comp_name }} · {{ $waybill->stock_no }}</p>
+                                        </div>
+                                      </div>
+                                      <button type="button" class="inventory-edit-close" data-dismiss="modal" aria-label="Close">
+                                        <i class="material-icons">close</i>
+                                      </button>
+                                    </div>
+
+                                    <div class="inventory-edit-body">
+                                      <div class="dash-form-grid">
+                                        <div class="dash-form-column">
+                                          <h6 class="inventory-edit-section-title"><i class="fa fa-building"></i> Sender info</h6>
+
+                                          <label class="inventory-edit-field">
+                                            <span class="inventory-edit-label">Company name</span>
+                                            <input type="text" class="inventory-edit-input" name="comp_name" value="{{ $waybill->comp_name }}" required/>
+                                          </label>
+
+                                          <label class="inventory-edit-field">
+                                            <span class="inventory-edit-label">Address</span>
+                                            <textarea class="inventory-edit-input inventory-edit-textarea" name="comp_add" rows="4" maxlength="2000" required>{{ $waybill->comp_add }}</textarea>
+                                          </label>
+
+                                          <label class="inventory-edit-field">
+                                            <span class="inventory-edit-label">Contact</span>
+                                            <input type="text" class="inventory-edit-input" name="comp_contact" value="{{ $waybill->comp_contact }}" required/>
+                                          </label>
+
+                                          <h6 class="inventory-edit-section-title inventory-edit-section-title-spaced"><i class="fa fa-id-card"></i> Dispatch driver</h6>
+
+                                          <label class="inventory-edit-field">
+                                            <span class="inventory-edit-label">Driver's name</span>
+                                            <input type="text" class="inventory-edit-input" name="drv_name" value="{{ $waybill->drv_name }}" required/>
+                                          </label>
+
+                                          <label class="inventory-edit-field">
+                                            <span class="inventory-edit-label">Contact</span>
+                                            <input type="text" class="inventory-edit-input" name="drv_contact" value="{{ $waybill->drv_contact }}" required/>
+                                          </label>
+
+                                          <label class="inventory-edit-field">
+                                            <span class="inventory-edit-label">Vehicle reg. no.</span>
+                                            <input type="text" class="inventory-edit-input" name="vno" value="{{ $waybill->vno }}" required/>
+                                          </label>
+                                        </div>
+
+                                        <div class="dash-form-column">
+                                          <h6 class="inventory-edit-section-title"><i class="fa fa-file-text"></i> Shipment details</h6>
+
+                                          <label class="inventory-edit-field">
+                                            <span class="inventory-edit-label">Waybill no.</span>
+                                            <input type="text" class="inventory-edit-input" name="bill_no" value="{{ $waybill->bill_no }}" required/>
+                                          </label>
+
+                                          <div class="inventory-edit-field-row">
+                                            <label class="inventory-edit-field">
+                                              <span class="inventory-edit-label">Weight</span>
+                                              <input type="text" class="inventory-edit-input" name="weight" value="{{ $waybill->weight }}"/>
+                                            </label>
+
+                                            <label class="inventory-edit-field">
+                                              <span class="inventory-edit-label">No. of pieces</span>
+                                              <input type="text" class="inventory-edit-input" name="nop" value="{{ $waybill->nop }}"/>
+                                            </label>
+                                          </div>
+
+                                          <label class="inventory-edit-field">
+                                            <span class="inventory-edit-label">Total quantity</span>
+                                            <input type="text" class="inventory-edit-input" name="tot_qty" value="{{ $waybill->tot_qty }}"/>
+                                          </label>
+
+                                          <div class="inventory-edit-field-row">
+                                            <label class="inventory-edit-field">
+                                              <span class="inventory-edit-label">Delivery date</span>
+                                              <input type="date" class="inventory-edit-input" name="del_date" value="{{ $waybill->del_date }}"/>
+                                            </label>
+
+                                            <label class="inventory-edit-field">
+                                              <span class="inventory-edit-label">Status</span>
+                                              <select name="status" class="inventory-edit-input inventory-edit-select">
+                                                @foreach (\App\Models\Waybill::statusOptions() as $statusOption)
+                                                  <option @selected($waybill->status === $statusOption)>{{ $statusOption }}</option>
+                                                @endforeach
+                                              </select>
+                                            </label>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div class="inventory-edit-footer">
+                                      <button type="button" class="inventory-edit-btn inventory-edit-btn-muted" data-dismiss="modal">Cancel</button>
+                                      <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary" name="store_action" value="update_waybill">
+                                        <i class="fa fa-save"></i> Update record
+                                      </button>
+                                    </div>
+                                  </form>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      @endforeach
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="waybill-list-footer">
+                  <p class="mb-0">Total: <strong>{{ $waybills->total() }}</strong></p>
+                  {{ $waybills->appends(['waybillsearch' => request()->query('waybillsearch')])->links() }}
+                </div>
+              @else
+                <div class="dash-empty-state">
+                  <span class="dash-empty-state-icon"><i class="fa fa-truck"></i></span>
+                  <h3 class="dash-empty-state-title">No waybills found</h3>
+                  <p class="dash-empty-state-text">
+                    @if ($waybillsearch !== '')
+                      No records match your search. Try another term or clear the filter.
+                    @else
+                      Saved waybills will appear here once you create one.
+                    @endif
+                  </p>
+                  <a href="/waybill" class="inventory-action-btn inventory-action-btn-primary">
+                    <i class="fa fa-plus"></i>
+                    <span>Create waybill</span>
+                  </a>
+                </div>
+              @endif
+            </div>
+          </div>
+
         </div>
-
+      </div>
+    </div>
   </div>
-
-
-@endsection
-
-@section('footer')
-
 
 @endsection

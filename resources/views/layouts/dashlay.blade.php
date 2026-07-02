@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="/maindir/css/style.css">
   <link rel="stylesheet" href="/maindir/css/dash-sidebar.css?v=12">
   <link rel="stylesheet" href="/maindir/css/dash-page-header.css?v=1">
+  <link rel="stylesheet" href="/maindir/css/dash-form.css?v=7">
   <link rel="stylesheet" href="/maindir/css/dash-tip.css?v=2">
   {{-- <link rel="stylesheet" href="/dashdir/css/bootstrap.min.css"> --}}
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
@@ -204,7 +205,7 @@
   <!--  Plugin for the Sliders, full documentation here: http://refreshless.com/nouislider/ -->
   <script src="/dashdir/js/plugins/nouislider.min.js"></script>
   <!-- Include a polyfill for ES6 Promises (optional) for IE11, UC Browser and Android browser support SweetAlert -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/core-js/2.4.1/core.js"></script>
+  {{-- core-js 2.4.1 full bundle throws RangeError on modern browsers; SweetAlert2 works without it --}}
   <!-- Library for adding dinamically elements -->
   <script src="/dashdir/js/plugins/arrive.min.js"></script>
   <!--  Google Maps Plugin    -->

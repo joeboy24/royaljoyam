@@ -97,7 +97,7 @@
                                         <p class="pending"><i class="fa fa-warning"></i>&nbsp;Pen..</p> 
                                         @endif
                                     </td>
-                                    <td class="col-sm-2 pr">{{date('M. d, Y', strtotime($wb->del_date))}}</td>
+                                    <td class="col-sm-2 pr">{{ $wb->formattedDeliveryDate() }}</td>
                                     
                                 </tr>
                                 @endif

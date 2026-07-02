@@ -223,7 +223,10 @@ class DashController extends Controller
         if(auth()->user()->status != 'Administrator'){
             return redirect('/dashboard'); 
         }
-        return view('pages.dash.waybill');
+
+        return view('pages.dash.waybill', [
+            'suggestedBillNo' => Waybill::suggestBillNo(),
+        ]);
     }
 
     public function stockview(){
@@ -238,20 +241,18 @@ class DashController extends Controller
             return redirect('/dashboard'); 
         }
         $c = 1;
-        $match = ['del' => 'no'];
-        $waybillsearch = $request->query('waybillsearch');
-        if(!empty($waybillsearch)){
-            $waybills = Waybill::where($match)->where('comp_name', 'like', '%'.$waybillsearch.'%')->orwhere('vno', 'like', '%'.$waybillsearch.'%')->orwhere('drv_name', 'like', '%'.$waybillsearch.'%')->orwhere('drv_contact', 'like', '%'.$waybillsearch.'%')->orderBy('id', 'desc')->paginate(10);
-            // if(count($waybills) < 1){
-            //     $waybills = Waybill::where($match)->where('drv_name', 'like', '%'.$waybillsearch.'%')->orderBy('id', 'desc')->paginate(10);
-        
-            // }
-        }else{
-            $waybills = Waybill::where($match)->orderBy('id', 'desc')->paginate(10);
-        }
+        $waybillsearch = trim((string) $request->query('waybillsearch', ''));
+
+        $waybills = Waybill::active()
+            ->with('user')
+            ->search($waybillsearch)
+            ->orderBy('id', 'desc')
+            ->paginate(10);
+
         $pass = [
             'c' => $c,
-            'waybills' => $waybills
+            'waybills' => $waybills,
+            'waybillsearch' => $waybillsearch,
         ];
         return view('pages.dash.waybillview')->with($pass);
     }
@@ -760,21 +761,31 @@ class DashController extends Controller
         
         $date_from = $request->query('date_from');
         $date_to = $request->query('date_to');
-        $match = ['del' => 'no'];
-        
-        if (!empty($date_from) && empty($date_to)) {
-            $waybills = Waybill::where($match)->where('created_at', 'LIKE', '%'.$date_from.'%')->orderBy('id', 'desc')->paginate(10);
-            $waybills_send = Waybill::where($match)->where('created_at', 'LIKE', '%'.$date_from.'%')->orderBy('id', 'desc')->get();
-        }elseif (empty($date_from) && !empty($date_to)) {
+
+        if (empty($date_from) && ! empty($date_to)) {
             return redirect(url()->previous())->with('error', 'Oops..! Provide *Date From* in order to proceed');
-        }elseif (!empty($date_from) && !empty($date_to)) {
-            $waybills = Waybill::where($match)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->orderBy('id', 'desc')->paginate(10);
-            $waybills_send = Waybill::where($match)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->orderBy('id', 'desc')->get();
-        }else{
-            // $match = ['del' => 'no'];
-            $waybills = Waybill::where($match)->orderBy('id', 'desc')->paginate(10);
-            $waybills_send = Waybill::where($match)->orderBy('id', 'desc')->get();
         }
+        
+        $waybills = Waybill::active()
+            ->with('user')
+            ->when(! empty($date_from) && empty($date_to), function ($query) use ($date_from) {
+                $query->where('created_at', 'LIKE', '%'.$date_from.'%');
+            })
+            ->when(! empty($date_from) && ! empty($date_to), function ($query) use ($date_from, $date_to) {
+                $query->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')]);
+            })
+            ->orderBy('id', 'desc')
+            ->paginate(10);
+
+        $waybills_send = Waybill::active()
+            ->when(! empty($date_from) && empty($date_to), function ($query) use ($date_from) {
+                $query->where('created_at', 'LIKE', '%'.$date_from.'%');
+            })
+            ->when(! empty($date_from) && ! empty($date_to), function ($query) use ($date_from, $date_to) {
+                $query->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')]);
+            })
+            ->orderBy('id', 'desc')
+            ->get();
 
         Session::put('waybillreps', $waybills_send);
         Session::put('date_from', $date_from);
@@ -787,7 +798,9 @@ class DashController extends Controller
             'c' => 1,
             'cats' => $cats,
             'waybills' => $waybills,
-            'company' => $company
+            'company' => $company,
+            'date_from' => $date_from,
+            'date_to' => $date_to,
         ];
         return view('pages.dash.waybillreport')->with($pass);
     }

@@ -1,359 +1,151 @@
 @extends('layouts.dashlay')
 
+@php
+  $defaultBillNo = old('bill_no', $suggestedBillNo ?? '');
+  $defaultDelDate = old('del_date', now()->format('Y-m-d'));
+  $defaultStatus = old('status', 'Pending');
+@endphp
+
 @section('content')
 
-  <!-- End Navbar -->
   <div class="content">
         <div class="container-fluid">
           <div class="row">
-            <div class="col-md-10">
+            <div class="col-md-11">
 
               @include('inc.messages')
 
-              {{-- <form action="{{action('PostsController@store')}}" method="POST">
-                @csrf --}}
-
-                <div class="form-group row mb-0">
-                  <div class="col-md-3 offset-md-0">
-                    <a href="/dashuser"><button type="submit" class="btn btn-primary"><i class="fa fa-shopping-basket"></i> &nbsp; Stock / Inventory</button></a>
-                  </div>
-
-                  <div class="col-md-9 offset-md-0">
-                      <a href="/waybillview"><button type="submit" class="btn btn-info pull-right"><i class="fa fa-table"></i> &nbsp; View Waybills</button></a>
+                <div class="form-group row mb-0 hideMe">
+                  <div class="col-md-8 offset-md-0 myTrim"></div>
+                  <div class="col-md-4 offset-md-0 myTrim inventory-toolbar-actions">
+                    <div class="inventory-actions-group">
+                      <a href="/items" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Inventory">
+                        <i class="fa fa-archive"></i>
+                      </a>
+                      <a href="/waybillview" class="inventory-action-btn inventory-action-btn-primary dash-tip" data-tip="View saved waybills">
+                        <i class="fa fa-table"></i>
+                        <span>View waybills</span>
+                      </a>
+                    </div>
                   </div>
                 </div>
-
-              {{-- </form> --}}
 
               <div class="card">
                 <x-dash-page-header
                   title="Waybill"
-                  subtitle="Complete waybill info here."
+                  subtitle="Complete waybill info here. After saving, you'll go straight to distribution."
                   icon="fa fa-truck"
                 />
-                <div class="card-body">
-                  <form action="{{action('ItemsController@store')}}" method="POST">
-                            @csrf
-                    <div class="container">
-                      <div class="row justify-content-center">
+                <div class="card-body dash-form-body">
+                  <form id="waybill-create-form" action="{{action('ItemsController@store')}}" method="POST">
+                    @csrf
+                    <input type="hidden" name="store_action" value="add_waybill"/>
 
-                          
+                    <div class="dash-form-grid">
+                      <div class="dash-form-column">
+                        <h6 class="inventory-edit-section-title"><i class="fa fa-building"></i> Sender info</h6>
 
-                      {{-- <div class="card-body"> --}}
+                        <label class="inventory-edit-field">
+                          <span class="inventory-edit-label">Company name</span>
+                          <input type="text" class="inventory-edit-input @error('comp_name') is-invalid @enderror" name="comp_name" value="{{ old('comp_name') }}" placeholder="Company name" required/>
+                          @error('comp_name')<span class="inventory-edit-error">{{ $message }}</span>@enderror
+                        </label>
 
-                        <div class="col-md-5 cl">
-                          <div style="height:30px"></div>
-                          
-                          <p>Sender Info. / From:</p>
-                          <div class="my_panel">
-                            <div class="input_div">
-                                <p>Company Name: </p>
-                                <input type="text" class="" name="comp_name" required/>
-                            </div>
+                        <label class="inventory-edit-field">
+                          <span class="inventory-edit-label">Address</span>
+                          <textarea class="inventory-edit-input inventory-edit-textarea @error('comp_add') is-invalid @enderror" name="comp_add" rows="4" maxlength="2000" placeholder="Company address" required>{{ old('comp_add') }}</textarea>
+                          @error('comp_add')<span class="inventory-edit-error">{{ $message }}</span>@enderror
+                        </label>
 
-                            <div class="input_div">
-                                <p>Address: </p>
-                                <textarea class="" name="comp_add" rows="4" required></textarea>
-                            </div>
+                        <label class="inventory-edit-field">
+                          <span class="inventory-edit-label">Contact</span>
+                          <input type="text" class="inventory-edit-input @error('comp_contact') is-invalid @enderror" name="comp_contact" value="{{ old('comp_contact') }}" placeholder="Phone or email" required/>
+                          @error('comp_contact')<span class="inventory-edit-error">{{ $message }}</span>@enderror
+                        </label>
 
-                            <div class="input_div">
-                                <p>Contact: </p>
-                                <input type="text" class="" name="comp_contact" required/>
-                            </div>
-                          </div>
+                        <h6 class="inventory-edit-section-title inventory-edit-section-title-spaced"><i class="fa fa-id-card"></i> Dispatch driver</h6>
 
-                          <p>Dispatch Driver</p>
-                          <div class="my_panel">
-                            <div class="input_div">
-                                <p>Driver's Name: </p>
-                                <input type="text" class="" name="drv_name" required/>
-                            </div>
+                        <label class="inventory-edit-field">
+                          <span class="inventory-edit-label">Driver's name</span>
+                          <input type="text" class="inventory-edit-input @error('drv_name') is-invalid @enderror" name="drv_name" value="{{ old('drv_name') }}" placeholder="Driver name" required/>
+                          @error('drv_name')<span class="inventory-edit-error">{{ $message }}</span>@enderror
+                        </label>
 
-                            <div class="input_div">
-                                <p>Contact: </p>
-                                <input type="text" class="" name="drv_contact" required/>
-                            </div>
+                        <label class="inventory-edit-field">
+                          <span class="inventory-edit-label">Contact</span>
+                          <input type="text" class="inventory-edit-input @error('drv_contact') is-invalid @enderror" name="drv_contact" value="{{ old('drv_contact') }}" placeholder="Driver contact" required/>
+                          @error('drv_contact')<span class="inventory-edit-error">{{ $message }}</span>@enderror
+                        </label>
 
-                            <div class="input_div">
-                                <p>Vehicle Reg. No: </p>
-                                <input type="text" class="" name="vno" required/>
-                            </div>
-                          </div>   
+                        <label class="inventory-edit-field">
+                          <span class="inventory-edit-label">Vehicle reg. no.</span>
+                          <input type="text" class="inventory-edit-input @error('vno') is-invalid @enderror" name="vno" value="{{ old('vno') }}" placeholder="Vehicle registration" required/>
+                          @error('vno')<span class="inventory-edit-error">{{ $message }}</span>@enderror
+                        </label>
+                      </div>
 
+                      <div class="dash-form-column">
+                        <h6 class="inventory-edit-section-title"><i class="fa fa-file-text"></i> Shipment details</h6>
+
+                        <label class="inventory-edit-field">
+                          <span class="inventory-edit-label">Waybill no.</span>
+                          <input type="text" class="inventory-edit-input @error('bill_no') is-invalid @enderror" name="bill_no" value="{{ $defaultBillNo }}" placeholder="Waybill number" required/>
+                          <span class="inventory-edit-field-hint">Auto-suggested — you can change it before saving.</span>
+                          @error('bill_no')<span class="inventory-edit-error">{{ $message }}</span>@enderror
+                        </label>
+
+                        <div class="inventory-edit-field-row">
+                          <label class="inventory-edit-field">
+                            <span class="inventory-edit-label">Weight</span>
+                            <input type="text" class="inventory-edit-input @error('weight') is-invalid @enderror" name="weight" value="{{ old('weight') }}" placeholder="e.g. SACK or 12.5"/>
+                            @error('weight')<span class="inventory-edit-error">{{ $message }}</span>@enderror
+                          </label>
+
+                          <label class="inventory-edit-field">
+                            <span class="inventory-edit-label">No. of pieces</span>
+                            <input type="text" class="inventory-edit-input @error('nop') is-invalid @enderror" name="nop" value="{{ old('nop') }}" placeholder="Pieces"/>
+                            @error('nop')<span class="inventory-edit-error">{{ $message }}</span>@enderror
+                          </label>
                         </div>
-                  
-                        <div class="col-md-5">
-                          <div style="height:60px"></div>
 
-                          <div class="input_div">
-                              <p>Waybill No.: </p>
-                              <input type="text" min="0" class="" name="bill_no" required/>
-                          </div>
+                        <label class="inventory-edit-field">
+                          <span class="inventory-edit-label">Total quantity</span>
+                          <input type="text" class="inventory-edit-input @error('tot_qty') is-invalid @enderror" name="tot_qty" value="{{ old('tot_qty') }}" placeholder="Total quantity"/>
+                          @error('tot_qty')<span class="inventory-edit-error">{{ $message }}</span>@enderror
+                        </label>
 
-                          <div class="input_div">
-                              <p>Weight of Package: </p>
-                              <input type="text" class="" name="weight"/>
-                          </div>
+                        <div class="inventory-edit-field-row">
+                          <label class="inventory-edit-field">
+                            <span class="inventory-edit-label">Delivery date</span>
+                            <input type="date" class="inventory-edit-input @error('del_date') is-invalid @enderror" name="del_date" value="{{ $defaultDelDate }}"/>
+                            @error('del_date')<span class="inventory-edit-error">{{ $message }}</span>@enderror
+                          </label>
 
-                          <div class="input_div">
-                              <p>No. of Pieces: </p>
-                              <input type="text" class="" name="nop"/>
-                          </div>
-
-                          <div class="input_div">
-                              <p>Total Quantity: </p>
-                              <input type="text" class="" name="tot_qty"/>
-                          </div>
-
-                          <div class="input_div">
-                              <p>Delivery Date: </p>
-                              <input type="date" class="" placeholder="DD/MM/YYY" name="del_date"/>
-                          </div>
-
-                          <div class="input_div">
-                            <p>Status: </p>
-                            <select name="status">
-                                <option>Pending</option>
-                                <option>Delivered</option>
+                          <label class="inventory-edit-field">
+                            <span class="inventory-edit-label">Status</span>
+                            <select name="status" class="inventory-edit-input inventory-edit-select @error('status') is-invalid @enderror">
+                              @foreach (\App\Models\Waybill::statusOptions() as $statusOption)
+                                <option @selected($defaultStatus === $statusOption)>{{ $statusOption }}</option>
+                              @endforeach
                             </select>
-                          </div>
-                        
-                          <div class="modal-footer">
-                            <button type="submit" class="btn btn-info" name="store_action" value="add_waybill"><i class="fa fa-save"></i> &nbsp; Save Bill</button>
-                          </div>
-
+                            @error('status')<span class="inventory-edit-error">{{ $message }}</span>@enderror
+                          </label>
                         </div>
-                
-                      {{-- </div> --}}
-
                       </div>
                     </div>
+
+                    <div class="inventory-edit-footer dash-form-footer">
+                      <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary">
+                        <i class="fa fa-save"></i> Save &amp; distribute
+                      </button>
+                    </div>
                   </form>
-                  <div style="height:30px"></div>
                 </div>
               </div>
 
             </div>
-
-
-                          
-            {{-- <div class="col-md-5">
-              <div class="card card-profile">
-                <div class="card-body myScroll">
-                  <h4 class="card-title">All Registered Categories</h4>
-
-                          @if (count($category) > 0)
-                            <table class="newtable1">
-                              <thead class="text-secondary">
-                                <th class="text_left">Category / Description</th>
-                                <th class="ryt">
-                                  Action
-                                </th>
-                              </thead>
-                              <tbody>
-
-
-                              @foreach ($category as $cat)
-                                  <tr>
-                                    <td>{{$i++}} &nbsp; <b class="myb">{{$cat->name}}</b><br>{{$cat->desc}}</td>
-                                    <td class="ryt">
-                                      <form action="{{ action('ItemsController@destroy', $cat->id) }}" method="POST">
-
-                                        <input type="hidden" name="_method" value="DELETE">
-                                        @csrf
-                                        <button type="submit" name="del_action" value="cat_del" rel="tooltip" title="Delete Category" class="close2" onclick="return confirm('Are you sure you want to delete this Category?');"><i class="fa fa-close"></i></button>
-                                    
-                                      </form>
-                                    </td>
-                                  </tr>
-                              @endforeach
-
-                              </tbody>
-                            </table>
-
-                            @else
-                              <p>No Category Added Yet</p>
-                            @endif
-
-                </div>
-              </div>
-
-                  <div style="height: 30px">
-                  </div>
-
-              <div class="card card-profile">
-                <div class="card-body">
-                  
-                  <div class="form-group inputHold">
-                    <a href="/items"><button type="submit" class="btn btn-secondary" data-toggle="modal" data-target="#view_items"><i class="fa fa-folder-open"></i> &nbsp; View All Items</button></a>
-                    <button type="submit" class="btn btn-secondary" data-toggle="modal" data-target="#view_users"><i class="fa fa-folder-open"></i> &nbsp; View All Users</button>
-                  </div>
-                  
-                </div>
-              </div>
-
-            </div> --}}
-
-
           </div>
         </div>
   </div>
-
-
-
-  <div class="modal fade" id="usrModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel"><i class="fa fa-plus-circle"></i>&nbsp;&nbsp; Register User Here</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-
-          
-          <form action="{{action('ItemsController@store')}}" method="POST">
-              @csrf
-
-              <div class="form-group row">
-                  <div class="col-md-12">
-                      <input id="name" placeholder="Name" type="text" class="form-control" name="name" required autofocus>
-                  </div>
-              </div>
-
-              <div class="form-group row">
-                  <div class="col-md-12">
-                      <input id="email" placeholder="Email" type="email" class="form-control" name="email" required>
-                  </div>
-              </div>
-
-              <div class="form-group row">
-                <div class="col-md-12">
-                  <select name="status" class="form-control" id="assign_tch" required>
-                    <option selected>User</option>
-                    <option>Administrator</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="form-group row">
-                  <div class="col-md-12">
-                      <input id="password" placeholder="Password" type="password" class="form-control" name="password" required>
-                  </div>
-              </div>
-
-              <div class="form-group row">
-                  <div class="col-md-12">
-                      <input id="password-confirm" placeholder="Confirm Password" type="password" class="form-control" name="password_confirmation" required>
-                  </div>
-              </div>
-
-              <div class="form-group row mb-0">
-                  <div class="col-md-6 offset-md-4">
-                      <button type="submit" class="btn btn-info" name="store_action" value="create_user"><i class="fa fa-save"></i> &nbsp; Add User</button>
-                  </div>
-              </div>
-          </form>
-
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal fade" id="catModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel"><i class="fa fa-plus-circle"></i>&nbsp;&nbsp; Add Category Here</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-
-          
-          <form action="{{action('ItemsController@store')}}" method="POST">
-              @csrf
-
-              <div class="form-group row">
-                  <div class="col-md-12">
-                      <input id="name" placeholder="Name" type="text" class="form-control" name="name" required autofocus>
-                  </div>
-              </div>
-
-              <div class="form-group row">
-                <div class="col-md-12">
-                  <textarea name="desc" class="form-control" rows="2" placeholder="Category Description"></textarea>
-                </div>
-              </div>
-
-              <div class="form-group row mb-0">
-                  <div class="col-md-6 offset-md-4">
-                      <button type="submit" class="btn btn-info" name="store_action" value="add_cat"><i class="fa fa-save"></i> &nbsp; Add Category</button>
-                  </div>
-              </div>
-          </form>
-
-        </div>
-      </div>
-    </div>
-  </div>
-
-  {{-- <div class="modal fade" id="view_users" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modtop" role="document">
-      <div id="printarea" class="modal-content">
-          <div class="card card-profile">
-            <div class="card-avatar">
-              <a href="#">              </a>
-            </div>
-            <div class="card-body">
-              <h6 class="card-category text-gray"></h6>
-              <div style="height: 30px">
-              </div>
-
-              <h3 class="card-title">All Users</h3>
-
-              @if(count($users) != 0)
-
-              <table id="config_tbl">
-                <thead>
-                  <th><h5 class="card-title">Username</h5></th>
-                  <th><h5 class="card-title">Email</h5></th>
-                  <th><h5 class="card-title">Status</h5></th>
-                </thead>
-                <tbody>
-                  @foreach ($users as $user)
-
-                    <form action="{{ action('ItemsController@destroy', $user->id) }}" method="POST">
-
-                      <input type="hidden" name="_method" value="DELETE">
-                      @csrf
-
-                      <tr>
-                        <td>{{$user->name}}</td>
-                        <td>{{$user->email}}</td>
-                        <td>{{$user->status}}
-                        <button type="submit" name="del_action" value="usr_del" rel="tooltip" title="Delete User" class="close2" onclick="return confirm('Are you sure you want to delete user?');"><i class="fa fa-close"></i></button>
-                        </td>
-                      </tr>
-
-                    </form>
-
-                  @endforeach
-
-                </tbody>
-              </table>
-
-              @else
-              <p>Oops..! No user registered yet!</p>
-              @endif
-
-            </div>
-          </div>
-      </div>
-
-    </div>
-  </div> --}}
 
 @endsection

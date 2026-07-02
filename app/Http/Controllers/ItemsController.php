@@ -297,6 +297,10 @@ class ItemsController extends Controller
      */
     public function store(Request $request)
     {
+        if ($request->input('store_action') === 'add_waybill') {
+            return $this->storeWaybill($request);
+        }
+
         $company = new Company;
         $user = new User;
         $cat = new Category;
@@ -673,58 +677,6 @@ class ItemsController extends Controller
                         
                     }
                     
-                break;
-
-                case 'add_waybill':
-
-                    $xter = substr(str_shuffle(str_repeat("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 4)), 0, 4);
-                    $time = date('is');
-                    $stockNo = 'ST'.$xter.$time;
-
-                    try {
-                        //code...
-                        $waybill = Waybill::firstOrCreate([
-                            'user_id' => auth()->user()->id,
-                            'stock_no' => $stockNo,
-                            'comp_name' => $request->input('comp_name'),
-                            'comp_add' => $request->input('comp_add'),
-                            'comp_contact' => $request->input('comp_contact'),
-                            'drv_name' => $request->input('drv_name'),
-                            'drv_contact' => $request->input('drv_contact'),
-                            'vno' => $request->input('vno'),
-                            'bill_no' => $request->input('bill_no'),
-                            'weight' => $request->input('weight'),
-                            'nop' => $request->input('nop'),
-                            'tot_qty' => $request->input('tot_qty'),
-                            'del_date' => $request->input('del_date'),
-                            'status' => $request->input('status')
-                            ]);
-                        
-                        // $waybill = new Waybill;
-                        // $waybill->user_id = auth()->user()->id;
-                        // $waybill->comp_name = $request->input('comp_name');
-                        // $waybill->comp_add = $request->input('comp_add');
-                        // $waybill->comp_contact = $request->input('comp_contact');
-                        // $waybill->drv_name = $request->input('drv_name');
-                        // $waybill->drv_contact = $request->input('drv_contact');
-                        // $waybill->vno = $request->input('vno');
-                        // $waybill->bill_no = $request->input('bill_no');
-                        // $waybill->weight = $request->input('weight');
-                        // $waybill->nop = $request->input('nop');
-                        // $waybill->tot_qty = $request->input('tot_qty');
-                        // $waybill->del_date = $request->input('del_date');
-                        // $waybill->status = $request->input('status');
-                        // $waybill->save();
-
-                        return redirect('/waybill')->with('success', 'Bill Successfully Saved');
-
-                    } catch (\Throwable $th) {
-                        //throw $th;
-                        return redirect('/waybill')->with('error', 'Oops..! Unhandled Error. ');
-                    }
-                   
-                    //Hash::make($data['password']);
-    
                 break;
 
                 case 'create_branch':
@@ -1128,8 +1080,10 @@ class ItemsController extends Controller
 
             }
         
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
         } catch (\Throwable $e) {
-            return redirect()->back()->with('error', 'Oops..! Something went wrong while processing that request.');
+            return redirect()->back()->with('error', 'Oops..! Something went wrong while processing that request. '.$e->getMessage());
         }
     }
 
@@ -1369,31 +1323,19 @@ class ItemsController extends Controller
             case 'update_waybill':
 
                 $waybill = Waybill::find($id);
-
-                try {
-                    //code...
-                    
-                    $waybill->user_id = auth()->user()->id;
-                    $waybill->comp_name = $request->input('comp_name');
-                    $waybill->comp_add = $request->input('comp_add');
-                    $waybill->comp_contact = $request->input('comp_contact');
-                    $waybill->drv_name = $request->input('drv_name');
-                    $waybill->drv_contact = $request->input('drv_contact');
-                    $waybill->vno = $request->input('vno');
-                    $waybill->bill_no = $request->input('bill_no');
-                    $waybill->weight = $request->input('weight');
-                    $waybill->nop = $request->input('nop');
-                    $waybill->tot_qty = $request->input('tot_qty');
-                    $waybill->del_date = $request->input('del_date');
-                    $waybill->status = $request->input('status');
-                    $waybill->save();
-
-                    return redirect('/waybillview')->with('success', 'Bill Successfully Updated');
-
-                } catch (\Throwable $th) {
-                    //throw $th;
-                    return redirect('/waybillview')->with('error', 'Oops..! Unhandled Error!');
+                if (! $waybill || $waybill->del === 'yes') {
+                    return redirect('/waybillview')->with('error', 'Waybill not found');
                 }
+
+                $validated = $this->prepareWaybillAttributes(
+                    $this->validateWaybillRequest($request, (int) $waybill->id)
+                );
+
+                $waybill->fill($validated);
+                $waybill->user_id = auth()->user()->id;
+                $waybill->save();
+
+                return redirect('/waybillview')->with('success', 'Bill Successfully Updated');
 
             break;
 
@@ -1651,6 +1593,139 @@ class ItemsController extends Controller
         }
 
         return redirect('/items')->with('error', 'Unknown update action.');
+    }
+
+    protected function validateWaybillRequest(Request $request, ?int $ignoreId = null): array
+    {
+        $billNoRule = 'required|string|max:255|unique:waybills,bill_no';
+        if ($ignoreId) {
+            $billNoRule .= ','.$ignoreId;
+        }
+
+        return $request->validate([
+            'comp_name' => 'required|string|max:255',
+            'comp_add' => 'required|string|max:2000',
+            'comp_contact' => 'required|string|max:255',
+            'drv_name' => 'required|string|max:255',
+            'drv_contact' => 'required|string|max:255',
+            'vno' => 'required|string|max:255',
+            'bill_no' => $billNoRule,
+            'weight' => 'nullable|string|max:255',
+            'nop' => 'nullable|string|max:255',
+            'tot_qty' => 'nullable|string|max:255',
+            'del_date' => 'nullable|date|max:20',
+            'status' => 'required|in:Pending,In Transit,Delivered',
+        ]);
+    }
+
+    protected function prepareWaybillAttributes(array $validated): array
+    {
+        foreach (['weight', 'nop', 'tot_qty'] as $field) {
+            $validated[$field] = filled($validated[$field] ?? null)
+                ? (string) $validated[$field]
+                : null;
+        }
+
+        // del_date is NOT NULL in the original schema; store '' when left blank.
+        $validated['del_date'] = filled($validated['del_date'] ?? null)
+            ? (string) $validated['del_date']
+            : '';
+
+        return $validated;
+    }
+
+    protected function storeWaybill(Request $request)
+    {
+        try {
+            $validated = $this->prepareWaybillAttributes(
+                $this->validateWaybillRequest($request)
+            );
+
+            $xter = substr(str_shuffle(str_repeat('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', 4)), 0, 4);
+            $stockNo = 'ST'.$xter.date('is');
+
+            $waybill = Waybill::create(array_merge($validated, [
+                'user_id' => (string) auth()->id(),
+                'stock_no' => $stockNo,
+                'del' => 'no',
+            ]));
+
+            return redirect('/distribution/'.$waybill->id)->with('success', 'Waybill saved. Add items below to distribute.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (\Illuminate\Database\QueryException $e) {
+            report($e);
+
+            return redirect()->back()->withInput()->with('error', $this->waybillQueryExceptionMessage($e));
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()->back()->withInput()->with('error', 'Oops..! Something went wrong while saving the waybill.');
+        }
+    }
+
+    protected function waybillQueryExceptionMessage(\Illuminate\Database\QueryException $exception): string
+    {
+        if ($this->isDuplicateWaybillBillNo($exception)) {
+            return 'That waybill number already exists. Please use a different one.';
+        }
+
+        $rawMessage = $exception->getMessage();
+        $message = strtolower($rawMessage);
+        $column = $this->waybillQueryExceptionColumn($exception);
+
+        if (str_contains($message, 'data too long')) {
+            if ($column) {
+                return 'Could not save waybill. The '.str_replace('_', ' ', $column).' is too long. Error: ';
+            }
+
+            return 'Could not save waybill. One or more fields may be too long. Error: ';
+        }
+
+        if (str_contains($message, 'cannot be null')
+            || str_contains($message, "doesn't have a default value")
+            || str_contains($message, 'not null constraint failed')) {
+            if ($column) {
+                return 'Could not save waybill. Missing or invalid value for '.str_replace('_', ' ', $column).'. Error: ';
+            }
+
+            return 'Could not save waybill. A required field was missing. Error: ';
+        }
+
+        if (str_contains($message, 'incorrect date')
+            || str_contains($message, 'invalid datetime')
+            || str_contains($message, '1292')) {
+            return 'Could not save waybill. Please enter a valid delivery date or leave it blank. Error: ';
+        }
+
+        return 'Could not save waybill. Error: ';
+    }
+
+    protected function waybillQueryExceptionColumn(\Illuminate\Database\QueryException $exception): ?string
+    {
+        if (preg_match("/column '([^']+)'/i", $exception->getMessage(), $matches)) {
+            return $matches[1];
+        }
+
+        if (preg_match('/not null constraint failed: (?:[\w.]+\.)?(\w+)/i', $exception->getMessage(), $matches)) {
+            return $matches[1];
+        }
+
+        return null;
+    }
+
+    protected function isDuplicateWaybillBillNo(\Illuminate\Database\QueryException $exception): bool
+    {
+        $message = strtolower($exception->getMessage());
+        $sqlState = $exception->errorInfo[0] ?? '';
+        $driverCode = (int) ($exception->errorInfo[1] ?? 0);
+
+        if ($sqlState === '23000' && in_array($driverCode, [1062, 19], true)) {
+            return str_contains($message, 'bill_no');
+        }
+
+        return str_contains($message, 'unique constraint failed')
+            && str_contains($message, 'bill_no');
     }
 
     /**
