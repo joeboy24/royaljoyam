@@ -100,6 +100,9 @@
                   <div class="col-md-5 offset-md-0 myTrim">
 
                     <form style="width: 400px" method="GET" action="{{ url('/items') }}">
+                      @if ($showRecycle)
+                        <input type="hidden" name="recycle" value="1">
+                      @endif
                       <div class="input-group no-border">
                         {{-- <input type="text" value="" class="form-control search_field" id="search" name="search" placeholder="Search Records...">
                         <button type="submit" class="btn btn-white btn-round my_bt">
@@ -114,7 +117,7 @@
                             <div class="ripple-container"></div>
                           </button>
 
-                          <a href="/items" class="refresh_a" title="Clear search"><button type="button" class="btn btn-success btn-round" id="mb">
+                          <a href="{{ $showRecycle ? url('/items?recycle=1') : url('/items') }}" class="refresh_a" title="Clear search"><button type="button" class="btn btn-success btn-round" id="mb">
                             <i class="fa fa-refresh"></i>
                             <div class="ripple-container"></div>
                           </button></a>
@@ -124,19 +127,27 @@
                       
                   </div>
                   <div class="col-md-7 offset-md-0 myTrim inventory-toolbar-actions">
-                    <button type="button" class="btn btn-info pull-right" data-toggle="modal" data-target="#addItemModal" title="Add Item">
-                      <i class="fa fa-plus"></i> Add Item
-                    </button>
-                    <a href="#"><button type="button" class="btn btn-white pull-right" title="Recycle Bin"><i class="fa fa-trash"></i></button></a>
-                    <a href="/dashuser"><button type="button" class="btn btn-white pull-right" title="Registry"><i class="fa fa-arrow-left"></i></button></a>
+                    @unless ($showRecycle)
+                      <button type="button" class="btn btn-info pull-right" data-toggle="modal" data-target="#addItemModal" title="Add Item">
+                        <i class="fa fa-plus"></i> Add Item
+                      </button>
+                      <a href="{{ url('/items?recycle=1') }}"><button type="button" class="btn btn-white pull-right" title="Recycle Bin"><i class="fa fa-trash"></i></button></a>
+                    @endunless
+                    <a href="{{ $showRecycle ? url('/items') : url('/dashuser') }}"><button type="button" class="btn btn-white pull-right" title="{{ $showRecycle ? 'Back to Inventory' : 'Registry' }}"><i class="fa fa-arrow-left"></i></button></a>
                   </div>
 
                 </div>
 
               <div class="card">
                 <div class="card-header card-header-primary">
-                  <h4 class="card-title">Inventory</h4>
-                  <p class="card-category" style="color: rgba(255,255,255,0.8);">Inventory records are managed separately from registry and configuration.</p>
+                  <h4 class="card-title">{{ $showRecycle ? 'Recycle Bin' : 'Inventory' }}</h4>
+                  <p class="card-category" style="color: rgba(255,255,255,0.8);">
+                    @if ($showRecycle)
+                      Deleted inventory items can be restored here.
+                    @else
+                      Inventory records are managed separately from registry and configuration.
+                    @endif
+                  </p>
                 </div>
                 <div id="printarea1" class="card-body">
             
@@ -152,14 +163,13 @@
                             <th>Total Qty.</th>
                             <th>Base Price (Gh₵)</th>
                             {{-- <th>Thumbnail</th> --}}
-                            <th>Date Created</th>
+                            <th>Date</th>
                             <th class="ryt">Actions</th>
                           </thead>
                           <tbody id="tb">
 
                             @foreach ($items as $item)
 
-                              @if ($item->del == 'no')
                                 @php $rowClass = ($c % 2 == 0) ? 'rowColour' : ''; @endphp
                                 <tr class="{{ trim($rowClass . (count(session('compbranch')) > 0 ? ' item-row-expandable' : '')) }}"
                                     @if (count(session('compbranch')) > 0)
@@ -175,7 +185,7 @@
                                     @endif
                                     {{ $c++ }}
                                   </td>
-                                  <td>{{$item->item_no}}<br><p class="small_p">{{$item->thumb_img}}</p></td>
+                                  <td>{{ $item->item_no }}</td>
                                   <td>{{$item->name}}</td>
                                   {{-- <td>{{$item->desc}}</td> --}}
                                   <td>{{$item->cat}}</td>
@@ -183,14 +193,22 @@
                                   <td><b style="font-weight: 600">{{ $item->qty }}</b></td>
                                   <td><b style="font-weight: 600">{{ number_format((float) $item->price, 2) }}</b></td>
                                   {{-- <td>{{$item->thumb_img}}</td> --}}
-                                  <td>{{$item->created_at}}</td>
+                                  <td>{{ $item->created_at ? \Carbon\Carbon::parse($item->created_at)->format('d M Y') : '—' }}</td>
                                   <td class="ryt item-row-actions">
-                                    <form action="{{ action('ItemsController@update', $item->id) }}" method="POST" class="item-delete-form" onclick="event.stopPropagation()">
-                                      @csrf
-                                      @method('PUT')
-                                      <button type="submit" name="store_action" value="del_item" rel="tooltip" title="Delete Item" class="close2" onclick="return confirm('Are you sure you want to delete selected item?');"><i class="fa fa-close"></i></button>
-                                    </form>
-                                    <button type="button" title="Edit Record" class="print_black item-edit-btn" data-target="#edit_{{ $item->id }}" onclick="event.stopPropagation(); openItemEditModal('edit_{{ $item->id }}');">&nbsp;<i class="fa fa-pencil"></i>&nbsp;</button>
+                                    @if ($showRecycle)
+                                      <form action="{{ action('ItemsController@update', $item->id) }}" method="POST" class="item-restore-form" onclick="event.stopPropagation()">
+                                        @csrf
+                                        @method('PUT')
+                                        <button type="submit" name="store_action" value="restore_item" rel="tooltip" title="Restore Item" class="close2 color10" onclick="return confirm('Restore this item to inventory?');"><i class="fa fa-reply"></i></button>
+                                      </form>
+                                    @else
+                                      <form action="{{ action('ItemsController@update', $item->id) }}" method="POST" class="item-delete-form" onclick="event.stopPropagation()">
+                                        @csrf
+                                        @method('PUT')
+                                        <button type="submit" name="store_action" value="del_item" rel="tooltip" title="Delete Item" class="close2" onclick="return confirm('Are you sure you want to delete selected item?');"><i class="fa fa-close"></i></button>
+                                      </form>
+                                      <button type="button" title="Edit Record" class="print_black item-edit-btn" data-target="#edit_{{ $item->id }}" onclick="event.stopPropagation(); openItemEditModal('edit_{{ $item->id }}');">&nbsp;<i class="fa fa-pencil"></i>&nbsp;</button>
+                                    @endif
                                   </td>
                                 </tr>
 
@@ -226,15 +244,13 @@
                                 </tr>
                                 @endif
 
-                              @endif
-
                             @endforeach
 
                           </tbody>
                         </table>
 
+                        @unless ($showRecycle)
                         @foreach ($items as $item)
-                          @if ($item->del == 'no')
                             <div class="modal fade item-edit-modal" id="edit_{{ $item->id }}" tabindex="-1" role="dialog" aria-labelledby="editModalLabel{{ $item->id }}" aria-hidden="true">
                               <div class="modal-dialog modtop" role="document">
                                 <div class="modal-content">
@@ -338,20 +354,20 @@
                                 </div>
                               </div>
                             </div>
-                          @endif
                         @endforeach
+                        @endunless
 
                         <p class="gray_p">
                           @if ($items->total() > 0)
                             @if ($itemsearch !== '')
-                              Showing <b>{{ $items->firstItem() }}-{{ $items->lastItem() }}</b> of <b>{{ $items->total() }}</b> {{ $items->total() === 1 ? 'match' : 'matches' }} ({{ $totalItemCount }} total items)
+                              Showing <b>{{ $items->firstItem() }}-{{ $items->lastItem() }}</b> of <b>{{ $items->total() }}</b> {{ $items->total() === 1 ? 'match' : 'matches' }} ({{ $totalItemCount }} total {{ $showRecycle ? 'deleted items' : 'items' }})
                             @else
-                              Showing <b>{{ $items->firstItem() }}-{{ $items->lastItem() }}</b> of <b>{{ $items->total() }}</b> items
+                              Showing <b>{{ $items->firstItem() }}-{{ $items->lastItem() }}</b> of <b>{{ $items->total() }}</b> {{ $showRecycle ? 'deleted items' : 'items' }}
                             @endif
                           @elseif ($itemsearch !== '')
-                            No matches for <b>"{{ $itemsearch }}"</b> ({{ $totalItemCount }} total items)
+                            No matches for <b>"{{ $itemsearch }}"</b> ({{ $totalItemCount }} total {{ $showRecycle ? 'deleted items' : 'items' }})
                           @else
-                            <b>0</b> items
+                            <b>0</b> {{ $showRecycle ? 'deleted items' : 'items' }}
                           @endif
                         </p>
 
@@ -375,9 +391,9 @@
                     @else
                       <p class="gray_p">
                         @if ($itemsearch !== '')
-                          No matches for <b>"{{ $itemsearch }}"</b> ({{ $totalItemCount }} total items)
+                          No matches for <b>"{{ $itemsearch }}"</b> ({{ $totalItemCount }} total {{ $showRecycle ? 'deleted items' : 'items' }})
                         @else
-                          <b>0</b> items
+                          <b>0</b> {{ $showRecycle ? 'deleted items' : 'items' }}
                         @endif
                       </p>
                     @endif
@@ -505,7 +521,8 @@
   .branch-qty-zero {
     color: #999;
   }
-  .item-row-actions .item-delete-form {
+  .item-row-actions .item-delete-form,
+  .item-row-actions .item-restore-form {
     display: inline;
   }
 </style>

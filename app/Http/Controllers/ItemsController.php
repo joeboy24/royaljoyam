@@ -42,7 +42,8 @@ class ItemsController extends Controller
             return redirect('/dashboard'); 
         }
 
-        $match = ['del' => 'no'];
+        $showRecycle = $request->query('recycle') === '1';
+        $match = ['del' => $showRecycle ? 'yes' : 'no'];
         $itemsearch = trim((string) $request->query('itemsearch', ''));
         $totalItemCount = Item::where($match)->count();
         $itemsQuery = Item::where($match);
@@ -51,9 +52,10 @@ class ItemsController extends Controller
             $itemsQuery->where('name', 'like', '%'.$itemsearch.'%');
         }
 
-        $items = $itemsQuery->orderBy('id', 'desc')->paginate(10)->appends([
+        $items = $itemsQuery->orderBy('id', 'desc')->paginate(10)->appends(array_filter([
             'itemsearch' => $itemsearch !== '' ? $itemsearch : null,
-        ]);
+            'recycle' => $showRecycle ? '1' : null,
+        ]));
 
         // $items = Item::All();
         $ITM = ItemImage::All();
@@ -67,6 +69,7 @@ class ItemsController extends Controller
             'items' => $items,
             'itemsearch' => $itemsearch,
             'totalItemCount' => $totalItemCount,
+            'showRecycle' => $showRecycle,
         ];
         // return $items;
         return view('pages.dash.itemsview')->with($pass);
@@ -1069,6 +1072,23 @@ class ItemsController extends Controller
                 }      
 
                     
+            break;
+
+            case 'restore_item':
+
+                $item = Item::find($id);
+                if (!$item) {
+                    return redirect('/items?recycle=1')->with('error', 'Item not found');
+                }
+
+                try {
+                    $item->del = 'no';
+                    $item->save();
+                    return redirect('/items?recycle=1')->with('success', 'Item successfully restored');
+                } catch(Exception $ex){
+                    return redirect('/items?recycle=1')->with('error', 'Oops..! Unhandled Error!');
+                }
+
             break;
 
             case 'update_sales':

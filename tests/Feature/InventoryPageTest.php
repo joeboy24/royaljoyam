@@ -295,6 +295,66 @@ class InventoryPageTest extends TestCase
         ]);
     }
 
+    public function test_inventory_table_does_not_show_thumbnail_filename(): void
+    {
+        $this->createItem([
+            'name' => 'Visible Item',
+            'thumb_img' => 'hidden_thumb_xyz.png',
+        ]);
+
+        $response = $this->actingAs($this->admin)->get('/items');
+
+        $response->assertOk();
+        $response->assertSee('Visible Item');
+        $response->assertDontSee('<p class="small_p">hidden_thumb_xyz.png</p>', false);
+    }
+
+    public function test_inventory_table_shows_formatted_created_date(): void
+    {
+        $item = $this->createItem(['name' => 'Dated Item']);
+        DB::table('items')->where('id', $item->id)->update([
+            'created_at' => '2024-03-15 10:30:00',
+        ]);
+
+        $response = $this->actingAs($this->admin)->get('/items');
+
+        $response->assertOk();
+        $response->assertSee('15 Mar 2024');
+    }
+
+    public function test_recycle_bin_shows_deleted_items(): void
+    {
+        $this->createItem(['name' => 'Active Item', 'del' => 'no']);
+        $this->createItem(['name' => 'Trashed Item', 'del' => 'yes']);
+
+        $response = $this->actingAs($this->admin)->get('/items?recycle=1');
+
+        $response->assertOk();
+        $response->assertSee('Recycle Bin');
+        $response->assertSee('href="' . url('/items') . '"', false);
+        $response->assertSee('Back to Inventory', false);
+        $response->assertSee('Trashed Item');
+        $response->assertDontSee('Active Item');
+        $response->assertSee('restore_item', false);
+    }
+
+    public function test_admin_can_restore_item_from_recycle_bin(): void
+    {
+        $item = $this->createItem(['name' => 'Restore Me', 'del' => 'yes']);
+
+        $response = $this->actingAs($this->admin)->put('/items/' . $item->id, [
+            'store_action' => 'restore_item',
+        ]);
+
+        $response->assertRedirect('/items?recycle=1');
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('items', [
+            'id' => $item->id,
+            'del' => 'no',
+        ]);
+    }
+
     public function test_inventory_pagination_links_appear_when_more_than_ten_items(): void
     {
         for ($i = 0; $i < 11; $i++) {
