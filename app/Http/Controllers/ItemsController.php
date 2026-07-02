@@ -397,15 +397,8 @@ class ItemsController extends Controller
 
                 case 'update_item':
 
-                    try {
-                        $item->del = 'yes';
-                        $item->save();
-                        return redirect('/itemsview')->with('success', 'Item successfully deleted');
-                    } catch(Exception $ex){
-                        return redirect('/itemsview')->with('error', 'Oops..! Unhandled Error!');
-                    }      
+                    return redirect('/items')->with('error', 'Item update should be handled through the stock update form');
 
-                        
                 break;
 
                 case 'admi_config':

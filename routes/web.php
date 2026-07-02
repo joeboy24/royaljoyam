@@ -49,6 +49,9 @@ Route::resource('/fees', 'FeesController');
 
 
 
+Route::redirect('/itemsview', '/items');
+Route::redirect('/stockview', '/items');
+
 Route::get('/runs', 'DashController@runs');
 Route::get('/changedate', 'DashController@changedate');
 Route::get('/deliverer', 'DashController@deliverer');
