@@ -189,11 +189,6 @@ class ItemsController extends Controller
                             # code...
                             return redirect('/sales')->with('error', 'Oops..! Define price for this item before purchase');
                         }
-                        // Available Qty for q1, q2, q3....
-                        $avQty = $avQty - $qty;
-                        // Available Qty main 
-                        $mainQty = $mainQty - $qty;
-
                         $matchThese = ['user_id' => auth()->user()->id, 'name' => $name];
                         $results = Cart::where($matchThese)->get();
                         
@@ -212,12 +207,6 @@ class ItemsController extends Controller
                                 'unit_price' => $sp,
                                 'tot' => $qty*$sp,
                             ]);
-
-                            // Update qty in stock
-                            $qtyUp = Item::find($it_id);
-                            $qtyUp->qty = $mainQty;
-                            $qtyUp->$q = $avQty;
-                            $qtyUp->save();
 
                             return redirect('/sales'); 
                             // return redirect('/sales')->with('success', $name.' added Successfully');
@@ -1119,13 +1108,13 @@ class ItemsController extends Controller
                 }
 
                 try {
-                    $generalQty = (int) $request->input('qty', 0);
+                    $generalQty = max(0, (int) $request->input('qty', 0));
                     $branchQtyTotal = 0;
 
                     for ($i = 1; $i <= count(session('compbranch')); $i++) {
                         $qq = 'q' . $i;
                         $bb = 'b' . $i;
-                        $qtyValue = (int) $request->input($qq, 0);
+                        $qtyValue = max(0, (int) $request->input($qq, 0));
                         $priceValue = $request->input($bb, 0);
 
                         $branchQtyTotal += $qtyValue;

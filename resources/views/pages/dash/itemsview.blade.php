@@ -256,15 +256,16 @@
 
                                                       <tr class="tbl_tr"><td class="tl"><b>Gen. Quantity</b></td><td class="tr">
                                                         <div class="form-group">
-                                                          <input type="number" class="form-control" name="qty" id="qty{{$item->id}}" placeholder="Quantity" value="{{$item->qty}}" readonly/>
+                                                          <input type="number" class="form-control" name="qty" id="qty{{$item->id}}" placeholder="Quantity" value="{{$item->qty}}" min="0" oninput="validateBranchQty{{$item->id}}()" required/>
                                                         </div>
+                                                        <p class="small_p" id="branch_status_{{$item->id}}">Branch totals must not exceed the General Quantity.</p>
                                                       </td></tr>
 
                                                       @for ($i = 0; $i < count(session('compbranch')); $i++)
                                                         <tr class="tbl_tr"><td class="tl">Branch {{$i+1}} Qty.</td><td class="tr">
                                                           <div class="form-group">
                                                             <input type="hidden" value="{{$qq = 'q'.$i+1}}">
-                                                            <input type="number" class="form-control" name="q{{$i+1}}" id="q{{$item->id}}" placeholder="Quantity" value="{{$item->$qq}}" onchange="qty_sum{{$item->id}}()" required/>
+                                                            <input type="number" class="form-control" name="q{{$i+1}}" id="q{{$i+1}}_{{$item->id}}" placeholder="Quantity" value="{{$item->$qq}}" min="0" oninput="validateBranchQty{{$item->id}}()" required/>
                                                           </div>
                                                         </td></tr>
                                                       @endfor
@@ -374,15 +375,21 @@
                                 </tr>
 
                                 <script type="text/javascript">
-                                
-                                  function qty_sum{{$item->id}}() {
-                                    q1 = Number(document.getElementById('q1{{$item->id}}').value);
-                                    q2 = Number(document.getElementById('q2{{$item->id}}').value);
-                                    q3 = Number(document.getElementById('q3{{$item->id}}').value);
-                                    qty = document.getElementById('qty{{$item->id}}');
-                                    qty.value = q1 + q2 + q3;
+                                  function validateBranchQty{{$item->id}}() {
+                                    let generalQty = Number(document.getElementById('qty{{$item->id}}').value || 0);
+                                    let branchTotal = 0;
+                                    @for ($i = 0; $i < count(session('compbranch')); $i++)
+                                      branchTotal += Number(document.getElementById('q{{$i+1}}_{{$item->id}}').value || 0);
+                                    @endfor
+                                    let status = document.getElementById('branch_status_{{$item->id}}');
+                                    if (branchTotal > generalQty) {
+                                      status.textContent = 'Branch totals exceed General Quantity.';
+                                      status.style.color = '#d9534f';
+                                    } else {
+                                      status.textContent = 'Branch totals are within General Quantity.';
+                                      status.style.color = '#28a745';
+                                    }
                                   }
-                                  
                                 </script>
                               
                               @endif
