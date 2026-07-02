@@ -11,11 +11,12 @@
               @include('inc.messages')
 
               <div class="card">
-                
-                <div class="card-header card-header-primary">
-                  <h4 class="card-title">Configuration</h4>
-                  <p class="card-category">Set up information about company here..</p>
-                </div>
+
+                <x-dash-page-header
+                  title="Configuration"
+                  subtitle="Set up company information, branches, and system options."
+                  icon="fa fa-cogs"
+                />
                 <div class="card-body">
             
                   <div class="container">

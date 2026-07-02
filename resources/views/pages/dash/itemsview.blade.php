@@ -128,33 +128,20 @@
                 </div>
 
               <div class="card">
-                <div class="card-header card-header-primary inventory-card-header">
-                  <div class="inventory-card-header-main">
-                    <div class="inventory-card-title-row">
-                      <span class="inventory-card-icon">
-                        <i class="fa {{ $showRecycle ? 'fa-trash' : 'fa-archive' }}"></i>
-                      </span>
-                      <div>
-                        <h4 class="card-title inventory-card-title">{{ $showRecycle ? 'Recycle Bin' : 'Inventory' }}</h4>
-                        <p class="inventory-card-subtitle">
-                          @if ($showRecycle)
-                            Deleted inventory items can be restored here.
-                          @else
-                            Inventory records are managed separately from registry and configuration.
-                          @endif
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                <x-dash-page-header
+                  :title="$showRecycle ? 'Recycle Bin' : 'Inventory'"
+                  :subtitle="$showRecycle ? 'Deleted inventory items can be restored here.' : 'Inventory records are managed separately from registry and configuration.'"
+                  :icon="$showRecycle ? 'fa fa-trash' : 'fa fa-archive'"
+                >
                   @if (count(session('compbranch')) > 0 && ! $showRecycle)
-                    <div class="inventory-branch-controls inventory-header-actions">
+                    <x-slot:actions>
                       <button type="button" class="inventory-branch-control-btn" id="toggleAllBranches" aria-expanded="false">
                         <i class="fa fa-angle-double-down"></i>
                         <span>Expand all</span>
                       </button>
-                    </div>
+                    </x-slot:actions>
                   @endif
-                </div>
+                </x-dash-page-header>
                 <div id="printarea1" class="card-body">
             
                     @if (count($items) > 0)
@@ -534,13 +521,6 @@
     --inv-accent-dark: #0097a7;
     --inv-accent-rgb: 0, 172, 193;
   }
-  .card .card-header-primary.inventory-card-header {
-    background: linear-gradient(
-      90deg,
-      var(--dash-header-from, #00acc1) 0%,
-      var(--dash-header-to, #0097a7) 100%
-    ) !important;
-  }
   .inventory-filter-row {
     display: flex;
     flex-wrap: wrap;
@@ -861,59 +841,6 @@
     gap: 8px;
     margin-bottom: 12px;
   }
-  .inventory-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.25rem;
-    flex-wrap: wrap;
-    padding: 1.5rem 1.875rem 0.75rem 1rem !important;
-    position: relative;
-  }
-  .inventory-card-title-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.875rem;
-  }
-  .inventory-card-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    margin-top: 0.125rem;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.16);
-    border: 1px solid rgba(255, 255, 255, 0.28);
-    color: #fff;
-    font-size: 17px;
-    flex-shrink: 0;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  }
-  .inventory-card-header .card-title,
-  .inventory-card-title {
-    margin: 0 0 0.25rem;
-    padding-top: 0.125rem;
-    font-size: 1.25rem;
-    font-weight: 600;
-    line-height: 1.2;
-  }
-  .inventory-card-subtitle {
-    margin: 0;
-    max-width: 520px;
-    font-size: 0.8125rem;
-    line-height: 1.35;
-    color: rgba(255, 255, 255, 0.82);
-  }
-  .inventory-card-header-main {
-    flex: 1 1 auto;
-    min-width: 220px;
-  }
-  .inventory-header-actions {
-    margin-bottom: 0;
-    flex: 0 0 auto;
-    align-self: center;
-  }
   .inventory-table {
     margin-bottom: 0;
   }
@@ -957,25 +884,10 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
-  .inventory-header-actions .inventory-branch-control-btn {
-    height: 36px;
-    padding: 0 16px;
-    border-color: rgba(255, 255, 255, 0.38);
-    background: rgba(255, 255, 255, 0.12);
-    color: #fff;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(4px);
-  }
   .inventory-branch-control-btn:hover {
     background: rgba(var(--inv-accent-rgb, 0, 172, 193), 0.08);
     border-color: var(--inv-accent, #00acc1);
     color: var(--inv-accent-dark, #0097a7);
-  }
-  .inventory-header-actions .inventory-branch-control-btn:hover {
-    background: rgba(255, 255, 255, 0.22);
-    border-color: rgba(255, 255, 255, 0.62);
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
   }
   .branch-detail-row td {
     padding-top: 0 !important;

@@ -26,10 +26,11 @@
               {{-- </form> --}}
 
               <div class="card">
-                <div class="card-header card-header-primary">
-                  <h4 class="card-title">Waybill</h4>
-                  <p class="card-category">Complete waybill info. here..</p>
-                </div>
+                <x-dash-page-header
+                  title="Waybill"
+                  subtitle="Complete waybill info here."
+                  icon="fa fa-truck"
+                />
                 <div class="card-body">
                   <form action="{{action('ItemsController@store')}}" method="POST">
                             @csrf
