@@ -63,17 +63,24 @@ class DistributionController extends Controller
      */
     public function show($id)
     {
-        //
-        // $cur_qtys[] = '';
-        $wbcs = Wbcontent::where('waybill_id', $id)->where('del', 'no')->get();
-        if (count($wbcs) > 0) {
-            foreach ($wbcs as $wbc) {
-                $cur_qtys[] = Item::find($wbc->item_id);
+        $wbcs = Wbcontent::where('waybill_id', $id)->where('del', 'no')->with(['item', 'waybill'])->get();
+        $cur_qtys = $wbcs->isNotEmpty()
+            ? $wbcs->map(fn ($wbc) => Item::find($wbc->item_id))->values()
+            : collect();
+
+        $dist_qtys = Wbdistribution::where('waybill_id', $id)->where('del', 'no')->get();
+        $dist_sent = [];
+        foreach ($dist_qtys as $dist) {
+            $itemId = $dist->item_id;
+            if (! isset($dist_sent[$itemId])) {
+                $dist_sent[$itemId] = array_fill_keys(array_map(fn ($i) => 'q'.$i, range(1, 7)), 0);
             }
-        }else {
-            $cur_qtys = '';
+            for ($i = 1; $i <= 7; $i++) {
+                $key = 'q'.$i;
+                $dist_sent[$itemId][$key] += (int) ($dist->{$key} ?? 0);
+            }
         }
-        // return $cur_qtys[1]->name;
+
         $items = Item::where('del', 'no')->orderBy('name')->get();
         $waybill = Waybill::active()->findOrFail($id);
         $send = [
@@ -85,8 +92,9 @@ class DistributionController extends Controller
             'items' => $items,
             'wbcontents' => $wbcs,
             'cur_qtys' => $cur_qtys,
-            'branches' => CompanyBranch::all(),
-            'dist_qtys' => Wbdistribution::where('waybill_id', $id)->where('del', 'no')->get(),
+            'branches' => CompanyBranch::where('del', 'no')->orderBy('tag')->get(),
+            'dist_qtys' => $dist_qtys,
+            'dist_sent' => $dist_sent,
         ];
         return view('pages.dash.waybill_dist')->with($send);
     }

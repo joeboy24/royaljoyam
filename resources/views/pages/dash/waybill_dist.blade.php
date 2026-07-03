@@ -130,9 +130,15 @@
                                         <button type="button" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-toggle="modal" data-target="#edit_{{ $wbc->id }}" title="Edit quantity" data-tip="Edit">
                                           <i class="fa fa-pencil"></i>
                                         </button>
-                                        <button type="submit" name="store_action" value="del_wbcontent" class="inventory-action-btn inventory-action-btn-icon dash-tip" title="Remove item" data-tip="Delete" onclick="return confirm('Are you sure you want to delete this item?');">
-                                          <i class="fa fa-trash"></i>
-                                        </button>
+                                        @if ((int) $wbc->qty_dist > 0)
+                                          <button type="button" class="inventory-action-btn inventory-action-btn-icon is-disabled dash-tip" disabled title="Cannot remove — already distributed" data-tip="Cannot delete — {{ $wbc->qty_dist }} distributed">
+                                            <i class="fa fa-trash"></i>
+                                          </button>
+                                        @else
+                                          <button type="submit" name="store_action" value="del_wbcontent" class="inventory-action-btn inventory-action-btn-icon dash-tip" title="Remove item" data-tip="Delete" onclick="return confirm('Are you sure you want to delete this item?');">
+                                            <i class="fa fa-trash"></i>
+                                          </button>
+                                        @endif
 
                                         <div class="modal fade waybill-edit-modal" id="edit_{{ $wbc->id }}" tabindex="-1" role="dialog" aria-labelledby="editWbcLabel_{{ $wbc->id }}" aria-hidden="true">
                                           <div class="modal-dialog inventory-edit-dialog modal-dialog-centered" role="document">
@@ -156,7 +162,10 @@
                                               <div class="inventory-edit-body">
                                                 <label class="inventory-edit-field">
                                                   <span class="inventory-edit-label">Quantity on waybill</span>
-                                                  <input type="number" class="inventory-edit-input" name="qty" min="0" value="{{ $wbc->qty }}" required>
+                                                  <input type="number" class="inventory-edit-input" name="qty" min="{{ max(0, (int) $wbc->qty_dist) }}" value="{{ $wbc->qty }}" required>
+                                                  @if ((int) $wbc->qty_dist > 0)
+                                                    <span class="inventory-edit-field-hint">Minimum {{ $wbc->qty_dist }} — already distributed to branches.</span>
+                                                  @endif
                                                 </label>
                                               </div>
 
@@ -192,7 +201,7 @@
 
                         <div class="dist-callout">
                           <i class="fa fa-info-circle" aria-hidden="true"></i>
-                          <span>Enter quantities to send to each branch, then click <strong>Update</strong> on the row.</span>
+                          <span>Enter quantities to send to each branch (must not exceed remaining), then click <strong>Update</strong> on the row.</span>
                         </div>
 
                         @foreach ($wbcontents as $wbc)
@@ -212,13 +221,14 @@
                                 <th rowspan="2">#</th>
                                 <th rowspan="2">Item</th>
                                 @foreach ($branches as $br)
-                                  <th colspan="2" class="dist-branch-group">{{ $br->tag }}</th>
+                                  <th colspan="3" class="dist-branch-group">{{ $br->tag }}</th>
                                 @endforeach
                                 <th rowspan="2" class="ryt actsize">Actions</th>
                               </tr>
                               <tr>
                                 @foreach ($branches as $br)
                                   <th class="dist-branch-sub dist-branch-sub-avl">Avl</th>
+                                  <th class="dist-branch-sub dist-branch-sub-sent">Sent</th>
                                   <th class="dist-branch-sub dist-branch-sub-add">Add</th>
                                 @endforeach
                               </tr>
@@ -226,21 +236,50 @@
                             <tbody>
                               @foreach ($wbcontents as $wbc)
                                 @if ($wbc->del == 'no')
-                                  <tr @class(['rowColour' => $x % 2 === 0])>
+                                  @php
+                                    $remaining = (int) $wbc->qty - (int) $wbc->qty_dist;
+                                    $sent = $dist_sent[$wbc->item_id] ?? [];
+                                    $itemStock = $cur_qtys[$loop->index] ?? null;
+                                  @endphp
+                                  <tr @class(['rowColour' => $x % 2 === 0, 'dist-branch-row' => true]) data-remaining="{{ $remaining }}">
                                     <td>{{ $x++ }}</td>
                                     <td class="dist-branch-item">
                                       <span class="dist-branch-item-no">{{ $wbc->item->item_no }}</span>
                                       {{ $wbc->item->name }}
+                                      @if ($remaining <= 0)
+                                        <span class="dist-branch-remaining dist-branch-remaining-none">Fully distributed</span>
+                                      @else
+                                        <span class="dist-branch-remaining">{{ $remaining }} remaining</span>
+                                      @endif
                                     </td>
                                     @for ($i = 0; $i < count($branches); $i++)
                                       @php $val = 'q'.($i + 1); @endphp
-                                      <td class="ryt dist-branch-avl">{{ $cur_qtys[$x - 2]->$val ?? '—' }}</td>
+                                      <td class="ryt dist-branch-avl">{{ $itemStock?->{$val} ?? '—' }}</td>
+                                      <td class="ryt dist-branch-sent">{{ ($sent[$val] ?? 0) > 0 ? $sent[$val] : '—' }}</td>
                                       <td class="dist-branch-add">
-                                        <input class="dist-branch-input" type="number" min="0" name="{{ $val.$wbc->item_id }}" form="distBranchForm_{{ $wbc->id }}" placeholder="0" required>
+                                        <input
+                                          class="dist-branch-input"
+                                          type="number"
+                                          min="0"
+                                          step="1"
+                                          name="{{ $val.$wbc->item_id }}"
+                                          form="distBranchForm_{{ $wbc->id }}"
+                                          placeholder="0"
+                                          @disabled($remaining <= 0)
+                                        >
                                       </td>
                                     @endfor
                                     <td class="ryt">
-                                      <button type="submit" form="distBranchForm_{{ $wbc->id }}" name="store_action" value="up_wbdist" class="inventory-action-btn inventory-action-btn-primary dist-branch-update-btn dash-tip" data-tip="Save branch quantities" onclick="return confirm('Update distribution for this item?');">
+                                      <button
+                                        type="submit"
+                                        form="distBranchForm_{{ $wbc->id }}"
+                                        name="store_action"
+                                        value="up_wbdist"
+                                        class="inventory-action-btn inventory-action-btn-primary dist-branch-update-btn dash-tip"
+                                        data-tip="Save branch quantities"
+                                        @disabled($remaining <= 0)
+                                        onclick="return distValidateBranchRow(this);"
+                                      >
                                         <i class="fa fa-check"></i>
                                         <span>Update</span>
                                       </button>
@@ -379,6 +418,33 @@
       }
     });
   })();
+
+  function distValidateBranchRow(button) {
+    var row = button.closest('tr');
+    if (!row) {
+      return true;
+    }
+
+    var remaining = parseInt(row.getAttribute('data-remaining') || '0', 10);
+    var inputs = row.querySelectorAll('.dist-branch-input');
+    var total = 0;
+
+    inputs.forEach(function (input) {
+      total += parseInt(input.value || '0', 10) || 0;
+    });
+
+    if (total <= 0) {
+      alert('Enter at least one branch quantity to distribute.');
+      return false;
+    }
+
+    if (total > remaining) {
+      alert('Total branch quantities (' + total + ') exceed remaining (' + remaining + ').');
+      return false;
+    }
+
+    return confirm('Distribute ' + total + ' unit(s) to branches?');
+  }
 </script>
 
 @endsection

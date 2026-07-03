@@ -120,6 +120,8 @@ class DistReportPageTest extends TestCase
         $this->actingAs($this->admin)
             ->get('/distreport')
             ->assertOk()
+            ->assertSee('Distribution Report')
+            ->assertSee('Load data')
             ->assertSee('MT-DIST-001')
             ->assertSee('Distribution Item')
             ->assertSee('Acme Supplies');

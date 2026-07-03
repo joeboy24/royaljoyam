@@ -244,6 +244,7 @@ class DashController extends Controller
         $showRecycle = $request->query('recycle') === '1';
         $waybillsearch = trim((string) $request->query('waybillsearch', ''));
         $filterStatus = trim((string) $request->query('status', ''));
+        $filterDistribution = trim((string) $request->query('distribution', ''));
         $dateFrom = $request->query('date_from');
         $dateTo = $request->query('date_to');
         $sort = (string) $request->query('sort', '');
@@ -256,6 +257,7 @@ class DashController extends Controller
             $showRecycle,
             $waybillsearch,
             $filterStatus,
+            $filterDistribution,
             $dateFrom,
             $dateTo,
             $sort,
@@ -265,10 +267,17 @@ class DashController extends Controller
 
         $waybillsQuery = Waybill::query()
             ->with('user')
+            ->withSum(['wbcontent as qty_total' => fn ($q) => $q->where('del', 'no')], 'qty')
+            ->withSum(['wbcontent as qty_distributed' => fn ($q) => $q->where('del', 'no')], 'qty_dist')
+            ->withCount(['wbcontent as item_count' => fn ($q) => $q->where('del', 'no')])
             ->search($waybillsearch)
             ->statusFilter($filterStatus)
             ->deliveryBetween($dateFrom, $dateTo)
             ->ordered($sort, $dir);
+
+        if (! $showRecycle) {
+            $waybillsQuery->distributionFilter($filterDistribution);
+        }
 
         if ($showRecycle) {
             $waybillsQuery->deleted();
@@ -286,6 +295,7 @@ class DashController extends Controller
             'waybillsearch' => $waybillsearch,
             'showRecycle' => $showRecycle,
             'filterStatus' => $filterStatus,
+            'filterDistribution' => $filterDistribution,
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
             'sort' => $sort,
@@ -301,6 +311,7 @@ class DashController extends Controller
         bool $showRecycle,
         string $waybillsearch,
         string $filterStatus,
+        string $filterDistribution,
         ?string $dateFrom,
         ?string $dateTo,
         string $sort,
@@ -311,6 +322,7 @@ class DashController extends Controller
             'recycle' => $showRecycle ? '1' : null,
             'waybillsearch' => $waybillsearch !== '' ? $waybillsearch : null,
             'status' => $filterStatus !== '' ? $filterStatus : null,
+            'distribution' => $filterDistribution !== '' ? $filterDistribution : null,
             'date_from' => $dateFrom ?: null,
             'date_to' => $dateTo ?: null,
             'sort' => $sort !== '' ? $sort : null,
@@ -974,6 +986,8 @@ class DashController extends Controller
             'sum' => 0,
             'cats' => $cats,
             'wbdreports' => $wbds,
+            'date_from' => $date_from,
+            'date_to' => $date_to,
         ];
         return view('pages.dash.distreport')->with($pass);
         

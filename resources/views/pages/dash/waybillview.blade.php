@@ -3,6 +3,7 @@
 @php
   $clearUrl = $showRecycle ? url('/waybillview?recycle=1') : url('/waybillview');
   $activeFilterCount = ($filterStatus !== '' ? 1 : 0)
+    + ($filterDistribution !== '' ? 1 : 0)
     + ($dateFrom ? 1 : 0)
     + ($dateTo ? 1 : 0)
     + ($perPage !== 10 ? 1 : 0);
@@ -72,6 +73,18 @@
                                 @endforeach
                               </select>
                             </label>
+
+                            @if (! $showRecycle)
+                              <label class="inventory-filter-field">
+                                <span class="inventory-filter-field-icon"><i class="fa fa-share-alt"></i></span>
+                                <select name="distribution" class="inventory-filter-select" title="Filter by distribution">
+                                  <option value="">All distribution</option>
+                                  <option value="pending" @selected($filterDistribution === 'pending')>Pending</option>
+                                  <option value="partial" @selected($filterDistribution === 'partial')>Partial</option>
+                                  <option value="complete" @selected($filterDistribution === 'complete')>Complete</option>
+                                </select>
+                              </label>
+                            @endif
 
                             <label class="inventory-filter-field inventory-filter-field-compact">
                               <span class="inventory-filter-field-icon"><i class="fa fa-calendar"></i></span>
@@ -150,7 +163,7 @@
 
             <div id="printarea1" class="card-body">
               @if ($waybills->total() > 0)
-                <div class="table-responsive">
+                <div class="table-responsive waybill-table-wrap">
                   <table class="table mt">
                     <thead class="text-secondary hideMe">
                       <tr>
@@ -163,13 +176,20 @@
                         <th>Pieces</th>
                         <th>Qty.</th>
                         <th class="waybill-table-status-col"><x-waybill-sort-link column="status" label="Status" :sort="$sort" :dir="$dir" :list-query="$listQuery" /></th>
+                        @if (! $showRecycle)
+                          <th class="waybill-table-dist-col">Distribution</th>
+                        @endif
                         <th class="waybill-table-date-col"><x-waybill-sort-link column="del_date" label="Delivery Date" :sort="$sort" :dir="$dir" :list-query="$listQuery" /></th>
-                        <th class="ryt actsize">Actions</th>
+                        <th class="ryt actsize waybill-table-actions-col">Actions</th>
                       </tr>
                     </thead>
                     <tbody id="tb">
                       @foreach ($waybills as $waybill)
-                        <tr @class(['rowColour' => $c % 2 === 0, 'waybill-recycle-row' => $showRecycle])>
+                        <tr @class([
+                          'rowColour' => $c % 2 === 0,
+                          'waybill-recycle-row' => $showRecycle,
+                          'waybill-row-dist-open' => ! $showRecycle && $waybill->hasOpenDistribution(),
+                        ])>
                           <td>{{ $c++ }}</td>
                           <td>
                             {{ $waybill->stock_no }}
@@ -190,8 +210,16 @@
                           <td class="waybill-table-status-col">
                             <x-waybill-status-badge :status="$waybill->status" />
                           </td>
+                          @if (! $showRecycle)
+                            <td class="waybill-table-dist-col">
+                              <x-waybill-distribution-badge
+                                :status="$waybill->distributionStatus()"
+                                :remaining="$waybill->distributionRemaining()"
+                              />
+                            </td>
+                          @endif
                           <td class="waybill-table-date-col">{{ $waybill->formattedDeliveryDate() }}</td>
-                          <td class="ryt">
+                          <td class="ryt waybill-table-actions-col">
                             @if ($showRecycle)
                               <form action="{{ action('ItemsController@update', $waybill->id) }}" method="POST" class="waybill-row-actions">
                                 @csrf
@@ -203,25 +231,47 @@
                               </form>
                             @else
                               <div class="waybill-row-actions">
-                                <button type="button" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-toggle="modal" data-target="#edit_{{ $waybill->id }}" title="Edit waybill" data-tip="Edit">
-                                  <i class="fa fa-pencil"></i>
-                                </button>
-
-                                <a href="/distribution/{{ $waybill->id }}" class="inventory-action-btn inventory-action-btn-icon dash-tip" title="Distribute" data-tip="Distribute">
+                                <a
+                                  href="/distribution/{{ $waybill->id }}"
+                                  class="inventory-action-btn inventory-action-btn-icon waybill-distribute-btn dash-tip"
+                                  title="{{ $waybill->distributionRemaining() > 0 ? $waybill->distributionRemaining().' remaining to distribute' : 'Distribute' }}"
+                                  data-tip="{{ $waybill->distributionRemaining() > 0 ? 'Distribute · '.$waybill->distributionRemaining().' rem.' : 'Distribute' }}"
+                                >
                                   <i class="fa fa-share-alt"></i>
+                                  @if ($waybill->distributionRemaining() > 0)
+                                    <span class="waybill-action-badge">{{ $waybill->distributionRemaining() }}</span>
+                                  @endif
                                 </a>
 
-                                <a href="/waybillprint/{{ $waybill->id }}" target="_blank" rel="noopener" class="inventory-action-btn inventory-action-btn-icon dash-tip" title="Print waybill" data-tip="Print">
-                                  <i class="fa fa-print"></i>
-                                </a>
-
-                                <form action="{{ action('ItemsController@update', $waybill->id) }}" method="POST" style="display:inline;">
-                                  @csrf
-                                  <input type="hidden" name="_method" value="PUT">
-                                  <button type="submit" name="store_action" value="del_waybil" class="inventory-action-btn inventory-action-btn-icon dash-tip" title="Move to recycle bin" data-tip="Delete" onclick="return confirm('Move this waybill to the recycle bin?');">
-                                    <i class="fa fa-trash"></i>
+                                <div class="waybill-actions-more">
+                                  <button
+                                    type="button"
+                                    class="inventory-action-btn inventory-action-btn-icon waybill-actions-more-toggle dash-tip"
+                                    aria-label="More actions"
+                                    aria-haspopup="true"
+                                    data-tip="More actions"
+                                  >
+                                    <i class="fa fa-ellipsis-h"></i>
                                   </button>
-                                </form>
+
+                                  <div class="waybill-actions-more-menu" role="group" aria-label="Waybill actions">
+                                    <button type="button" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-toggle="modal" data-target="#edit_{{ $waybill->id }}" title="Edit waybill" data-tip="Edit">
+                                      <i class="fa fa-pencil"></i>
+                                    </button>
+
+                                    <a href="/waybillprint/{{ $waybill->id }}" target="_blank" rel="noopener" class="inventory-action-btn inventory-action-btn-icon dash-tip" title="Print waybill" data-tip="Print">
+                                      <i class="fa fa-print"></i>
+                                    </a>
+
+                                    <form action="{{ action('ItemsController@update', $waybill->id) }}" method="POST">
+                                      @csrf
+                                      <input type="hidden" name="_method" value="PUT">
+                                      <button type="submit" name="store_action" value="del_waybil" class="inventory-action-btn inventory-action-btn-icon dash-tip" title="Move to recycle bin" data-tip="Delete" onclick="return confirm('Move this waybill to the recycle bin?');">
+                                        <i class="fa fa-trash"></i>
+                                      </button>
+                                    </form>
+                                  </div>
+                                </div>
                               </div>
 
                               <div class="modal fade waybill-edit-modal" id="edit_{{ $waybill->id }}" tabindex="-1" role="dialog" aria-labelledby="editWaybillLabel_{{ $waybill->id }}" aria-hidden="true">
@@ -386,4 +436,91 @@
 
 @section('footer')
 <script src="/maindir/js/inventory-collapsible-filters.js?v=2"></script>
+<script>
+  (function () {
+    var menus = Array.prototype.slice.call(document.querySelectorAll('.waybill-actions-more'));
+
+    function positionMenu(wrap) {
+      var toggle = wrap.querySelector('.waybill-actions-more-toggle');
+      var menu = wrap.querySelector('.waybill-actions-more-menu');
+      if (!toggle || !menu) {
+        return;
+      }
+
+      var rect = toggle.getBoundingClientRect();
+      menu.style.top = (rect.top + (rect.height / 2)) + 'px';
+      menu.style.left = (rect.left - 6) + 'px';
+    }
+
+    function closeAllMenus() {
+      menus.forEach(function (wrap) {
+        wrap.classList.remove('is-open');
+        var toggle = wrap.querySelector('.waybill-actions-more-toggle');
+        var menu = wrap.querySelector('.waybill-actions-more-menu');
+        if (toggle) {
+          toggle.setAttribute('aria-expanded', 'false');
+        }
+        if (menu) {
+          menu.style.top = '';
+          menu.style.left = '';
+        }
+      });
+    }
+
+    function openMenu(wrap) {
+      closeAllMenus();
+      wrap.classList.add('is-open');
+      positionMenu(wrap);
+      var toggle = wrap.querySelector('.waybill-actions-more-toggle');
+      if (toggle) {
+        toggle.setAttribute('aria-expanded', 'true');
+      }
+    }
+
+    function repositionOpenMenu() {
+      var openWrap = document.querySelector('.waybill-actions-more.is-open');
+      if (openWrap) {
+        positionMenu(openWrap);
+      }
+    }
+
+    menus.forEach(function (wrap) {
+      var toggle = wrap.querySelector('.waybill-actions-more-toggle');
+      if (!toggle) {
+        return;
+      }
+
+      wrap.addEventListener('mouseenter', function () {
+        openMenu(wrap);
+      });
+
+      toggle.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (wrap.classList.contains('is-open')) {
+          closeAllMenus();
+        } else {
+          openMenu(wrap);
+        }
+      });
+    });
+
+    document.addEventListener('click', function (event) {
+      if (!event.target.closest('.waybill-actions-more')) {
+        closeAllMenus();
+      }
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        closeAllMenus();
+      }
+    });
+
+    window.addEventListener('scroll', repositionOpenMenu, true);
+    window.addEventListener('resize', repositionOpenMenu);
+
+    document.addEventListener('show.bs.modal', closeAllMenus);
+  })();
+</script>
 @endsection

@@ -17,6 +17,68 @@ class Waybill extends Model
         return $this->hasMany('App\Models\Wbcontent');
     }
 
+    public function activeWbcontents()
+    {
+        return $this->hasMany('App\Models\Wbcontent')->where('del', 'no');
+    }
+
+    public function scopeDistributionFilter($query, ?string $filter)
+    {
+        if ($filter === null || $filter === '' || ! in_array($filter, static::distributionFilterOptions(), true)) {
+            return $query;
+        }
+
+        return match ($filter) {
+            'pending' => $query
+                ->whereHas('wbcontent', fn ($q) => $q->where('del', 'no'))
+                ->whereDoesntHave('wbcontent', fn ($q) => $q->where('del', 'no')->where('qty_dist', '>', 0)),
+            'partial' => $query
+                ->whereHas('wbcontent', fn ($q) => $q->where('del', 'no')->where('qty_dist', '>', 0))
+                ->whereHas('wbcontent', fn ($q) => $q->where('del', 'no')->whereRaw('CAST(qty_dist AS UNSIGNED) < CAST(qty AS UNSIGNED)')),
+            'complete' => $query
+                ->whereHas('wbcontent', fn ($q) => $q->where('del', 'no'))
+                ->whereDoesntHave('wbcontent', fn ($q) => $q->where('del', 'no')->whereRaw('CAST(qty_dist AS UNSIGNED) < CAST(qty AS UNSIGNED)')),
+            default => $query,
+        };
+    }
+
+    public function distributionRemaining(): int
+    {
+        return max(0, (int) ($this->qty_total ?? 0) - (int) ($this->qty_distributed ?? 0));
+    }
+
+    public function distributionStatus(): string
+    {
+        $itemCount = (int) ($this->item_count ?? 0);
+
+        if ($itemCount === 0) {
+            return 'none';
+        }
+
+        $remaining = $this->distributionRemaining();
+        $distributed = (int) ($this->qty_distributed ?? 0);
+
+        if ($remaining === 0) {
+            return 'complete';
+        }
+
+        if ($distributed === 0) {
+            return 'pending';
+        }
+
+        return 'partial';
+    }
+
+    public function hasOpenDistribution(): bool
+    {
+        return $this->distributionStatus() === 'pending' || $this->distributionStatus() === 'partial';
+    }
+
+    public static function distributionFilterOptions(): array
+    {
+        return ['pending', 'partial', 'complete'];
+    }
+
     public function scopeActive($query)
     {
         return $query->where('del', 'no');

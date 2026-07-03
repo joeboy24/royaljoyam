@@ -1506,94 +1506,78 @@ class ItemsController extends Controller
 
             case 'up_wbcontent':
                 $wb = Wbcontent::find($id);
-                $wb->qty = $request->input('qty');
+                if (! $wb) {
+                    return redirect(url()->previous())->with('error', 'Waybill item not found.');
+                }
+                $newQty = max(0, (int) $request->input('qty'));
+                if ($newQty < (int) $wb->qty_dist) {
+                    return redirect(url()->previous())->with('error', 'Cannot set quantity below already distributed amount ('.$wb->qty_dist.').');
+                }
+                $wb->qty = $newQty;
                 $wb->save();
                 return redirect(url()->previous())->with('success', 'Waybill quantity update successful');
             break;
 
             case 'del_wbcontent':
-                // Check availabity or if dustributed in Wbdistribution before deletion
                 $wb = Wbcontent::find($id);
-                // $wb->del = 'yes';
+                if (! $wb) {
+                    return redirect(url()->previous())->with('error', 'Waybill item not found.');
+                }
+                if ((int) $wb->qty_dist > 0) {
+                    return redirect(url()->previous())->with('error', 'Cannot remove item — '.$wb->qty_dist.' already distributed to branches.');
+                }
                 $wb->delete();
                 return redirect(url()->previous())->with('success', 'Item removed from waybill');
             break;
 
             case 'up_wbdist':
-                $q1=0; $q2=0; $q3=0; $q4=0; $q5=0; $q6=0; $q7=0;
                 $wbc = Wbcontent::find($id);
-                $wbd = Wbdistribution::where('waybill_id', $wbc->waybill_id)->where('item_id', $wbc->item_id)->latest()->first();
-                if ($request->input('q1'.$wbc->item_id)) {
-                    $q1 = $request->input('q1'.$wbc->item_id);
+                if (! $wbc) {
+                    return redirect(url()->previous())->with('error', 'Waybill item not found.');
                 }
-                if ($request->input('q2'.$wbc->item_id)) {
-                    $q2 = $request->input('q2'.$wbc->item_id);
+
+                $branchQtys = [];
+                for ($i = 1; $i <= 7; $i++) {
+                    $branchQtys['q'.$i] = max(0, (int) $request->input('q'.$i.$wbc->item_id, 0));
                 }
-                if ($request->input('q3'.$wbc->item_id)) {
-                    $q3 = $request->input('q3'.$wbc->item_id);
-                }
-                if ($request->input('q4'.$wbc->item_id)) {
-                    $q4 = $request->input('q4'.$wbc->item_id);
-                }
-                if ($request->input('q5'.$wbc->item_id)) {
-                    $q5 = $request->input('q5'.$wbc->item_id);
-                }
-                if ($request->input('q6'.$wbc->item_id)) {
-                    $q6 = $request->input('q6'.$wbc->item_id);
-                }
-                if ($request->input('q7'.$wbc->item_id)) {
-                    $q7 = $request->input('q7'.$wbc->item_id);
-                }
-                // return $q1.', '.$q2.', '.$q3.', '.$q4.', '.$q5.', '.$q6.', '.$q7;
 
                 $itup = Item::find($wbc->item_id);
-                $totQs = $q1 + $q2 + $q3 + $q4 + $q5 + $q6 + $q7;
-                if ($wbc->qty == $wbc->qty_dist) {
+                if (! $itup) {
+                    return redirect(url()->previous())->with('error', 'Item not found.');
+                }
+
+                $totQs = array_sum($branchQtys);
+                $remaining = (int) $wbc->qty - (int) $wbc->qty_dist;
+
+                if ($totQs <= 0) {
+                    return redirect(url()->previous())->with('error', 'Enter at least one branch quantity to distribute.');
+                }
+                if ($remaining <= 0) {
                     return redirect(url()->previous())->with('error', 'Oops..! Restock item `'.$itup->name.'` in order to distribute. 0 left');
                 }
-                if ($wbc->qty - ($wbc->qty_dist + $totQs) < 0) {
-                    return redirect(url()->previous())->with('error', 'Oops..! Only '.$wbc->qty - $wbc->qty_dist.' available for distribution to branches');
+                if ($totQs > $remaining) {
+                    return redirect(url()->previous())->with('error', 'Oops..! Only '.$remaining.' available for distribution to branches');
                 }
-                $wbc->qty_dist = $wbc->qty_dist + $totQs;
+
+                $wbc->qty_dist = (int) $wbc->qty_dist + $totQs;
                 $wbc->save();
 
-                // if ($wbd) {
-                //     $wbd->q1 = $wbd->q1 + $q1;
-                //     $wbd->q2 = $wbd->q2 + $q2;
-                //     $wbd->q3 = $wbd->q3 + $q3;
-                //     $wbd->q4 = $wbd->q4 + $q4;
-                //     $wbd->q5 = $wbd->q5 + $q5;
-                //     $wbd->q6 = $wbd->q6 + $q6;
-                //     $wbd->q7 = $wbd->q7 + $q7;
-                //     $wbd->save();
-                // } else {
-                    $wbd_insert = Wbdistribution::firstOrCreate([
-                        'user_id' => auth()->user()->id,
-                        'waybill_id' => $wbc->waybill_id,
-                        'item_id' => $wbc->item_id,
-                        'q1' => $q1,
-                        'q2' => $q2,
-                        'q3' => $q3,
-                        'q4' => $q4,
-                        'q5' => $q5,
-                        'q6' => $q6,
-                        'q7' => $q7,
-                    ]);
-                // }
-                // return redirect(url()->previous())->with('success', 'Waybill branch quantities update successful');
-                
-                $itup->q1 = $itup->q1 + $q1;
-                $itup->q2 = $itup->q2 + $q2;
-                $itup->q3 = $itup->q3 + $q3;
-                $itup->q4 = $itup->q4 + $q4;
-                $itup->q5 = $itup->q5 + $q5;
-                $itup->q6 = $itup->q6 + $q6;
-                $itup->q7 = $itup->q7 + $q7;
+                Wbdistribution::create(array_merge([
+                    'user_id' => auth()->user()->id,
+                    'waybill_id' => $wbc->waybill_id,
+                    'item_id' => $wbc->item_id,
+                ], $branchQtys));
+
+                $itup->q1 = $itup->q1 + $branchQtys['q1'];
+                $itup->q2 = $itup->q2 + $branchQtys['q2'];
+                $itup->q3 = $itup->q3 + $branchQtys['q3'];
+                $itup->q4 = $itup->q4 + $branchQtys['q4'];
+                $itup->q5 = $itup->q5 + $branchQtys['q5'];
+                $itup->q6 = $itup->q6 + $branchQtys['q6'];
+                $itup->q7 = $itup->q7 + $branchQtys['q7'];
                 $itup->qty = $itup->qty + $totQs;
                 $itup->save();
-                
-                // Update wbc quantiy distributed. To obtain remaining qty.
-                // $wb = Wbcontent::where('waybill_id', $wbc->waybill_id)->where('item_id', $wbc->item_id)->latest()->first();
+
                 return redirect(url()->previous())->with('success', 'Waybill branch quantities update successful');
             break;
 

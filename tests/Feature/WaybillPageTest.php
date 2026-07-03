@@ -341,6 +341,75 @@ class WaybillPageTest extends TestCase
             ->assertDontSee('WB-PENDING-FILTER');
     }
 
+    public function test_waybill_history_shows_distribution_status_and_remaining(): void
+    {
+        $pending = $this->createWaybill(['bill_no' => 'WB-DIST-PEND']);
+        $partial = $this->createWaybill(['bill_no' => 'WB-DIST-PART']);
+        $complete = $this->createWaybill(['bill_no' => 'WB-DIST-DONE']);
+
+        $pendingItem = $this->createItem(['item_no' => 'MT-DIST-PEND']);
+        $partialItem = $this->createItem(['item_no' => 'MT-DIST-PART']);
+        $completeItem = $this->createItem(['item_no' => 'MT-DIST-DONE']);
+
+        $this->createWbcontent($pending->id, $pendingItem, ['qty' => '10', 'qty_dist' => '0']);
+        $this->createWbcontent($partial->id, $partialItem, ['qty' => '10', 'qty_dist' => '4']);
+        $this->createWbcontent($complete->id, $completeItem, ['qty' => '10', 'qty_dist' => '10']);
+
+        $response = $this->actingAs($this->admin)->get('/waybillview');
+
+        $response->assertOk()
+            ->assertSee('waybill-table-dist-col', false)
+            ->assertSee('waybill-dist-pending', false)
+            ->assertSee('waybill-dist-partial', false)
+            ->assertSee('waybill-dist-complete', false)
+            ->assertSee('10 rem.', false)
+            ->assertSee('6 rem.', false)
+            ->assertSee('waybill-row-dist-open', false)
+            ->assertSee('waybill-action-badge', false)
+            ->assertSee('waybill-actions-more', false);
+    }
+
+    public function test_waybill_history_filters_by_distribution_status(): void
+    {
+        $pending = $this->createWaybill(['bill_no' => 'WB-FILTER-PEND']);
+        $partial = $this->createWaybill(['bill_no' => 'WB-FILTER-PART']);
+        $complete = $this->createWaybill(['bill_no' => 'WB-FILTER-DONE']);
+
+        $this->createWbcontent($pending->id, $this->createItem(), ['qty' => '10', 'qty_dist' => '0']);
+        $this->createWbcontent($partial->id, $this->createItem(), ['qty' => '10', 'qty_dist' => '3']);
+        $this->createWbcontent($complete->id, $this->createItem(), ['qty' => '10', 'qty_dist' => '10']);
+
+        $this->actingAs($this->admin)
+            ->get('/waybillview?distribution=pending')
+            ->assertOk()
+            ->assertSee('WB-FILTER-PEND')
+            ->assertDontSee('WB-FILTER-PART')
+            ->assertDontSee('WB-FILTER-DONE');
+
+        $this->actingAs($this->admin)
+            ->get('/waybillview?distribution=partial')
+            ->assertOk()
+            ->assertSee('WB-FILTER-PART')
+            ->assertDontSee('WB-FILTER-PEND')
+            ->assertDontSee('WB-FILTER-DONE');
+
+        $this->actingAs($this->admin)
+            ->get('/waybillview?distribution=complete')
+            ->assertOk()
+            ->assertSee('WB-FILTER-DONE')
+            ->assertDontSee('WB-FILTER-PEND')
+            ->assertDontSee('WB-FILTER-PART');
+    }
+
+    public function test_waybill_history_has_distribution_filter(): void
+    {
+        $this->actingAs($this->admin)
+            ->get('/waybillview')
+            ->assertOk()
+            ->assertSee('name="distribution"', false)
+            ->assertSee('All distribution');
+    }
+
     public function test_waybill_history_has_collapsible_filters(): void
     {
         $this->actingAs($this->admin)
@@ -426,5 +495,137 @@ class WaybillPageTest extends TestCase
             ->assertSee('Branch distribution')
             ->assertSee('MT095158')
             ->assertSee('STRIPS');
+    }
+
+    public function test_cannot_delete_waybill_item_when_already_distributed(): void
+    {
+        $waybill = $this->createWaybill(['bill_no' => 'WB-DEL-001']);
+        $itemId = $this->createItem(['item_no' => 'MT-DEL-001']);
+        $wbcId = $this->createWbcontent($waybill->id, $itemId, ['qty' => '10', 'qty_dist' => '5']);
+
+        $this->actingAs($this->admin)
+            ->put('/items/'.$wbcId, [
+                '_token' => csrf_token(),
+                'store_action' => 'del_wbcontent',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('wbcontents', ['id' => $wbcId]);
+    }
+
+    public function test_cannot_reduce_waybill_qty_below_distributed_amount(): void
+    {
+        $waybill = $this->createWaybill(['bill_no' => 'WB-QTY-001']);
+        $itemId = $this->createItem(['item_no' => 'MT-QTY-001']);
+        $wbcId = $this->createWbcontent($waybill->id, $itemId, ['qty' => '10', 'qty_dist' => '6']);
+
+        $this->actingAs($this->admin)
+            ->put('/items/'.$wbcId, [
+                '_token' => csrf_token(),
+                'store_action' => 'up_wbcontent',
+                'qty' => '4',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('wbcontents', ['id' => $wbcId, 'qty' => '10']);
+    }
+
+    public function test_branch_distribution_validates_remaining_quantity(): void
+    {
+        $waybill = $this->createWaybill(['bill_no' => 'WB-DIST-VAL']);
+        $itemId = $this->createItem(['item_no' => 'MT-DIST-VAL', 'qty' => '100']);
+        $wbcId = $this->createWbcontent($waybill->id, $itemId, ['qty' => '10', 'qty_dist' => '0']);
+
+        $this->actingAs($this->admin)
+            ->put('/items/'.$wbcId, [
+                '_token' => csrf_token(),
+                'store_action' => 'up_wbdist',
+                'q1'.$itemId => '12',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->actingAs($this->admin)
+            ->put('/items/'.$wbcId, [
+                '_token' => csrf_token(),
+                'store_action' => 'up_wbdist',
+                'q1'.$itemId => '4',
+                'q2'.$itemId => '3',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('wbcontents', ['id' => $wbcId, 'qty_dist' => '7']);
+        $this->assertDatabaseHas('wbdistributions', [
+            'waybill_id' => (string) $waybill->id,
+            'item_id' => (string) $itemId,
+            'q1' => '4',
+            'q2' => '3',
+        ]);
+    }
+
+    public function test_distribution_page_shows_sent_branch_totals(): void
+    {
+        DB::table('company_branches')->insert([
+            'user_id' => (string) $this->admin->id,
+            'name' => 'Branch A',
+            'loc' => 'Loc 1',
+            'contact' => '0000000001',
+            'tag' => '1',
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $waybill = $this->createWaybill(['bill_no' => 'WB-SENT-001']);
+        $itemId = $this->createItem(['item_no' => 'MT-SENT-001']);
+        $this->createWbcontent($waybill->id, $itemId, ['qty' => '10', 'qty_dist' => '5']);
+
+        DB::table('wbdistributions')->insert([
+            'user_id' => (string) $this->admin->id,
+            'waybill_id' => (string) $waybill->id,
+            'item_id' => (string) $itemId,
+            'q1' => '3',
+            'q2' => '2',
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get('/distribution/'.$waybill->id)
+            ->assertOk()
+            ->assertSee('dist-branch-sent', false)
+            ->assertSee('5 remaining')
+            ->assertSee('MT-SENT-001');
+    }
+
+    protected function createItem(array $overrides = []): int
+    {
+        return DB::table('items')->insertGetId(array_merge([
+            'item_no' => 'MT-'.uniqid(),
+            'user_id' => (string) $this->admin->id,
+            'name' => 'Test Item',
+            'qty' => '100',
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ], $overrides));
+    }
+
+    protected function createWbcontent(int|string $waybillId, int|string $itemId, array $overrides = []): int
+    {
+        return DB::table('wbcontents')->insertGetId(array_merge([
+            'user_id' => (string) $this->admin->id,
+            'waybill_id' => (string) $waybillId,
+            'item_id' => (string) $itemId,
+            'qty' => '10',
+            'qty_dist' => '0',
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ], $overrides));
     }
 }

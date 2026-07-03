@@ -658,6 +658,76 @@
   color: #1565c0;
 }
 
+.waybill-table-dist-col {
+  width: 132px;
+  min-width: 132px;
+  max-width: 132px;
+  vertical-align: middle !important;
+}
+
+.waybill-dist-badge {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 6px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.waybill-dist-badge-meta {
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.waybill-dist-none {
+  background: #f5f5f5;
+  color: #757575;
+}
+
+.waybill-dist-pending {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.waybill-dist-partial {
+  background: #fce4ec;
+  color: #c2185b;
+}
+
+.waybill-dist-complete {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.waybill-row-dist-open > td:first-child {
+  box-shadow: inset 3px 0 0 var(--inv-accent);
+}
+
+.waybill-distribute-btn {
+  position: relative;
+}
+
+.waybill-action-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--inv-accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  pointer-events: none;
+}
+
 .inventory-edit-input.is-invalid {
   border-color: #e53935;
 }
@@ -693,8 +763,74 @@
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
+}
+
+.waybill-table-actions-col {
+  overflow: visible;
+  white-space: nowrap;
+}
+
+.waybill-actions-more {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.waybill-actions-more-menu {
+  position: fixed;
+  z-index: 1038;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #ececec;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-100%, -50%) translateX(6px);
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+}
+
+.waybill-actions-more-menu form {
+  display: inline-flex;
+  margin: 0;
+}
+
+.waybill-actions-more.is-open .waybill-actions-more-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-100%, -50%) translateX(0);
+  pointer-events: auto;
+}
+
+.modal-open .waybill-actions-more .waybill-actions-more-menu {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.waybill-actions-more-toggle[aria-expanded="true"] {
+  border-color: rgba(var(--inv-accent-rgb), 0.35);
+  color: var(--inv-accent);
+  background: rgba(var(--inv-accent-rgb), 0.08);
+}
+
+.waybill-table-wrap {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.waybill-table-wrap .table {
+  overflow: visible;
+}
+
+.card-body:has(.waybill-table-wrap) {
+  overflow: visible;
 }
 
 .waybill-list-footer {
@@ -969,11 +1105,22 @@
   border-left: 1px solid rgba(var(--inv-accent-rgb), 0.12);
 }
 
+.dist-branch-sub-sent {
+  color: #888;
+}
+
 .dist-branch-avl {
   font-size: 13px;
   font-weight: 600;
   color: #555;
   min-width: 52px;
+}
+
+.dist-branch-sent {
+  font-size: 13px;
+  font-weight: 600;
+  color: #888;
+  min-width: 44px;
 }
 
 .dist-branch-add {
@@ -1011,6 +1158,26 @@
   font-size: 11px;
   font-weight: 700;
   color: var(--inv-accent);
+}
+
+.dist-branch-remaining {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #777;
+}
+
+.dist-branch-remaining-none {
+  color: #999;
+  font-style: italic;
+}
+
+.inventory-action-btn.is-disabled,
+.inventory-action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .dist-branch-update-btn {
