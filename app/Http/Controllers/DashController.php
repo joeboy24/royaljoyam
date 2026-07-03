@@ -240,21 +240,83 @@ class DashController extends Controller
         if(auth()->user()->status != 'Administrator'){
             return redirect('/dashboard'); 
         }
-        $c = 1;
-        $waybillsearch = trim((string) $request->query('waybillsearch', ''));
 
-        $waybills = Waybill::active()
+        $showRecycle = $request->query('recycle') === '1';
+        $waybillsearch = trim((string) $request->query('waybillsearch', ''));
+        $filterStatus = trim((string) $request->query('status', ''));
+        $dateFrom = $request->query('date_from');
+        $dateTo = $request->query('date_to');
+        $sort = (string) $request->query('sort', '');
+        $dir = (string) $request->query('dir', 'desc');
+        $perPage = in_array((int) $request->query('per_page', 10), [10, 25, 50], true)
+            ? (int) $request->query('per_page', 10)
+            : 10;
+
+        $listQuery = $this->waybillListQueryParams(
+            $showRecycle,
+            $waybillsearch,
+            $filterStatus,
+            $dateFrom,
+            $dateTo,
+            $sort,
+            $dir,
+            $perPage
+        );
+
+        $waybillsQuery = Waybill::query()
             ->with('user')
             ->search($waybillsearch)
-            ->orderBy('id', 'desc')
-            ->paginate(10);
+            ->statusFilter($filterStatus)
+            ->deliveryBetween($dateFrom, $dateTo)
+            ->ordered($sort, $dir);
+
+        if ($showRecycle) {
+            $waybillsQuery->deleted();
+        } else {
+            $waybillsQuery->active();
+        }
+
+        $waybills = $waybillsQuery
+            ->paginate($perPage)
+            ->appends($listQuery);
 
         $pass = [
-            'c' => $c,
+            'c' => 1,
             'waybills' => $waybills,
             'waybillsearch' => $waybillsearch,
+            'showRecycle' => $showRecycle,
+            'filterStatus' => $filterStatus,
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
+            'sort' => $sort,
+            'dir' => $dir,
+            'perPage' => $perPage,
+            'listQuery' => $listQuery,
         ];
+
         return view('pages.dash.waybillview')->with($pass);
+    }
+
+    private function waybillListQueryParams(
+        bool $showRecycle,
+        string $waybillsearch,
+        string $filterStatus,
+        ?string $dateFrom,
+        ?string $dateTo,
+        string $sort,
+        string $dir,
+        int $perPage
+    ): array {
+        return array_filter([
+            'recycle' => $showRecycle ? '1' : null,
+            'waybillsearch' => $waybillsearch !== '' ? $waybillsearch : null,
+            'status' => $filterStatus !== '' ? $filterStatus : null,
+            'date_from' => $dateFrom ?: null,
+            'date_to' => $dateTo ?: null,
+            'sort' => $sort !== '' ? $sort : null,
+            'dir' => $dir !== 'desc' ? $dir : null,
+            'per_page' => $perPage !== 10 ? $perPage : null,
+        ], fn ($value) => $value !== null && $value !== '');
     }
 
     public function empty_cart(){
@@ -378,6 +440,26 @@ class DashController extends Controller
             'count' => 1
         ];
         return view('pages.invoice.waybillprint')->with($pass);
+    }
+
+    public function waybillPrintSingle($id){
+        if(auth()->user()->status != 'Administrator'){
+            return redirect('/dashboard');
+        }
+
+        $waybill = Waybill::with('user')->active()->findOrFail($id);
+
+        Session::put('waybillreps', collect([$waybill]));
+        Session::put('date_from', $waybill->del_date ?: '');
+        Session::put('date_to', '');
+
+        if (! session('company')) {
+            Session::put('company', Company::find(1));
+        }
+
+        return view('pages.invoice.waybillprint', [
+            'count' => 1,
+        ]);
     }
 
     public function distreportprint(){
@@ -866,17 +948,17 @@ class DashController extends Controller
         $match = ['del' => 'no'];
         
         if (!empty($date_from) && empty($date_to)) {
-            $wbds = Wbdistribution::where($match)->where('created_at', 'LIKE', '%'.$date_from.'%')->orderBy('id', 'desc')->paginate(10);
-            $wbds_send = Wbdistribution::where($match)->where('created_at', 'LIKE', '%'.$date_from.'%')->orderBy('id', 'desc')->get();
+            $wbds = Wbdistribution::with(['item', 'waybill'])->where($match)->where('created_at', 'LIKE', '%'.$date_from.'%')->orderBy('id', 'desc')->paginate(10);
+            $wbds_send = Wbdistribution::with(['item', 'waybill'])->where($match)->where('created_at', 'LIKE', '%'.$date_from.'%')->orderBy('id', 'desc')->get();
         }elseif (empty($date_from) && !empty($date_to)) {
             return redirect(url()->previous())->with('error', 'Oops..! Provide *Date From* in order to proceed');
         }elseif (!empty($date_from) && !empty($date_to)) {
-            $wbds = Wbdistribution::where($match)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->orderBy('id', 'desc')->paginate(10);
-            $wbds_send = Wbdistribution::where($match)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->orderBy('id', 'desc')->get();
+            $wbds = Wbdistribution::with(['item', 'waybill'])->where($match)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->orderBy('id', 'desc')->paginate(10);
+            $wbds_send = Wbdistribution::with(['item', 'waybill'])->where($match)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->orderBy('id', 'desc')->get();
         }else{
             // $match = ['del' => 'no'];
-            $wbds = Wbdistribution::where($match)->orderBy('id', 'desc')->paginate(10);
-            $wbds_send = Wbdistribution::where($match)->orderBy('id', 'desc')->get();
+            $wbds = Wbdistribution::with(['item', 'waybill'])->where($match)->orderBy('id', 'desc')->paginate(10);
+            $wbds_send = Wbdistribution::with(['item', 'waybill'])->where($match)->orderBy('id', 'desc')->get();
         }
 
         Session::put('wbdreports', $wbds_send);

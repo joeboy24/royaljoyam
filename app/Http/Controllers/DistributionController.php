@@ -8,7 +8,7 @@ use App\Models\Item;
 use App\Models\Wbcontent;
 use App\Models\CompanyBranch;
 use App\Models\Wbdistribution;
-use Session;
+use App\Models\Waybill;
 use DateTime;
 
 class DistributionController extends Controller
@@ -25,39 +25,13 @@ class DistributionController extends Controller
 
     public function index(Request $request)
     {
-        //
-        if(auth()->user()->status != 'Administrator'){
-            return redirect('/dashboard'); 
-        }
-        
-        $date_from = $request->query('date_from');
-        $date_to = $request->query('date_to');
-        $match = ['del' => 'no'];
-        
-        if (!empty($date_from) && empty($date_to)) {
-            $wbds = Wbdistribution::where($match)->where('created_at', 'LIKE', '%'.$date_from.'%')->orderBy('id', 'desc')->paginate(10);
-            $wbds_send = Wbdistribution::where($match)->where('created_at', 'LIKE', '%'.$date_from.'%')->orderBy('id', 'desc')->get();
-        }elseif (empty($date_from) && !empty($date_to)) {
-            return redirect(url()->previous())->with('error', 'Oops..! Provide *Date From* in order to proceed');
-        }elseif (!empty($date_from) && !empty($date_to)) {
-            $wbds = Wbdistribution::where($match)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->orderBy('id', 'desc')->paginate(10);
-            $wbds_send = Wbdistribution::where($match)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->orderBy('id', 'desc')->get();
-        }else{
-            // $match = ['del' => 'no'];
-            $wbds = Wbdistribution::where($match)->orderBy('id', 'desc')->paginate(10);
-            $wbds_send = Wbdistribution::where($match)->orderBy('id', 'desc')->get();
+        if (auth()->user()->status != 'Administrator') {
+            return redirect('/dashboard');
         }
 
-        Session::put('wbdreports', $wbds_send);
-        Session::put('date_from', $date_from);
-        Session::put('date_to', $date_to);
+        $query = $request->getQueryString();
 
-        $pass = [
-            'i' => 1,
-            'c' => 1,
-            'wbds' => $wbds,
-        ];
-        return view('pages.dash.distreport')->with($pass);
+        return redirect('/distreport'.($query ? '?'.$query : ''));
     }
 
     /**
@@ -100,12 +74,14 @@ class DistributionController extends Controller
             $cur_qtys = '';
         }
         // return $cur_qtys[1]->name;
-        $items = Item::where('del', 'no')->get();
+        $items = Item::where('del', 'no')->orderBy('name')->get();
+        $waybill = Waybill::active()->findOrFail($id);
         $send = [
             'c' => 1,
             'x' => 1,
             't' => 1,
             'wb_id' => $id,
+            'waybill' => $waybill,
             'items' => $items,
             'wbcontents' => $wbcs,
             'cur_qtys' => $cur_qtys,

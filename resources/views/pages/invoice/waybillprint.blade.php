@@ -68,8 +68,8 @@
                         <th>Weight</th>
                         <th>Pieces</th> 
                         <th>Qty.</th>
-                        <th>Status</th>
-                        <th class="col-sm-1 pr">Delivery Date</th>
+                        <th class="waybill-print-status-col">Status</th>
+                        <th class="waybill-print-date-col pr">Delivery Date</th>
                     </thead>
                     <tbody>
                         @if(count(session('waybillreps')) > 0)
@@ -90,14 +90,16 @@
                                     <td>{{$wb->weight}}</td>
                                     <td>{{$wb->nop}}</td>
                                     <td>{{$wb->tot_qty}}</td>
-                                    <td class="col-sm-1 pr">
-                                        @if ($wb->status == 'Delivered')
-                                        <p class="delivered"><i class="fa fa-check"></i>&nbsp;Del..</p>
+                                    <td class="waybill-print-status-col">
+                                        @if ($wb->status === 'Delivered')
+                                          <span class="waybill-print-status waybill-print-status-delivered"><i class="fa fa-check"></i> Delivered</span>
+                                        @elseif ($wb->status === 'In Transit')
+                                          <span class="waybill-print-status waybill-print-status-transit"><i class="fa fa-truck"></i> In Transit</span>
                                         @else
-                                        <p class="pending"><i class="fa fa-warning"></i>&nbsp;Pen..</p> 
+                                          <span class="waybill-print-status waybill-print-status-pending"><i class="fa fa-clock-o"></i> Pending</span>
                                         @endif
                                     </td>
-                                    <td class="col-sm-2 pr">{{ $wb->formattedDeliveryDate() }}</td>
+                                    <td class="waybill-print-date-col pr">{{ $wb->formattedDeliveryDate() }}</td>
                                     
                                 </tr>
                                 @endif

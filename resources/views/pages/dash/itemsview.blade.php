@@ -14,7 +14,14 @@
 
                   <div class="col-md-8 offset-md-0 myTrim">
 
-                    <form method="GET" action="{{ url('/items') }}" class="inventory-filter-form">
+                    @php
+                      $clearUrl = $showRecycle ? url('/items?recycle=1') : url('/items');
+                      $activeFilterCount = ($filterCategory !== '' ? 1 : 0)
+                        + ($filterStock !== '' ? 1 : 0)
+                        + ($perPage !== 10 ? 1 : 0);
+                    @endphp
+
+                    <form method="GET" action="{{ url('/items') }}" class="inventory-filter-form inventory-list-toolbar">
                       @if ($showRecycle)
                         <input type="hidden" name="recycle" value="1">
                       @endif
@@ -42,60 +49,63 @@
                               <span>Search</span>
                             </button>
 
-                            <a href="{{ $showRecycle ? url('/items?recycle=1') : url('/items') }}" class="inventory-search-btn inventory-search-btn-clear" title="Clear filters">
+                            <div class="inventory-filters-panel is-collapsed" data-collapsible-filters>
+                              <button
+                                type="button"
+                                class="inventory-filters-toggle inventory-search-btn inventory-search-btn-muted dash-tip"
+                                aria-expanded="false"
+                                aria-controls="itemFiltersControls"
+                                data-tip="Filters"
+                              >
+                                <i class="fa fa-filter"></i>
+                                @if ($activeFilterCount > 0)
+                                  <span class="inventory-filters-count">{{ $activeFilterCount }}</span>
+                                @endif
+                              </button>
+
+                              <div class="inventory-filters-body" id="itemFiltersControls">
+                                <div class="inventory-filters-controls">
+                                  <label class="inventory-filter-field">
+                                    <span class="inventory-filter-field-icon"><i class="fa fa-folder-open"></i></span>
+                                    <select name="category" class="inventory-filter-select" title="Filter by category">
+                                      <option value="">All categories</option>
+                                      @foreach ($filterCategories as $categoryName)
+                                        <option value="{{ $categoryName }}" @if ($filterCategory === $categoryName) selected @endif>{{ $categoryName }}</option>
+                                      @endforeach
+                                    </select>
+                                  </label>
+
+                                  @unless ($showRecycle)
+                                    <label class="inventory-filter-field">
+                                      <span class="inventory-filter-field-icon"><i class="fa fa-signal"></i></span>
+                                      <select name="stock" class="inventory-filter-select" title="Filter by stock status">
+                                        <option value="">All stock levels</option>
+                                        <option value="low" @if ($filterStock === 'low') selected @endif>Low / out of stock</option>
+                                        <option value="has_branch" @if ($filterStock === 'has_branch') selected @endif>Has branch stock</option>
+                                      </select>
+                                    </label>
+                                  @endunless
+
+                                  <label class="inventory-filter-field inventory-filter-field-compact">
+                                    <span class="inventory-filter-field-icon"><i class="fa fa-list-ol"></i></span>
+                                    <select name="per_page" class="inventory-filter-select inventory-per-page-select" title="Rows per page">
+                                      @foreach ([10, 25, 50] as $pageSize)
+                                        <option value="{{ $pageSize }}" @if ($perPage === $pageSize) selected @endif>{{ $pageSize }} / page</option>
+                                      @endforeach
+                                    </select>
+                                  </label>
+
+                                  <button type="submit" class="inventory-search-btn inventory-search-btn-primary inventory-filters-apply">
+                                    <i class="fa fa-filter"></i>
+                                    <span>Apply</span>
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+
+                            <a href="{{ $clearUrl }}" class="inventory-search-btn inventory-search-btn-clear inventory-search-btn-icon dash-tip" data-tip="Clear filters">
                               <i class="fa fa-refresh"></i>
-                              <span>Clear</span>
                             </a>
-                          </div>
-                        </div>
-
-                        @php
-                          $activeFilterCount = ($filterCategory !== '' ? 1 : 0)
-                            + ($filterStock !== '' ? 1 : 0)
-                            + ($perPage !== 10 ? 1 : 0);
-                        @endphp
-
-                        <div class="inventory-filters-panel">
-                          <div class="inventory-filters-heading">
-                            <span class="inventory-filters-label">
-                              <i class="fa fa-filter"></i>
-                              Filters
-                              @if ($activeFilterCount > 0)
-                                <span class="inventory-filters-count">{{ $activeFilterCount }}</span>
-                              @endif
-                            </span>
-                          </div>
-
-                          <div class="inventory-filters-controls">
-                            <label class="inventory-filter-field">
-                              <span class="inventory-filter-field-icon"><i class="fa fa-folder-open"></i></span>
-                              <select name="category" class="inventory-filter-select" onchange="this.form.submit()" title="Filter by category">
-                                <option value="">All categories</option>
-                                @foreach ($filterCategories as $categoryName)
-                                  <option value="{{ $categoryName }}" @if ($filterCategory === $categoryName) selected @endif>{{ $categoryName }}</option>
-                                @endforeach
-                              </select>
-                            </label>
-
-                            @unless ($showRecycle)
-                              <label class="inventory-filter-field">
-                                <span class="inventory-filter-field-icon"><i class="fa fa-signal"></i></span>
-                                <select name="stock" class="inventory-filter-select" onchange="this.form.submit()" title="Filter by stock status">
-                                  <option value="">All stock levels</option>
-                                  <option value="low" @if ($filterStock === 'low') selected @endif>Low / out of stock</option>
-                                  <option value="has_branch" @if ($filterStock === 'has_branch') selected @endif>Has branch stock</option>
-                                </select>
-                              </label>
-                            @endunless
-
-                            <label class="inventory-filter-field inventory-filter-field-compact">
-                              <span class="inventory-filter-field-icon"><i class="fa fa-list-ol"></i></span>
-                              <select name="per_page" class="inventory-filter-select inventory-per-page-select" onchange="this.form.submit()" title="Rows per page">
-                                @foreach ([10, 25, 50] as $pageSize)
-                                  <option value="{{ $pageSize }}" @if ($perPage === $pageSize) selected @endif>{{ $pageSize }} / page</option>
-                                @endforeach
-                              </select>
-                            </label>
                           </div>
                         </div>
                       </div>
@@ -513,6 +523,8 @@
 
 @section('footer')
 
+<script src="/maindir/js/inventory-collapsible-filters.js?v=2"></script>
+
 <style>
   .inventory-filter-row {
     display: flex;
@@ -649,6 +661,13 @@
     background: #f1f8f2;
     color: #1b5e20;
     border-color: rgba(46, 125, 50, 0.4);
+  }
+  .inventory-list-toolbar .inventory-filters-panel[data-collapsible-filters] {
+    flex: 0 0 auto;
+    padding: 0;
+    background: none;
+    border: none;
+    box-shadow: none;
   }
   .inventory-filters-panel {
     flex: 1 1 420px;

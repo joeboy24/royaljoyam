@@ -22,6 +22,48 @@ class Waybill extends Model
         return $query->where('del', 'no');
     }
 
+    public function scopeDeleted($query)
+    {
+        return $query->where('del', 'yes');
+    }
+
+    public function scopeStatusFilter($query, ?string $status)
+    {
+        if ($status !== null && $status !== '' && in_array($status, static::statusOptions(), true)) {
+            return $query->where('status', $status);
+        }
+
+        return $query;
+    }
+
+    public function scopeDeliveryBetween($query, ?string $from, ?string $to)
+    {
+        if ($from) {
+            $query->where('del_date', '>=', $from);
+        }
+
+        if ($to) {
+            $query->where('del_date', '<=', $to);
+        }
+
+        return $query;
+    }
+
+    public function scopeOrdered($query, ?string $sort, ?string $direction)
+    {
+        $columns = [
+            'bill_no' => 'bill_no',
+            'del_date' => 'del_date',
+            'status' => 'status',
+            'created_at' => 'created_at',
+        ];
+
+        $column = $columns[$sort] ?? 'id';
+        $dir = strtolower((string) $direction) === 'asc' ? 'asc' : 'desc';
+
+        return $query->orderBy($column, $dir);
+    }
+
     public function scopeSearch($query, ?string $term)
     {
         if ($term === null || $term === '') {

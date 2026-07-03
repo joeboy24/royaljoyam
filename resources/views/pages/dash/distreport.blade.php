@@ -88,11 +88,14 @@
                   <div id="printarea1" class="card-body">
               
                     @if (count($wbdreports) > 0)
+                        @php
+                          $branchKeys = collect(session('compbranch', []))->keys()->map(fn ($index) => 'q'.($index + 1));
+                        @endphp
                         <table class="table mt">
                           <thead class=" text-secondary hideMe">
                             <th>#</th>
                             <th>Item</th>
-                            @foreach (session('compbranch') as $br)
+                            @foreach (session('compbranch', []) as $br)
                               <th>Br {{$br->tag}}</th>
                             @endforeach
                             <th class="ryt">Date Distributed</th>
@@ -109,10 +112,19 @@
                                   <tr>
                                 @endif
                                   <td>{{$c++}}</td>
-                                  <td>{{$wbd->item->item_no.' - '.$wbd->item->name}}<br><p class="small_p">{{$wbd->waybill->comp_name}}</p></td>
-                                  @foreach (session('compbranch') as $br)
-                                    <input type="hidden" value="{{$x = 'q'.$br->tag}}">
-                                    <td>{{$wbd->$x}}</td>
+                                  <td>
+                                    @if ($wbd->item)
+                                      {{ $wbd->item->item_no.' - '.$wbd->item->name }}
+                                      @if ($wbd->waybill)
+                                        <br><p class="small_p">{{ $wbd->waybill->comp_name }}</p>
+                                      @endif
+                                    @else
+                                      <span class="text-muted">Item unavailable</span>
+                                    @endif
+                                  </td>
+                                  @foreach (session('compbranch', []) as $branchIndex => $br)
+                                    @php $qtyKey = 'q'.($branchIndex + 1); @endphp
+                                    <td>{{ $wbd->{$qtyKey} ?? 0 }}</td>
                                   @endforeach
                                   <td class="ryt">{{date('M. d, Y', strtotime($wbd->created_at))}}</td>
                                   
@@ -124,16 +136,11 @@
 
                               <tr>
                                 <td></td>
-                                <td><b>Total Qty.:<h6>
-                                  {{$wbdreports->sum(['q1'])+$wbdreports->sum(['q2'])+
-                                  $wbdreports->sum(['q3'])+$wbdreports->sum(['q4'])+
-                                  $wbdreports->sum(['q5'])+$wbdreports->sum(['q6'])+
-                                  $wbdreports->sum(['q7'])}}
-                                </b></h6>
-                                @foreach (session('compbranch') as $br)
-                                  <input type="hidden" value="{{$x = 'q'.$br->tag}}">
-                                  <input type="hidden" value="{{$sum = $sum + $wbdreports->sum($x)}}">
-                                  <td><b>{{ number_format($wbdreports->sum($x))}}</b></td>
+                                <td><b>Total Qty.:</b>
+                                  {{ $branchKeys->sum(fn ($key) => $wbdreports->sum($key)) }}
+                                </td>
+                                @foreach ($branchKeys as $key)
+                                  <td><b>{{ number_format($wbdreports->sum($key)) }}</b></td>
                                 @endforeach
                                 <td></td>
                               </tr>

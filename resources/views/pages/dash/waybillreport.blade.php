@@ -130,8 +130,8 @@
                         <th>Weight</th>
                         <th>Pieces</th>
                         <th>Qty.</th>
-                        <th>Status</th>
-                        <th>Delivery Date</th>
+                        <th class="waybill-table-status-col">Status</th>
+                        <th class="waybill-table-date-col">Delivery Date</th>
                       </tr>
                     </thead>
                     <tbody id="tb">
@@ -154,10 +154,10 @@
                           <td>{{ $wb->weight ?: '—' }}</td>
                           <td>{{ $wb->nop ?: '—' }}</td>
                           <td>{{ $wb->tot_qty ?: '—' }}</td>
-                          <td>
+                          <td class="waybill-table-status-col">
                             <x-waybill-status-badge :status="$wb->status" />
                           </td>
-                          <td>{{ $wb->formattedDeliveryDate() }}</td>
+                          <td class="waybill-table-date-col">{{ $wb->formattedDeliveryDate() }}</td>
                         </tr>
                       @endforeach
                     </tbody>

@@ -64,6 +64,7 @@ Route::get('/stockfillprint', 'DashController@stockfillprint');
 Route::get('/stockreportprinting', 'DashController@stockreportprinting');
 Route::get('/expensereportprinting', 'DashController@expensereportprinting');
 Route::get('/returnprint', 'DashController@returnprint');
+Route::get('/waybillprint/{id}', 'DashController@waybillPrintSingle');
 Route::get('/waybillprint', 'DashController@waybillprint');
 Route::get('/distreportprint', 'DashController@distreportprint');
 

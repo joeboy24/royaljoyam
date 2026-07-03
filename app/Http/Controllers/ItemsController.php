@@ -1256,10 +1256,29 @@ class ItemsController extends Controller
             case 'del_waybil':
 
                 $wb = Waybill::find($id);
+                if (! $wb || $wb->del === 'yes') {
+                    return redirect('/waybillview')->with('error', 'Waybill not found');
+                }
+
                 $wb->del = 'yes';
                 $wb->save();
-                return redirect(url()->previous())->with('success', 'Waybill deletion successful');
-                
+
+                return redirect('/waybillview')->with('success', 'Waybill moved to recycle bin');
+
+            break;
+
+            case 'restore_waybill':
+
+                $wb = Waybill::find($id);
+                if (! $wb || $wb->del !== 'yes') {
+                    return redirect('/waybillview?recycle=1')->with('error', 'Waybill not found in recycle bin');
+                }
+
+                $wb->del = 'no';
+                $wb->save();
+
+                return redirect('/waybillview?recycle=1')->with('success', 'Waybill restored successfully');
+
             break;
 
             case 'del_item':

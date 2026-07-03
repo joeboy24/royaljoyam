@@ -168,6 +168,9 @@ class InventoryPageTest extends TestCase
         $response->assertSee('toggleAllBranchDetails', false);
         $response->assertSee('restoreBranchDetailState', false);
         $response->assertSee('inventoryExpandedBranchIds', false);
+        $response->assertSee('data-collapsible-filters', false);
+        $response->assertSee('inventory-filters-toggle', false);
+        $response->assertSee('data-tip="Clear filters"', false);
     }
 
     public function test_dash_sidebar_highlights_registry_on_registry_page(): void

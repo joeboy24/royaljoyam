@@ -296,4 +296,135 @@ class WaybillPageTest extends TestCase
             ->assertOk()
             ->assertSee('href="/waybillreport"', false);
     }
+
+    public function test_recycle_bin_shows_deleted_waybills(): void
+    {
+        $this->createWaybill(['bill_no' => 'WB-ACTIVE-RECYCLE']);
+        $deleted = $this->createWaybill(['bill_no' => 'WB-DELETED-RECYCLE']);
+        $deleted->del = 'yes';
+        $deleted->save();
+
+        $this->actingAs($this->admin)
+            ->get('/waybillview?recycle=1')
+            ->assertOk()
+            ->assertSee('WB-DELETED-RECYCLE')
+            ->assertDontSee('WB-ACTIVE-RECYCLE')
+            ->assertSee('restore_waybill', false);
+    }
+
+    public function test_admin_can_restore_waybill_from_recycle_bin(): void
+    {
+        $deleted = $this->createWaybill(['bill_no' => 'WB-RESTORE-001']);
+        $deleted->del = 'yes';
+        $deleted->save();
+
+        $response = $this->actingAs($this->admin)->put('/items/'.$deleted->id, [
+            'store_action' => 'restore_waybill',
+        ]);
+
+        $response->assertRedirect('/waybillview?recycle=1');
+        $this->assertDatabaseHas('waybills', [
+            'id' => $deleted->id,
+            'del' => 'no',
+        ]);
+    }
+
+    public function test_waybill_history_filters_by_status(): void
+    {
+        $this->createWaybill(['bill_no' => 'WB-PENDING-FILTER', 'status' => 'Pending']);
+        $this->createWaybill(['bill_no' => 'WB-DELIVERED-FILTER', 'status' => 'Delivered']);
+
+        $this->actingAs($this->admin)
+            ->get('/waybillview?status=Delivered')
+            ->assertOk()
+            ->assertSee('WB-DELIVERED-FILTER')
+            ->assertDontSee('WB-PENDING-FILTER');
+    }
+
+    public function test_waybill_history_has_collapsible_filters(): void
+    {
+        $this->actingAs($this->admin)
+            ->get('/waybillview')
+            ->assertOk()
+            ->assertSee('data-collapsible-filters', false)
+            ->assertSee('inventory-filters-toggle', false);
+    }
+
+    public function test_waybill_history_sorts_by_bill_number(): void
+    {
+        $this->createWaybill(['bill_no' => 'WB-ZZZ-999']);
+        $this->createWaybill(['bill_no' => 'WB-AAA-111']);
+
+        $response = $this->actingAs($this->admin)
+            ->get('/waybillview?sort=bill_no&dir=asc');
+
+        $response->assertOk();
+        $this->assertLessThan(
+            strpos($response->getContent(), 'WB-ZZZ-999'),
+            strpos($response->getContent(), 'WB-AAA-111')
+        );
+    }
+
+    public function test_single_waybill_print_route_loads(): void
+    {
+        DB::table('companies')->insert([
+            'id' => 1,
+            'user_id' => (string) $this->admin->id,
+            'name' => 'Royal Joyam',
+            'address' => 'Test Address',
+            'contact' => '0244000000',
+            'email' => 'test@example.com',
+            'logo' => 'logo.png',
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $waybill = $this->createWaybill(['bill_no' => 'WB-PRINT-001', 'status' => 'Delivered']);
+
+        $this->actingAs($this->admin)
+            ->get('/waybillprint/'.$waybill->id)
+            ->assertOk()
+            ->assertSee('WB-PRINT-001')
+            ->assertSee('waybill-print-status-col', false)
+            ->assertSee('Delivered')
+            ->assertDontSee('Del..');
+    }
+
+    public function test_distribution_page_has_searchable_item_picker(): void
+    {
+        $waybill = $this->createWaybill(['bill_no' => 'WB-DIST-001']);
+
+        $itemId = DB::table('items')->insertGetId([
+            'item_no' => 'MT095158',
+            'user_id' => (string) $this->admin->id,
+            'name' => 'STRIPS',
+            'brand' => 'Test Brand',
+            'qty' => '100',
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('wbcontents')->insert([
+            'user_id' => (string) $this->admin->id,
+            'waybill_id' => (string) $waybill->id,
+            'item_id' => (string) $itemId,
+            'qty' => '10',
+            'qty_dist' => '0',
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get('/distribution/'.$waybill->id)
+            ->assertOk()
+            ->assertSee('id="distItemSearch"', false)
+            ->assertSee('id="distItemList"', false)
+            ->assertSee('Back to waybills')
+            ->assertSee('Branch distribution')
+            ->assertSee('MT095158')
+            ->assertSee('STRIPS');
+    }
 }
