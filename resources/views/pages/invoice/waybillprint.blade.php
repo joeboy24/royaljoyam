@@ -18,10 +18,9 @@
 <body style="background: #eee">
 
     @php
-      $waybills = $waybills ?? collect(session('waybillreps', []));
-      $company = $company ?? session('company');
-      $date_from = $date_from ?? session('date_from');
-      $date_to = $date_to ?? session('date_to');
+      $waybills = collect($waybills ?? []);
+      $date_from = $date_from ?? '';
+      $date_to = $date_to ?? '';
     @endphp
 
     <section id="invoice">

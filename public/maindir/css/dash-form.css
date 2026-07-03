@@ -1065,6 +1065,17 @@
   margin-bottom: 0;
 }
 
+.dist-section-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.dist-branch-bulk-btn {
+  margin: 0;
+}
+
 .dist-callout {
   display: flex;
   align-items: flex-start;

@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="/maindir/css/style.css">
   <link rel="stylesheet" href="/maindir/css/dash-sidebar.css?v=12">
   <link rel="stylesheet" href="/maindir/css/dash-page-header.css?v=1">
-  <link rel="stylesheet" href="/maindir/css/dash-form.css?v=26">
+  <link rel="stylesheet" href="/maindir/css/dash-form.css?v=27">
   <link rel="stylesheet" href="/maindir/css/dash-flash.css?v=1">
   <link rel="stylesheet" href="/maindir/css/dash-tip.css?v=2">
   {{-- <link rel="stylesheet" href="/dashdir/css/bootstrap.min.css"> --}}

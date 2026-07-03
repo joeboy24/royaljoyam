@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Company;
@@ -299,6 +300,10 @@ class ItemsController extends Controller
     {
         if ($request->input('store_action') === 'add_waybill') {
             return $this->storeWaybill($request);
+        }
+
+        if ($request->input('store_action') === 'up_wbdist_all') {
+            return $this->bulkUpdateWbdist($request);
         }
 
         $company = new Company;
@@ -1540,52 +1545,15 @@ class ItemsController extends Controller
                     return redirect(url()->previous())->with('error', 'Waybill item not found.');
                 }
 
-                $waybill = Waybill::find($wbc->waybill_id);
-                if (! $waybill || ! $waybill->canDistribute()) {
-                    return redirect(url()->previous())->with('error', 'Waybill must be marked Delivered before distributing to branches.');
-                }
-
-                $branchQtys = [];
-                for ($i = 1; $i <= 7; $i++) {
-                    $branchQtys['q'.$i] = max(0, (int) $request->input('q'.$i.$wbc->item_id, 0));
-                }
-
-                $itup = Item::find($wbc->item_id);
-                if (! $itup) {
-                    return redirect(url()->previous())->with('error', 'Item not found.');
-                }
-
-                $totQs = array_sum($branchQtys);
-                $remaining = (int) $wbc->qty - (int) $wbc->qty_dist;
-
-                if ($totQs <= 0) {
+                $branchQtys = $this->branchQtysFromRequest($request, (int) $wbc->item_id);
+                if (array_sum($branchQtys) <= 0) {
                     return redirect(url()->previous())->with('error', 'Enter at least one branch quantity to distribute.');
                 }
-                if ($remaining <= 0) {
-                    return redirect(url()->previous())->with('error', 'Oops..! Restock item `'.$itup->name.'` in order to distribute. 0 left');
+
+                $error = $this->applyBranchDistribution($wbc, $branchQtys);
+                if ($error) {
+                    return redirect(url()->previous())->with('error', $error);
                 }
-                if ($totQs > $remaining) {
-                    return redirect(url()->previous())->with('error', 'Oops..! Only '.$remaining.' available for distribution to branches');
-                }
-
-                $wbc->qty_dist = (int) $wbc->qty_dist + $totQs;
-                $wbc->save();
-
-                Wbdistribution::create(array_merge([
-                    'user_id' => auth()->user()->id,
-                    'waybill_id' => $wbc->waybill_id,
-                    'item_id' => $wbc->item_id,
-                ], $branchQtys));
-
-                $itup->q1 = $itup->q1 + $branchQtys['q1'];
-                $itup->q2 = $itup->q2 + $branchQtys['q2'];
-                $itup->q3 = $itup->q3 + $branchQtys['q3'];
-                $itup->q4 = $itup->q4 + $branchQtys['q4'];
-                $itup->q5 = $itup->q5 + $branchQtys['q5'];
-                $itup->q6 = $itup->q6 + $branchQtys['q6'];
-                $itup->q7 = $itup->q7 + $branchQtys['q7'];
-                $itup->qty = $itup->qty + $totQs;
-                $itup->save();
 
                 return redirect(url()->previous())->with('success', 'Waybill branch quantities update successful');
             break;
@@ -1605,6 +1573,116 @@ class ItemsController extends Controller
         }
 
         return redirect('/items')->with('error', 'Unknown update action.');
+    }
+
+    protected function bulkUpdateWbdist(Request $request)
+    {
+        $wbId = $request->input('wb_id');
+        if (! $wbId) {
+            return redirect(url()->previous())->with('error', 'Waybill not found.');
+        }
+
+        $waybill = Waybill::active()->find($wbId);
+        if (! $waybill) {
+            return redirect(url()->previous())->with('error', 'Waybill not found.');
+        }
+
+        if (! $waybill->canDistribute()) {
+            return redirect(url()->previous())->with('error', 'Waybill must be marked Delivered before distributing to branches.');
+        }
+
+        $wbcontents = Wbcontent::where('waybill_id', $wbId)->where('del', 'no')->get();
+        $updated = 0;
+
+        DB::beginTransaction();
+        try {
+            foreach ($wbcontents as $wbc) {
+                $branchQtys = $this->branchQtysFromRequest($request, (int) $wbc->item_id);
+                if (array_sum($branchQtys) <= 0) {
+                    continue;
+                }
+
+                $error = $this->applyBranchDistribution($wbc, $branchQtys);
+                if ($error) {
+                    DB::rollBack();
+
+                    return redirect(url()->previous())->with('error', $error);
+                }
+
+                $updated++;
+            }
+
+            if ($updated === 0) {
+                DB::rollBack();
+
+                return redirect(url()->previous())->with('error', 'Enter at least one branch quantity to distribute.');
+            }
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            report($e);
+
+            return redirect(url()->previous())->with('error', 'Oops..! Something went wrong while distributing to branches.');
+        }
+
+        $label = $updated === 1 ? '1 item' : $updated.' items';
+
+        return redirect(url()->previous())->with('success', 'Branch distribution saved for '.$label.'.');
+    }
+
+    protected function branchQtysFromRequest(Request $request, int $itemId): array
+    {
+        $branchQtys = [];
+        for ($i = 1; $i <= 7; $i++) {
+            $branchQtys['q'.$i] = max(0, (int) $request->input('q'.$i.$itemId, 0));
+        }
+
+        return $branchQtys;
+    }
+
+    protected function applyBranchDistribution(Wbcontent $wbc, array $branchQtys): ?string
+    {
+        $waybill = Waybill::find($wbc->waybill_id);
+        if (! $waybill || ! $waybill->canDistribute()) {
+            return 'Waybill must be marked Delivered before distributing to branches.';
+        }
+
+        $itup = Item::find($wbc->item_id);
+        if (! $itup) {
+            return 'Item not found.';
+        }
+
+        $totQs = array_sum($branchQtys);
+        $remaining = (int) $wbc->qty - (int) $wbc->qty_dist;
+
+        if ($remaining <= 0) {
+            return 'Oops..! Restock item `'.$itup->name.'` in order to distribute. 0 left';
+        }
+        if ($totQs > $remaining) {
+            return 'Oops..! Only '.$remaining.' available for distribution to branches';
+        }
+
+        $wbc->qty_dist = (int) $wbc->qty_dist + $totQs;
+        $wbc->save();
+
+        Wbdistribution::create(array_merge([
+            'user_id' => auth()->user()->id,
+            'waybill_id' => $wbc->waybill_id,
+            'item_id' => $wbc->item_id,
+        ], $branchQtys));
+
+        $itup->q1 = $itup->q1 + $branchQtys['q1'];
+        $itup->q2 = $itup->q2 + $branchQtys['q2'];
+        $itup->q3 = $itup->q3 + $branchQtys['q3'];
+        $itup->q4 = $itup->q4 + $branchQtys['q4'];
+        $itup->q5 = $itup->q5 + $branchQtys['q5'];
+        $itup->q6 = $itup->q6 + $branchQtys['q6'];
+        $itup->q7 = $itup->q7 + $branchQtys['q7'];
+        $itup->qty = $itup->qty + $totQs;
+        $itup->save();
+
+        return null;
     }
 
     protected function validateWaybillRequest(Request $request, ?int $ignoreId = null): array

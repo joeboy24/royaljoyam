@@ -449,8 +449,8 @@ class DashController extends Controller
             return redirect('/dashboard'); 
         }
 
-        $date_from = $request->query('date_from', session('date_from'));
-        $date_to = $request->query('date_to', session('date_to'));
+        $date_from = $request->query('date_from');
+        $date_to = $request->query('date_to');
 
         if (empty($date_from) && ! empty($date_to)) {
             return redirect('/waybillreport')->with('error', 'Oops..! Provide *Date From* in order to proceed');
@@ -480,8 +480,8 @@ class DashController extends Controller
             return redirect('/dashboard'); 
         }
 
-        $date_from = $request->query('date_from', session('date_from'));
-        $date_to = $request->query('date_to', session('date_to'));
+        $date_from = $request->query('date_from');
+        $date_to = $request->query('date_to');
 
         if (empty($date_from) && ! empty($date_to)) {
             return redirect('/distreport')->with('error', 'Oops..! Provide *Date From* in order to proceed');
@@ -496,6 +496,7 @@ class DashController extends Controller
             'date_from' => $date_from,
             'date_to' => $date_to,
             'company' => Company::find(1),
+            'branches' => $this->reportBranches(),
         ]);
     }
 
@@ -878,10 +879,6 @@ class DashController extends Controller
         $waybills = (clone $reportQuery)->paginate(10);
         $waybills_send = (clone $reportQuery)->get();
 
-        Session::put('waybillreps', $waybills_send);
-        Session::put('date_from', $date_from);
-        Session::put('date_to', $date_to);
-
         $cats = Category::All();
         $company = Company::find(1);
         $pass = [
@@ -964,11 +961,6 @@ class DashController extends Controller
         $reportQuery = $this->distributionReportQuery($date_from, $date_to);
         $wbds = (clone $reportQuery)->paginate(10);
         $wbds_send = (clone $reportQuery)->get();
-
-        Session::put('wbdreports', $wbds_send);
-        Session::put('date_from', $date_from);
-        Session::put('date_to', $date_to);
-        // return $wbds;
 
         $cats = Category::All();
         $company = Company::find(1);
@@ -1061,7 +1053,7 @@ class DashController extends Controller
         }
 
         $wbdreports = $this->distributionReportQuery($date_from, $date_to)->get();
-        $branches = collect(session('compbranch', []));
+        $branches = $this->reportBranches();
         $filename = 'distribution-report-'.date('Y-m-d-His').'.csv';
 
         return response()->streamDownload(function () use ($wbdreports, $branches) {
@@ -1177,6 +1169,11 @@ class DashController extends Controller
             'date_to' => $dateTo,
             'company' => Company::find(1),
         ];
+    }
+
+    private function reportBranches()
+    {
+        return CompanyBranch::where('del', 'no')->orderBy('tag')->get();
     }
 
 }

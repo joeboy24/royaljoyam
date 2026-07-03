@@ -18,11 +18,10 @@
 <body style="background: #eee">
 
     @php
-      $wbdreports = collect($wbdreports ?? session('wbdreports', []));
-      $company = $company ?? session('company');
-      $date_from = $date_from ?? session('date_from');
-      $date_to = $date_to ?? session('date_to');
-      $branches = collect(session('compbranch', []));
+      $wbdreports = collect($wbdreports ?? []);
+      $date_from = $date_from ?? '';
+      $date_to = $date_to ?? '';
+      $branches = collect($branches ?? []);
       $branchKeys = $branches->keys()->map(fn ($index) => 'q'.($index + 1));
     @endphp
 

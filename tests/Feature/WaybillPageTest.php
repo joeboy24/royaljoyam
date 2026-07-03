@@ -569,6 +569,81 @@ class WaybillPageTest extends TestCase
         ]);
     }
 
+    public function test_bulk_branch_distribution_updates_multiple_items(): void
+    {
+        $waybill = $this->createWaybill(['bill_no' => 'WB-BULK-001', 'status' => 'Delivered']);
+        $itemA = $this->createItem(['item_no' => 'MT-BULK-A', 'qty' => '100']);
+        $itemB = $this->createItem(['item_no' => 'MT-BULK-B', 'qty' => '100']);
+        $wbcA = $this->createWbcontent($waybill->id, $itemA, ['qty' => '10', 'qty_dist' => '0']);
+        $wbcB = $this->createWbcontent($waybill->id, $itemB, ['qty' => '8', 'qty_dist' => '0']);
+
+        $this->actingAs($this->admin)
+            ->post('/items', [
+                '_token' => csrf_token(),
+                'store_action' => 'up_wbdist_all',
+                'wb_id' => $waybill->id,
+                'q1'.$itemA => '3',
+                'q2'.$itemA => '2',
+                'q1'.$itemB => '4',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('wbcontents', ['id' => $wbcA, 'qty_dist' => '5']);
+        $this->assertDatabaseHas('wbcontents', ['id' => $wbcB, 'qty_dist' => '4']);
+        $this->assertDatabaseHas('wbdistributions', [
+            'waybill_id' => (string) $waybill->id,
+            'item_id' => (string) $itemA,
+            'q1' => '3',
+            'q2' => '2',
+        ]);
+        $this->assertDatabaseHas('wbdistributions', [
+            'waybill_id' => (string) $waybill->id,
+            'item_id' => (string) $itemB,
+            'q1' => '4',
+        ]);
+    }
+
+    public function test_bulk_branch_distribution_rolls_back_when_one_item_is_invalid(): void
+    {
+        $waybill = $this->createWaybill(['bill_no' => 'WB-BULK-ROLL', 'status' => 'Delivered']);
+        $itemA = $this->createItem(['item_no' => 'MT-BULK-ROLL-A', 'qty' => '100']);
+        $itemB = $this->createItem(['item_no' => 'MT-BULK-ROLL-B', 'qty' => '100']);
+        $wbcA = $this->createWbcontent($waybill->id, $itemA, ['qty' => '10', 'qty_dist' => '0']);
+        $wbcB = $this->createWbcontent($waybill->id, $itemB, ['qty' => '5', 'qty_dist' => '0']);
+
+        $this->actingAs($this->admin)
+            ->post('/items', [
+                '_token' => csrf_token(),
+                'store_action' => 'up_wbdist_all',
+                'wb_id' => $waybill->id,
+                'q1'.$itemA => '2',
+                'q1'.$itemB => '8',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('wbcontents', ['id' => $wbcA, 'qty_dist' => '0']);
+        $this->assertDatabaseHas('wbcontents', ['id' => $wbcB, 'qty_dist' => '0']);
+        $this->assertDatabaseMissing('wbdistributions', [
+            'waybill_id' => (string) $waybill->id,
+            'item_id' => (string) $itemA,
+        ]);
+    }
+
+    public function test_distribution_page_shows_update_all_button_when_delivered(): void
+    {
+        $waybill = $this->createWaybill(['bill_no' => 'WB-BULK-UI', 'status' => 'Delivered']);
+        $itemId = $this->createItem(['item_no' => 'MT-BULK-UI']);
+        $this->createWbcontent($waybill->id, $itemId, ['qty' => '10']);
+
+        $this->actingAs($this->admin)
+            ->get('/distribution/'.$waybill->id)
+            ->assertOk()
+            ->assertSee('Update all')
+            ->assertSee('distSubmitBulkDistribution', false);
+    }
+
     public function test_add_wbcontent_syncs_waybill_tot_qty(): void
     {
         $waybill = $this->createWaybill(['bill_no' => 'WB-TOTQTY', 'tot_qty' => '0']);

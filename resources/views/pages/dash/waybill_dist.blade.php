@@ -193,10 +193,23 @@
                           <h6 class="inventory-edit-section-title inventory-edit-section-title-spaced">
                             <i class="fa fa-sitemap"></i> Branch distribution
                           </h6>
-                          <a href="/distreport" class="inventory-action-btn dash-tip" data-tip="View distribution history">
-                            <i class="fa fa-history"></i>
-                            <span>Distribution history</span>
-                          </a>
+                          <div class="dist-section-toolbar-actions">
+                            @if ($waybill->canDistribute())
+                              <button
+                                type="button"
+                                class="inventory-action-btn inventory-action-btn-primary dist-branch-bulk-btn dash-tip"
+                                data-tip="Save branch quantities for all items"
+                                onclick="return distSubmitBulkDistribution();"
+                              >
+                                <i class="fa fa-check-square-o"></i>
+                                <span>Update all</span>
+                              </button>
+                            @endif
+                            <a href="/distreport" class="inventory-action-btn dash-tip" data-tip="View distribution history">
+                              <i class="fa fa-history"></i>
+                              <span>Distribution history</span>
+                            </a>
+                          </div>
                         </div>
 
                         @if (! $waybill->canDistribute())
@@ -207,7 +220,7 @@
                         @else
                           <div class="dist-callout">
                             <i class="fa fa-info-circle" aria-hidden="true"></i>
-                            <span>Enter quantities to send to each branch (must not exceed remaining), then click <strong>Update</strong> on the row.</span>
+                            <span>Enter quantities to send to each branch (must not exceed remaining), then click <strong>Update</strong> on a row or <strong>Update all</strong> to save every item at once.</span>
                           </div>
                         @endif
 
@@ -298,6 +311,13 @@
                             </tbody>
                           </table>
                         </div>
+
+                        <form action="{{ action('ItemsController@store') }}" method="POST" id="distBranchBulkForm" hidden>
+                          @csrf
+                          <input type="hidden" name="store_action" value="up_wbdist_all">
+                          <input type="hidden" name="wb_id" value="{{ $wb_id }}">
+                          <div id="distBranchBulkFields"></div>
+                        </form>
                       </div>
                     @else
                       <div class="dash-empty-state">
@@ -452,6 +472,84 @@
     }
 
     return confirm('Distribute ' + total + ' unit(s) to branches?');
+  }
+
+  function distRowBranchTotal(row) {
+    var total = 0;
+    row.querySelectorAll('.dist-branch-input:not(:disabled)').forEach(function (input) {
+      total += parseInt(input.value || '0', 10) || 0;
+    });
+
+    return total;
+  }
+
+  function distSubmitBulkDistribution() {
+    var bulkForm = document.getElementById('distBranchBulkForm');
+    var bulkFields = document.getElementById('distBranchBulkFields');
+    if (!bulkForm || !bulkFields) {
+      return false;
+    }
+
+    var rows = document.querySelectorAll('.dist-branch-row');
+    var itemCount = 0;
+    var unitTotal = 0;
+    var hasError = false;
+
+    bulkFields.innerHTML = '';
+
+    rows.forEach(function (row) {
+      if (hasError) {
+        return;
+      }
+
+      var remaining = parseInt(row.getAttribute('data-remaining') || '0', 10);
+      if (remaining <= 0) {
+        return;
+      }
+
+      var rowTotal = distRowBranchTotal(row);
+      if (rowTotal <= 0) {
+        return;
+      }
+
+      if (rowTotal > remaining) {
+        alert('Total branch quantities (' + rowTotal + ') exceed remaining (' + remaining + ') for one or more items.');
+        hasError = true;
+        return;
+      }
+
+      row.querySelectorAll('.dist-branch-input:not(:disabled)').forEach(function (input) {
+        var value = parseInt(input.value || '0', 10) || 0;
+        if (value <= 0) {
+          return;
+        }
+
+        var hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = input.name;
+        hidden.value = String(value);
+        bulkFields.appendChild(hidden);
+      });
+
+      itemCount++;
+      unitTotal += rowTotal;
+    });
+
+    if (hasError) {
+      return false;
+    }
+
+    if (itemCount === 0) {
+      alert('Enter at least one branch quantity to distribute.');
+      return false;
+    }
+
+    if (!confirm('Distribute ' + unitTotal + ' unit(s) across ' + itemCount + ' item(s)?')) {
+      return false;
+    }
+
+    bulkForm.submit();
+    return false;
   }
 </script>
 

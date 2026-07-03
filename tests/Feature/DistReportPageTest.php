@@ -250,6 +250,54 @@ class DistReportPageTest extends TestCase
         $this->assertStringContainsString('CSV Corp', $response->streamedContent());
     }
 
+    public function test_distreport_print_loads_from_query_params_without_session(): void
+    {
+        $waybill = Waybill::create([
+            'user_id' => (string) $this->admin->id,
+            'stock_no' => 'ST-DIST-QP',
+            'comp_name' => 'Query Corp',
+            'comp_add' => '12 Market Street',
+            'comp_contact' => '0244000000',
+            'drv_name' => 'John Driver',
+            'drv_contact' => '0244111111',
+            'vno' => 'GR-1234-20',
+            'bill_no' => 'WB-DIST-QP',
+            'weight' => '10',
+            'nop' => '2',
+            'tot_qty' => '20',
+            'del_date' => '2026-07-15',
+            'status' => 'Delivered',
+            'del' => 'no',
+        ]);
+
+        $itemId = DB::table('items')->insertGetId([
+            'item_no' => 'MT-DIST-QP',
+            'user_id' => (string) $this->admin->id,
+            'name' => 'Query Item',
+            'qty' => '100',
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('wbdistributions')->insert([
+            'user_id' => (string) $this->admin->id,
+            'waybill_id' => (string) $waybill->id,
+            'item_id' => (string) $itemId,
+            'q1' => '2',
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get('/distreportprint?date_from='.now()->toDateString())
+            ->assertOk()
+            ->assertSee('MT-DIST-QP')
+            ->assertSee('Query Corp')
+            ->assertSee('Br 1');
+    }
+
     public function test_distreport_print_handles_missing_waybill(): void
     {
         DB::table('wbdistributions')->insert([
