@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Company;
@@ -13,15 +12,12 @@ use App\Models\Cart;
 use App\Models\Sale;
 use App\Models\Order;
 use App\Models\Expense;
-use App\Models\Waybill;
 use App\Models\ItemAudit;
 use App\Models\SalesHistory;
 use App\Models\SalesPayment;
 use App\Models\CompanyBranch;
 use App\Models\ItemImage;
 use App\Models\Category;
-use App\Models\Wbcontent;
-use App\Models\Wbdistribution;
 use App\Models\Closure;
 use Exception;
 
@@ -298,14 +294,6 @@ class ItemsController extends Controller
      */
     public function store(Request $request)
     {
-        if ($request->input('store_action') === 'add_waybill') {
-            return $this->storeWaybill($request);
-        }
-
-        if ($request->input('store_action') === 'up_wbdist_all') {
-            return $this->bulkUpdateWbdist($request);
-        }
-
         $company = new Company;
         $user = new User;
         $cat = new Category;
@@ -955,33 +943,6 @@ class ItemsController extends Controller
     
                 break;
 
-                case 'add_wbcontent':
-
-                    $wb_id = $request->input('wb_id');
-                    $qty = $request->input('qty');
-                    $item_id = $request->input('item');
-
-                    $wbcont_check = Wbcontent::where('waybill_id', $wb_id)->where('item_id', $item_id)->get();
-                    $item = Item::find($item_id);
-                    if (count($wbcont_check) > 0) {
-                        return redirect(url()->previous())->with('error', 'Oops..! Item `'.$item->item_no.' - '.$item->name.'` already added.');
-                    }
-
-                    try {
-                        $wb_insert = Wbcontent::firstOrCreate([
-                            'user_id' => auth()->user()->id,
-                            'waybill_id' => $wb_id,
-                            'item_id' => $item_id,
-                            'qty' => $qty,
-                        ]);
-                    } catch (\Throwable $th) {
-                        throw $th;
-                    }
-                    Waybill::syncTotQtyFor($wb_id);
-                    return redirect(url()->previous())->with('success', 'Item `'.$item->item_no.' - '.$item->name.'` successfully added.');
-    
-                break;
-
                 case 'set_closure':
 
                     $month = session('cldate');
@@ -1259,34 +1220,6 @@ class ItemsController extends Controller
 
             break;
 
-            case 'del_waybil':
-
-                $wb = Waybill::find($id);
-                if (! $wb || $wb->del === 'yes') {
-                    return redirect('/waybillview')->with('error', 'Waybill not found');
-                }
-
-                $wb->del = 'yes';
-                $wb->save();
-
-                return redirect('/waybillview')->with('success', 'Waybill moved to recycle bin');
-
-            break;
-
-            case 'restore_waybill':
-
-                $wb = Waybill::find($id);
-                if (! $wb || $wb->del !== 'yes') {
-                    return redirect('/waybillview?recycle=1')->with('error', 'Waybill not found in recycle bin');
-                }
-
-                $wb->del = 'no';
-                $wb->save();
-
-                return redirect('/waybillview?recycle=1')->with('success', 'Waybill restored successfully');
-
-            break;
-
             case 'del_item':
 
                 $item = Item::find($id);
@@ -1343,25 +1276,6 @@ class ItemsController extends Controller
                     return redirect(url()->previous())->with('error', 'Oops..! Error updating record.');
                 }      
                     
-            break;
-
-            case 'update_waybill':
-
-                $waybill = Waybill::find($id);
-                if (! $waybill || $waybill->del === 'yes') {
-                    return redirect('/waybillview')->with('error', 'Waybill not found');
-                }
-
-                $validated = $this->prepareWaybillAttributes(
-                    $this->validateWaybillRequest($request, (int) $waybill->id)
-                );
-
-                $waybill->fill($validated);
-                $waybill->user_id = auth()->user()->id;
-                $waybill->save();
-
-                return redirect('/waybillview')->with('success', 'Bill Successfully Updated');
-
             break;
 
             case 'qty_change':
@@ -1510,54 +1424,6 @@ class ItemsController extends Controller
                     
             break;
 
-            case 'up_wbcontent':
-                $wb = Wbcontent::find($id);
-                if (! $wb) {
-                    return redirect(url()->previous())->with('error', 'Waybill item not found.');
-                }
-                $newQty = max(0, (int) $request->input('qty'));
-                if ($newQty < (int) $wb->qty_dist) {
-                    return redirect(url()->previous())->with('error', 'Cannot set quantity below already distributed amount ('.$wb->qty_dist.').');
-                }
-                $wb->qty = $newQty;
-                $wb->save();
-                Waybill::syncTotQtyFor($wb->waybill_id);
-                return redirect(url()->previous())->with('success', 'Waybill quantity update successful');
-            break;
-
-            case 'del_wbcontent':
-                $wb = Wbcontent::find($id);
-                if (! $wb) {
-                    return redirect(url()->previous())->with('error', 'Waybill item not found.');
-                }
-                if ((int) $wb->qty_dist > 0) {
-                    return redirect(url()->previous())->with('error', 'Cannot remove item — '.$wb->qty_dist.' already distributed to branches.');
-                }
-                $waybillId = $wb->waybill_id;
-                $wb->delete();
-                Waybill::syncTotQtyFor($waybillId);
-                return redirect(url()->previous())->with('success', 'Item removed from waybill');
-            break;
-
-            case 'up_wbdist':
-                $wbc = Wbcontent::find($id);
-                if (! $wbc) {
-                    return redirect(url()->previous())->with('error', 'Waybill item not found.');
-                }
-
-                $branchQtys = $this->branchQtysFromRequest($request, (int) $wbc->item_id);
-                if (array_sum($branchQtys) <= 0) {
-                    return redirect(url()->previous())->with('error', 'Enter at least one branch quantity to distribute.');
-                }
-
-                $error = $this->applyBranchDistribution($wbc, $branchQtys);
-                if ($error) {
-                    return redirect(url()->previous())->with('error', $error);
-                }
-
-                return redirect(url()->previous())->with('success', 'Waybill branch quantities update successful');
-            break;
-
             case 'del_paid_debt':
                 $sp = SalesPayment::find($id);
                 $order = Sale::where('id', $sp->sale_id)->first();
@@ -1575,248 +1441,6 @@ class ItemsController extends Controller
         return redirect('/items')->with('error', 'Unknown update action.');
     }
 
-    protected function bulkUpdateWbdist(Request $request)
-    {
-        $wbId = $request->input('wb_id');
-        if (! $wbId) {
-            return redirect(url()->previous())->with('error', 'Waybill not found.');
-        }
-
-        $waybill = Waybill::active()->find($wbId);
-        if (! $waybill) {
-            return redirect(url()->previous())->with('error', 'Waybill not found.');
-        }
-
-        if (! $waybill->canDistribute()) {
-            return redirect(url()->previous())->with('error', 'Waybill must be marked Delivered before distributing to branches.');
-        }
-
-        $wbcontents = Wbcontent::where('waybill_id', $wbId)->where('del', 'no')->get();
-        $updated = 0;
-
-        DB::beginTransaction();
-        try {
-            foreach ($wbcontents as $wbc) {
-                $branchQtys = $this->branchQtysFromRequest($request, (int) $wbc->item_id);
-                if (array_sum($branchQtys) <= 0) {
-                    continue;
-                }
-
-                $error = $this->applyBranchDistribution($wbc, $branchQtys);
-                if ($error) {
-                    DB::rollBack();
-
-                    return redirect(url()->previous())->with('error', $error);
-                }
-
-                $updated++;
-            }
-
-            if ($updated === 0) {
-                DB::rollBack();
-
-                return redirect(url()->previous())->with('error', 'Enter at least one branch quantity to distribute.');
-            }
-
-            DB::commit();
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            report($e);
-
-            return redirect(url()->previous())->with('error', 'Oops..! Something went wrong while distributing to branches.');
-        }
-
-        $label = $updated === 1 ? '1 item' : $updated.' items';
-
-        return redirect(url()->previous())->with('success', 'Branch distribution saved for '.$label.'.');
-    }
-
-    protected function branchQtysFromRequest(Request $request, int $itemId): array
-    {
-        $branchQtys = [];
-        for ($i = 1; $i <= 7; $i++) {
-            $branchQtys['q'.$i] = max(0, (int) $request->input('q'.$i.$itemId, 0));
-        }
-
-        return $branchQtys;
-    }
-
-    protected function applyBranchDistribution(Wbcontent $wbc, array $branchQtys): ?string
-    {
-        $waybill = Waybill::find($wbc->waybill_id);
-        if (! $waybill || ! $waybill->canDistribute()) {
-            return 'Waybill must be marked Delivered before distributing to branches.';
-        }
-
-        $itup = Item::find($wbc->item_id);
-        if (! $itup) {
-            return 'Item not found.';
-        }
-
-        $totQs = array_sum($branchQtys);
-        $remaining = (int) $wbc->qty - (int) $wbc->qty_dist;
-
-        if ($remaining <= 0) {
-            return 'Oops..! Restock item `'.$itup->name.'` in order to distribute. 0 left';
-        }
-        if ($totQs > $remaining) {
-            return 'Oops..! Only '.$remaining.' available for distribution to branches';
-        }
-
-        $wbc->qty_dist = (int) $wbc->qty_dist + $totQs;
-        $wbc->save();
-
-        Wbdistribution::create(array_merge([
-            'user_id' => auth()->user()->id,
-            'waybill_id' => $wbc->waybill_id,
-            'item_id' => $wbc->item_id,
-        ], $branchQtys));
-
-        $itup->q1 = $itup->q1 + $branchQtys['q1'];
-        $itup->q2 = $itup->q2 + $branchQtys['q2'];
-        $itup->q3 = $itup->q3 + $branchQtys['q3'];
-        $itup->q4 = $itup->q4 + $branchQtys['q4'];
-        $itup->q5 = $itup->q5 + $branchQtys['q5'];
-        $itup->q6 = $itup->q6 + $branchQtys['q6'];
-        $itup->q7 = $itup->q7 + $branchQtys['q7'];
-        $itup->qty = $itup->qty + $totQs;
-        $itup->save();
-
-        return null;
-    }
-
-    protected function validateWaybillRequest(Request $request, ?int $ignoreId = null): array
-    {
-        $billNoRule = 'required|string|max:255|unique:waybills,bill_no';
-        if ($ignoreId) {
-            $billNoRule .= ','.$ignoreId;
-        }
-
-        return $request->validate([
-            'comp_name' => 'required|string|max:255',
-            'comp_add' => 'required|string|max:2000',
-            'comp_contact' => 'required|string|max:255',
-            'drv_name' => 'required|string|max:255',
-            'drv_contact' => 'required|string|max:255',
-            'vno' => 'required|string|max:255',
-            'bill_no' => $billNoRule,
-            'weight' => 'nullable|numeric|min:0',
-            'nop' => 'nullable|integer|min:0',
-            'tot_qty' => 'nullable|integer|min:0',
-            'del_date' => 'nullable|date|max:20',
-            'status' => 'required|in:Pending,In Transit,Delivered',
-        ]);
-    }
-
-    protected function prepareWaybillAttributes(array $validated): array
-    {
-        foreach (['weight', 'nop', 'tot_qty'] as $field) {
-            $validated[$field] = filled($validated[$field] ?? null)
-                ? (string) $validated[$field]
-                : null;
-        }
-
-        // del_date is NOT NULL in the original schema; store '' when left blank.
-        $validated['del_date'] = filled($validated['del_date'] ?? null)
-            ? (string) $validated['del_date']
-            : '';
-
-        return $validated;
-    }
-
-    protected function storeWaybill(Request $request)
-    {
-        try {
-            $validated = $this->prepareWaybillAttributes(
-                $this->validateWaybillRequest($request)
-            );
-
-            $xter = substr(str_shuffle(str_repeat('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', 4)), 0, 4);
-            $stockNo = 'ST'.$xter.date('is');
-
-            $waybill = Waybill::create(array_merge($validated, [
-                'user_id' => (string) auth()->id(),
-                'stock_no' => $stockNo,
-                'del' => 'no',
-            ]));
-
-            return redirect('/distribution/'.$waybill->id)->with('success', 'Waybill saved. Add items below to distribute.');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            throw $e;
-        } catch (\Illuminate\Database\QueryException $e) {
-            report($e);
-
-            return redirect()->back()->withInput()->with('error', $this->waybillQueryExceptionMessage($e));
-        } catch (\Throwable $e) {
-            report($e);
-
-            return redirect()->back()->withInput()->with('error', 'Oops..! Something went wrong while saving the waybill.');
-        }
-    }
-
-    protected function waybillQueryExceptionMessage(\Illuminate\Database\QueryException $exception): string
-    {
-        if ($this->isDuplicateWaybillBillNo($exception)) {
-            return 'That waybill number already exists. Please use a different one.';
-        }
-
-        $rawMessage = $exception->getMessage();
-        $message = strtolower($rawMessage);
-        $column = $this->waybillQueryExceptionColumn($exception);
-
-        if (str_contains($message, 'data too long')) {
-            if ($column) {
-                return 'Could not save waybill. The '.str_replace('_', ' ', $column).' is too long. Error: ';
-            }
-
-            return 'Could not save waybill. One or more fields may be too long. Error: ';
-        }
-
-        if (str_contains($message, 'cannot be null')
-            || str_contains($message, "doesn't have a default value")
-            || str_contains($message, 'not null constraint failed')) {
-            if ($column) {
-                return 'Could not save waybill. Missing or invalid value for '.str_replace('_', ' ', $column).'. Error: ';
-            }
-
-            return 'Could not save waybill. A required field was missing. Error: ';
-        }
-
-        if (str_contains($message, 'incorrect date')
-            || str_contains($message, 'invalid datetime')
-            || str_contains($message, '1292')) {
-            return 'Could not save waybill. Please enter a valid delivery date or leave it blank. Error: ';
-        }
-
-        return 'Could not save waybill. Error: ';
-    }
-
-    protected function waybillQueryExceptionColumn(\Illuminate\Database\QueryException $exception): ?string
-    {
-        if (preg_match("/column '([^']+)'/i", $exception->getMessage(), $matches)) {
-            return $matches[1];
-        }
-
-        if (preg_match('/not null constraint failed: (?:[\w.]+\.)?(\w+)/i', $exception->getMessage(), $matches)) {
-            return $matches[1];
-        }
-
-        return null;
-    }
-
-    protected function isDuplicateWaybillBillNo(\Illuminate\Database\QueryException $exception): bool
-    {
-        $message = strtolower($exception->getMessage());
-        $sqlState = $exception->errorInfo[0] ?? '';
-        $driverCode = (int) ($exception->errorInfo[1] ?? 0);
-
-        if ($sqlState === '23000' && in_array($driverCode, [1062, 19], true)) {
-            return str_contains($message, 'bill_no');
-        }
-
-        return str_contains($message, 'unique constraint failed')
-            && str_contains($message, 'bill_no');
-    }
 
     /**
      * Remove the specified resource from storage.

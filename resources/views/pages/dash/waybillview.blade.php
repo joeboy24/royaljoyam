@@ -221,10 +221,10 @@
                           <td class="waybill-table-date-col">{{ $waybill->formattedDeliveryDate() }}</td>
                           <td class="ryt waybill-table-actions-col">
                             @if ($showRecycle)
-                              <form action="{{ action('ItemsController@update', $waybill->id) }}" method="POST" class="waybill-row-actions">
+                              <form action="{{ url('/waybill/'.$waybill->id.'/restore') }}" method="POST" class="waybill-row-actions">
                                 @csrf
                                 <input type="hidden" name="_method" value="PUT">
-                                <button type="submit" name="store_action" value="restore_waybill" class="inventory-action-btn inventory-action-btn-primary dash-tip" title="Restore waybill" data-tip="Restore" onclick="return confirm('Restore this waybill?');">
+                                <button type="submit" class="inventory-action-btn inventory-action-btn-primary dash-tip" title="Restore waybill" data-tip="Restore" onclick="return confirm('Restore this waybill?');">
                                   <i class="fa fa-reply"></i>
                                   <span>Restore</span>
                                 </button>
@@ -273,10 +273,10 @@
                                       <i class="fa fa-print"></i>
                                     </a>
 
-                                    <form action="{{ action('ItemsController@update', $waybill->id) }}" method="POST">
+                                    <form action="{{ url('/waybill/'.$waybill->id) }}" method="POST">
                                       @csrf
-                                      <input type="hidden" name="_method" value="PUT">
-                                      <button type="submit" name="store_action" value="del_waybil" class="inventory-action-btn inventory-action-btn-icon dash-tip" title="Move to recycle bin" data-tip="Delete" onclick="return confirm('Move this waybill to the recycle bin?');">
+                                      <input type="hidden" name="_method" value="DELETE">
+                                      <button type="submit" class="inventory-action-btn inventory-action-btn-icon dash-tip" title="Move to recycle bin" data-tip="Delete" onclick="return confirm('Move this waybill to the recycle bin?');">
                                         <i class="fa fa-trash"></i>
                                       </button>
                                     </form>
@@ -287,7 +287,7 @@
                               <div class="modal fade waybill-edit-modal" id="edit_{{ $waybill->id }}" tabindex="-1" role="dialog" aria-labelledby="editWaybillLabel_{{ $waybill->id }}" aria-hidden="true">
                                 <div class="modal-dialog inventory-edit-dialog modal-dialog-centered" role="document">
                                   <div class="modal-content inventory-edit-modal">
-                                    <form action="{{ action('ItemsController@update', $waybill->id) }}" method="POST">
+                                    <form action="{{ url('/waybill/'.$waybill->id) }}" method="POST">
                                       @csrf
                                       <input type="hidden" name="_method" value="PUT">
 
@@ -391,7 +391,7 @@
 
                                       <div class="inventory-edit-footer">
                                         <button type="button" class="inventory-edit-btn inventory-edit-btn-muted" data-dismiss="modal">Cancel</button>
-                                        <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary" name="store_action" value="update_waybill">
+                                        <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary">
                                           <i class="fa fa-save"></i> Update record
                                         </button>
                                       </div>

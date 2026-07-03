@@ -151,8 +151,7 @@ class WaybillPageTest extends TestCase
 
     public function test_add_waybill_creates_record_with_valid_data(): void
     {
-        $response = $this->actingAs($this->admin)->post('/items', [
-            'store_action' => 'add_waybill',
+        $response = $this->actingAs($this->admin)->post('/waybill', [
             'comp_name' => 'Acme Supplies',
             'comp_add' => '12 Market Street',
             'comp_contact' => '0244000000',
@@ -178,8 +177,7 @@ class WaybillPageTest extends TestCase
 
     public function test_add_waybill_redirects_to_distribution_after_save(): void
     {
-        $response = $this->actingAs($this->admin)->post('/items', [
-            'store_action' => 'add_waybill',
+        $response = $this->actingAs($this->admin)->post('/waybill', [
             'comp_name' => 'Acme Supplies',
             'comp_add' => '12 Market Street',
             'comp_contact' => '0244000000',
@@ -196,8 +194,7 @@ class WaybillPageTest extends TestCase
 
     public function test_add_waybill_accepts_in_transit_status(): void
     {
-        $response = $this->actingAs($this->admin)->post('/items', [
-            'store_action' => 'add_waybill',
+        $response = $this->actingAs($this->admin)->post('/waybill', [
             'comp_name' => 'Acme Supplies',
             'comp_add' => '12 Market Street',
             'comp_contact' => '0244000000',
@@ -229,8 +226,7 @@ class WaybillPageTest extends TestCase
 
     public function test_add_waybill_allows_blank_optional_fields(): void
     {
-        $response = $this->actingAs($this->admin)->post('/items', [
-            'store_action' => 'add_waybill',
+        $response = $this->actingAs($this->admin)->post('/waybill', [
             'comp_name' => 'Acme Supplies',
             'comp_add' => '12 Market Street',
             'comp_contact' => '0244000000',
@@ -251,8 +247,7 @@ class WaybillPageTest extends TestCase
 
     public function test_add_waybill_rejects_non_numeric_weight(): void
     {
-        $response = $this->actingAs($this->admin)->post('/items', [
-            'store_action' => 'add_waybill',
+        $response = $this->actingAs($this->admin)->post('/waybill', [
             'comp_name' => 'Acme Supplies',
             'comp_add' => 'EJISU',
             'comp_contact' => '0503113033',
@@ -275,8 +270,7 @@ class WaybillPageTest extends TestCase
     {
         $this->createWaybill(['bill_no' => 'WB-DUP-001']);
 
-        $response = $this->actingAs($this->admin)->post('/items', [
-            'store_action' => 'add_waybill',
+        $response = $this->actingAs($this->admin)->post('/waybill', [
             'comp_name' => 'Acme Supplies',
             'comp_add' => '12 Market Street',
             'comp_contact' => '0244000000',
@@ -292,8 +286,7 @@ class WaybillPageTest extends TestCase
 
     public function test_add_waybill_rejects_address_longer_than_form_limit(): void
     {
-        $response = $this->actingAs($this->admin)->post('/items', [
-            'store_action' => 'add_waybill',
+        $response = $this->actingAs($this->admin)->post('/waybill', [
             'comp_name' => 'Acme Supplies',
             'comp_add' => str_repeat('A', 2001),
             'comp_contact' => '0244000000',
@@ -327,7 +320,7 @@ class WaybillPageTest extends TestCase
             ->assertOk()
             ->assertSee('WB-DELETED-RECYCLE')
             ->assertDontSee('WB-ACTIVE-RECYCLE')
-            ->assertSee('restore_waybill', false);
+            ->assertSee('/restore', false);
     }
 
     public function test_admin_can_restore_waybill_from_recycle_bin(): void
@@ -336,8 +329,8 @@ class WaybillPageTest extends TestCase
         $deleted->del = 'yes';
         $deleted->save();
 
-        $response = $this->actingAs($this->admin)->put('/items/'.$deleted->id, [
-            'store_action' => 'restore_waybill',
+        $response = $this->actingAs($this->admin)->put('/waybill/'.$deleted->id.'/restore', [
+            '_token' => csrf_token(),
         ]);
 
         $response->assertRedirect('/waybillview?recycle=1');
@@ -507,9 +500,8 @@ class WaybillPageTest extends TestCase
         $wbcId = $this->createWbcontent($waybill->id, $itemId, ['qty' => '10', 'qty_dist' => '5']);
 
         $this->actingAs($this->admin)
-            ->put('/items/'.$wbcId, [
+            ->delete('/waybill/contents/'.$wbcId, [
                 '_token' => csrf_token(),
-                'store_action' => 'del_wbcontent',
             ])
             ->assertRedirect()
             ->assertSessionHas('error');
@@ -524,9 +516,8 @@ class WaybillPageTest extends TestCase
         $wbcId = $this->createWbcontent($waybill->id, $itemId, ['qty' => '10', 'qty_dist' => '6']);
 
         $this->actingAs($this->admin)
-            ->put('/items/'.$wbcId, [
+            ->put('/waybill/contents/'.$wbcId, [
                 '_token' => csrf_token(),
-                'store_action' => 'up_wbcontent',
                 'qty' => '4',
             ])
             ->assertRedirect()
@@ -537,23 +528,22 @@ class WaybillPageTest extends TestCase
 
     public function test_branch_distribution_validates_remaining_quantity(): void
     {
+        $this->seedBranches();
         $waybill = $this->createWaybill(['bill_no' => 'WB-DIST-VAL', 'status' => 'Delivered']);
         $itemId = $this->createItem(['item_no' => 'MT-DIST-VAL', 'qty' => '100']);
         $wbcId = $this->createWbcontent($waybill->id, $itemId, ['qty' => '10', 'qty_dist' => '0']);
 
         $this->actingAs($this->admin)
-            ->put('/items/'.$wbcId, [
+            ->put('/waybill/contents/'.$wbcId.'/distribute', [
                 '_token' => csrf_token(),
-                'store_action' => 'up_wbdist',
                 'q1'.$itemId => '12',
             ])
             ->assertRedirect()
             ->assertSessionHas('error');
 
         $this->actingAs($this->admin)
-            ->put('/items/'.$wbcId, [
+            ->put('/waybill/contents/'.$wbcId.'/distribute', [
                 '_token' => csrf_token(),
-                'store_action' => 'up_wbdist',
                 'q1'.$itemId => '4',
                 'q2'.$itemId => '3',
             ])
@@ -571,6 +561,7 @@ class WaybillPageTest extends TestCase
 
     public function test_bulk_branch_distribution_updates_multiple_items(): void
     {
+        $this->seedBranches();
         $waybill = $this->createWaybill(['bill_no' => 'WB-BULK-001', 'status' => 'Delivered']);
         $itemA = $this->createItem(['item_no' => 'MT-BULK-A', 'qty' => '100']);
         $itemB = $this->createItem(['item_no' => 'MT-BULK-B', 'qty' => '100']);
@@ -578,10 +569,8 @@ class WaybillPageTest extends TestCase
         $wbcB = $this->createWbcontent($waybill->id, $itemB, ['qty' => '8', 'qty_dist' => '0']);
 
         $this->actingAs($this->admin)
-            ->post('/items', [
+            ->post('/waybill/'.$waybill->id.'/distribute-all', [
                 '_token' => csrf_token(),
-                'store_action' => 'up_wbdist_all',
-                'wb_id' => $waybill->id,
                 'q1'.$itemA => '3',
                 'q2'.$itemA => '2',
                 'q1'.$itemB => '4',
@@ -613,10 +602,8 @@ class WaybillPageTest extends TestCase
         $wbcB = $this->createWbcontent($waybill->id, $itemB, ['qty' => '5', 'qty_dist' => '0']);
 
         $this->actingAs($this->admin)
-            ->post('/items', [
+            ->post('/waybill/'.$waybill->id.'/distribute-all', [
                 '_token' => csrf_token(),
-                'store_action' => 'up_wbdist_all',
-                'wb_id' => $waybill->id,
                 'q1'.$itemA => '2',
                 'q1'.$itemB => '8',
             ])
@@ -650,18 +637,14 @@ class WaybillPageTest extends TestCase
         $itemA = $this->createItem(['item_no' => 'MT-TOT-A']);
         $itemB = $this->createItem(['item_no' => 'MT-TOT-B']);
 
-        $this->actingAs($this->admin)->post('/items', [
+        $this->actingAs($this->admin)->post('/waybill/'.$waybill->id.'/contents', [
             '_token' => csrf_token(),
-            'store_action' => 'add_wbcontent',
-            'wb_id' => $waybill->id,
             'item' => $itemA,
             'qty' => '10',
         ])->assertRedirect();
 
-        $this->actingAs($this->admin)->post('/items', [
+        $this->actingAs($this->admin)->post('/waybill/'.$waybill->id.'/contents', [
             '_token' => csrf_token(),
-            'store_action' => 'add_wbcontent',
-            'wb_id' => $waybill->id,
             'item' => $itemB,
             'qty' => '5',
         ])->assertRedirect();
@@ -728,9 +711,8 @@ class WaybillPageTest extends TestCase
         $wbcId = $this->createWbcontent($waybill->id, $itemId, ['qty' => '10', 'qty_dist' => '0']);
 
         $this->actingAs($this->admin)
-            ->put('/items/'.$wbcId, [
+            ->put('/waybill/contents/'.$wbcId.'/distribute', [
                 '_token' => csrf_token(),
-                'store_action' => 'up_wbdist',
                 'q1'.$itemId => '3',
             ])
             ->assertRedirect()
@@ -784,6 +766,25 @@ class WaybillPageTest extends TestCase
             ->assertSee('MT-SENT-001');
     }
 
+    public function test_non_admin_cannot_access_waybill_history(): void
+    {
+        $branchUserId = DB::table('users')->insertGetId([
+            'company_branch_id' => '1',
+            'name' => 'branch.user',
+            'email' => 'branch@test.example',
+            'bv' => '1',
+            'status' => 'Branch A',
+            'password' => Hash::make('password'),
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs(User::findOrFail($branchUserId))
+            ->get('/waybillview')
+            ->assertForbidden();
+    }
+
     protected function createItem(array $overrides = []): int
     {
         return DB::table('items')->insertGetId(array_merge([
@@ -809,5 +810,29 @@ class WaybillPageTest extends TestCase
             'created_at' => now(),
             'updated_at' => now(),
         ], $overrides));
+    }
+
+    /** @param list<array{tag: string, name?: string}> $branches */
+    protected function seedBranches(array $branches = null): void
+    {
+        if ($branches === null) {
+            $branches = [
+                ['tag' => '1', 'name' => 'Branch A'],
+                ['tag' => '2', 'name' => 'Branch B'],
+            ];
+        }
+
+        foreach ($branches as $branch) {
+            DB::table('company_branches')->insert([
+                'user_id' => (string) $this->admin->id,
+                'name' => $branch['name'] ?? 'Branch '.$branch['tag'],
+                'loc' => 'Loc '.$branch['tag'],
+                'contact' => '000000000'.$branch['tag'],
+                'tag' => (string) $branch['tag'],
+                'del' => 'no',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
     }
 }

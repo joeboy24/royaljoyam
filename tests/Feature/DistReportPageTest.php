@@ -250,6 +250,67 @@ class DistReportPageTest extends TestCase
         $this->assertStringContainsString('CSV Corp', $response->streamedContent());
     }
 
+    public function test_distreport_shows_all_active_branch_columns(): void
+    {
+        DB::table('company_branches')->insert([
+            'user_id' => (string) $this->admin->id,
+            'name' => 'Branch C',
+            'loc' => 'Loc 3',
+            'contact' => '0000000003',
+            'tag' => '3',
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $waybill = Waybill::create([
+            'user_id' => (string) $this->admin->id,
+            'stock_no' => 'ST-BR-COLS',
+            'comp_name' => 'Branch Col Corp',
+            'comp_add' => '12 Market Street',
+            'comp_contact' => '0244000000',
+            'drv_name' => 'John Driver',
+            'drv_contact' => '0244111111',
+            'vno' => 'GR-1234-20',
+            'bill_no' => 'WB-BR-COLS',
+            'weight' => '10',
+            'nop' => '2',
+            'tot_qty' => '5',
+            'del_date' => '2026-07-15',
+            'status' => 'Delivered',
+            'del' => 'no',
+        ]);
+
+        $itemId = DB::table('items')->insertGetId([
+            'item_no' => 'MT-BR-COLS',
+            'user_id' => (string) $this->admin->id,
+            'name' => 'Branch Column Item',
+            'qty' => '100',
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('wbdistributions')->insert([
+            'user_id' => (string) $this->admin->id,
+            'waybill_id' => (string) $waybill->id,
+            'item_id' => (string) $itemId,
+            'q1' => '1',
+            'q2' => '2',
+            'q3' => '3',
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get('/distreport')
+            ->assertOk()
+            ->assertSee('Br 1')
+            ->assertSee('Br 2')
+            ->assertSee('Br 3');
+    }
+
     public function test_distreport_print_loads_from_query_params_without_session(): void
     {
         $waybill = Waybill::create([

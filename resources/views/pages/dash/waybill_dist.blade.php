@@ -35,9 +35,8 @@
                 <div id="printarea1" class="card-body dash-form-body">
 
                   <div class="dist-add-item-panel">
-                    <form action="{{ action('ItemsController@store') }}" method="POST" class="dist-add-item-form" id="distAddItemForm">
+                    <form action="{{ url('/waybill/'.$wb_id.'/contents') }}" method="POST" class="dist-add-item-form" id="distAddItemForm">
                       @csrf
-                      <input type="hidden" name="wb_id" value="{{ $wb_id }}">
 
                       <div class="dist-add-item-row">
                         <div class="dist-item-picker" id="distItemPicker">
@@ -74,7 +73,7 @@
                           <input type="number" class="inventory-edit-input" name="qty" placeholder="Qty." min="1" step="1" required>
                         </label>
 
-                        <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary dist-add-item-btn" name="store_action" value="add_wbcontent">
+                        <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary dist-add-item-btn">
                           <i class="fa fa-plus"></i> Add
                         </button>
                       </div>
@@ -123,10 +122,7 @@
                                     <td>{{ $wbc->qty - $wbc->qty_dist }}</td>
                                     <td>{{ date('M. d, Y', strtotime($wbc->created_at)) }}</td>
                                     <td class="ryt">
-                                      <form action="{{ action('ItemsController@update', $wbc->id) }}" method="POST" class="waybill-row-actions">
-                                        <input type="hidden" name="_method" value="PUT">
-                                        @csrf
-
+                                      <div class="waybill-row-actions">
                                         <button type="button" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-toggle="modal" data-target="#edit_{{ $wbc->id }}" title="Edit quantity" data-tip="Edit">
                                           <i class="fa fa-pencil"></i>
                                         </button>
@@ -135,10 +131,18 @@
                                             <i class="fa fa-trash"></i>
                                           </button>
                                         @else
-                                          <button type="submit" name="store_action" value="del_wbcontent" class="inventory-action-btn inventory-action-btn-icon dash-tip" title="Remove item" data-tip="Delete" onclick="return confirm('Are you sure you want to delete this item?');">
-                                            <i class="fa fa-trash"></i>
-                                          </button>
+                                          <form action="{{ url('/waybill/contents/'.$wbc->id) }}" method="POST" class="waybill-row-delete-form">
+                                            @csrf
+                                            <input type="hidden" name="_method" value="DELETE">
+                                            <button type="submit" class="inventory-action-btn inventory-action-btn-icon dash-tip" title="Remove item" data-tip="Delete" onclick="return confirm('Are you sure you want to delete this item?');">
+                                              <i class="fa fa-trash"></i>
+                                            </button>
+                                          </form>
                                         @endif
+
+                                        <form action="{{ url('/waybill/contents/'.$wbc->id) }}" method="POST">
+                                          @csrf
+                                          <input type="hidden" name="_method" value="PUT">
 
                                         <div class="modal fade waybill-edit-modal" id="edit_{{ $wbc->id }}" tabindex="-1" role="dialog" aria-labelledby="editWbcLabel_{{ $wbc->id }}" aria-hidden="true">
                                           <div class="modal-dialog inventory-edit-dialog modal-dialog-centered" role="document">
@@ -171,14 +175,15 @@
 
                                               <div class="inventory-edit-footer">
                                                 <button type="button" class="inventory-edit-btn inventory-edit-btn-muted" data-dismiss="modal">Cancel</button>
-                                                <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary" name="store_action" value="up_wbcontent">
+                                                <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary">
                                                   <i class="fa fa-save"></i> Update
                                                 </button>
                                               </div>
                                             </div>
                                           </div>
                                         </div>
-                                      </form>
+                                        </form>
+                                      </div>
                                     </td>
                                   </tr>
                                 @endif
@@ -226,7 +231,7 @@
 
                         @foreach ($wbcontents as $wbc)
                           @if ($wbc->del == 'no')
-                            <form action="{{ action('ItemsController@update', $wbc->id) }}" method="POST" id="distBranchForm_{{ $wbc->id }}" hidden>
+                            <form action="{{ url('/waybill/contents/'.$wbc->id.'/distribute') }}" method="POST" id="distBranchForm_{{ $wbc->id }}" hidden>
                               @csrf
                               <input type="hidden" name="_method" value="PUT">
                               <input type="hidden" name="tvalue" value="{{ $t++ }}">
@@ -273,8 +278,8 @@
                                         <span class="dist-branch-remaining">{{ $remaining }} remaining</span>
                                       @endif
                                     </td>
-                                    @for ($i = 0; $i < count($branches); $i++)
-                                      @php $val = 'q'.($i + 1); @endphp
+                                    @foreach ($branches as $branchIndex => $br)
+                                      @php $val = 'q'.($branchIndex + 1); @endphp
                                       <td class="ryt dist-branch-avl">{{ $itemStock?->{$val} ?? '—' }}</td>
                                       <td class="ryt dist-branch-sent">{{ ($sent[$val] ?? 0) > 0 ? $sent[$val] : '—' }}</td>
                                       <td class="dist-branch-add">
@@ -289,13 +294,11 @@
                                           @disabled(! $canBranchUpdate)
                                         >
                                       </td>
-                                    @endfor
+                                    @endforeach
                                     <td class="ryt">
                                       <button
                                         type="submit"
                                         form="distBranchForm_{{ $wbc->id }}"
-                                        name="store_action"
-                                        value="up_wbdist"
                                         class="inventory-action-btn inventory-action-btn-primary dist-branch-update-btn dash-tip"
                                         data-tip="Save branch quantities"
                                         @disabled(! $canBranchUpdate)
@@ -312,10 +315,8 @@
                           </table>
                         </div>
 
-                        <form action="{{ action('ItemsController@store') }}" method="POST" id="distBranchBulkForm" hidden>
+                        <form action="{{ url('/waybill/'.$wb_id.'/distribute-all') }}" method="POST" id="distBranchBulkForm" hidden>
                           @csrf
-                          <input type="hidden" name="store_action" value="up_wbdist_all">
-                          <input type="hidden" name="wb_id" value="{{ $wb_id }}">
                           <div id="distBranchBulkFields"></div>
                         </form>
                       </div>

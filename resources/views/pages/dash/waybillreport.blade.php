@@ -62,7 +62,7 @@
 
           <div class="form-group row mb-0 hideMe">
             <div class="col-md-12 myTrim">
-              <form class="inventory-filter-form" action="{{ action('DashController@waybillreport') }}" method="GET">
+              <form class="inventory-filter-form" action="{{ url('/waybillreport') }}" method="GET">
                 <div class="inventory-filter-row">
                   <div class="inventory-filters-panel">
                     <div class="inventory-filters-heading">

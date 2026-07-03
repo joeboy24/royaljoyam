@@ -22,7 +22,7 @@
       $date_from = $date_from ?? '';
       $date_to = $date_to ?? '';
       $branches = collect($branches ?? []);
-      $branchKeys = $branches->keys()->map(fn ($index) => 'q'.($index + 1));
+      $branchKeys = collect($branchKeys ?? $branches->keys()->map(fn ($index) => 'q'.($index + 1)));
     @endphp
 
     <section id="invoice">

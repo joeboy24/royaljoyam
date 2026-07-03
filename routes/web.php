@@ -64,9 +64,9 @@ Route::get('/stockfillprint', 'DashController@stockfillprint');
 Route::get('/stockreportprinting', 'DashController@stockreportprinting');
 Route::get('/expensereportprinting', 'DashController@expensereportprinting');
 Route::get('/returnprint', 'DashController@returnprint');
-Route::get('/waybillprint/{id}', 'DashController@waybillPrintSingle');
-Route::get('/waybillprint', 'DashController@waybillprint');
-Route::get('/distreportprint', 'DashController@distreportprint');
+Route::get('/waybillprint/{id}', 'WaybillReportController@waybillPrintSingle');
+Route::get('/waybillprint', 'WaybillReportController@waybillPrint');
+Route::get('/distreportprint', 'WaybillReportController@distReportPrint');
 
 Route::get('/debtsreportprinting', function () {
     return view('pages.invoice.debtsinvoice');
@@ -78,8 +78,17 @@ Auth::routes();
 
 Route::redirect('/home', '/dashboard')->name('home');
 Route::get('/orders', 'DashController@orders');
-Route::get('/waybill', 'DashController@waybill');
-Route::get('/waybillview', 'DashController@waybillview');
+Route::get('/waybill', 'WaybillController@create');
+Route::post('/waybill', 'WaybillController@store');
+Route::get('/waybillview', 'WaybillController@index');
+Route::put('/waybill/{waybill}', 'WaybillController@update');
+Route::delete('/waybill/{waybill}', 'WaybillController@destroy');
+Route::put('/waybill/{waybill}/restore', 'WaybillController@restore');
+Route::post('/waybill/{waybill}/contents', 'WaybillContentController@store');
+Route::put('/waybill/contents/{wbcontent}', 'WaybillContentController@update');
+Route::delete('/waybill/contents/{wbcontent}', 'WaybillContentController@destroy');
+Route::put('/waybill/contents/{wbcontent}/distribute', 'WaybillContentController@distribute');
+Route::post('/waybill/{waybill}/distribute-all', 'WaybillContentController@distributeAll');
 Route::get('/sales', 'DashController@sales');
 Route::get('/mpt_cart', 'DashController@empty_cart');
 Route::get('/stockbal', 'DashController@stockbal');
@@ -87,11 +96,11 @@ Route::get('/genstockbal', 'DashController@genstockbal');
 Route::get('/expensereport', 'DashController@expensereport');
 Route::get('/debts', 'DashController@debts');
 Route::get('/paid_debts', 'DashController@debts_paid');
-Route::get('/waybillreport/export', 'DashController@exportWaybillReport');
-Route::get('/waybillreport', 'DashController@waybillreport');
+Route::get('/waybillreport/export', 'WaybillReportController@exportWaybillReport');
+Route::get('/waybillreport', 'WaybillReportController@waybillReport');
 Route::get('/returnsreport', 'DashController@returnsreport');
-Route::get('/distreport/export', 'DashController@exportDistReport');
-Route::get('/distreport', 'DashController@distreport');
+Route::get('/distreport/export', 'WaybillReportController@exportDistReport');
+Route::get('/distreport', 'WaybillReportController@distReport');
 Route::get('/closure_page', 'DashController@closure');
 Route::get('/saleshistory', 'DashController@saleshistory');
 

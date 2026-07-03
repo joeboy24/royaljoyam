@@ -37,9 +37,8 @@
                   icon="fa fa-truck"
                 />
                 <div class="card-body dash-form-body">
-                  <form id="waybill-create-form" action="{{action('ItemsController@store')}}" method="POST">
+                  <form id="waybill-create-form" action="{{ url('/waybill') }}" method="POST">
                     @csrf
-                    <input type="hidden" name="store_action" value="add_waybill"/>
 
                     <div class="dash-form-grid">
                       <div class="dash-form-column">

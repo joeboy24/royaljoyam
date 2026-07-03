@@ -62,7 +62,7 @@
 
           <div class="form-group row mb-0 hideMe">
             <div class="col-md-12 myTrim">
-              <form class="inventory-filter-form" action="{{ action('DashController@distreport') }}" method="GET">
+              <form class="inventory-filter-form" action="{{ url('/distreport') }}" method="GET">
                 <div class="inventory-filter-row">
                   <div class="inventory-filters-panel">
                     <div class="inventory-filters-heading">
@@ -124,7 +124,8 @@
             <div id="printarea1" class="card-body">
               @if ($wbdreports->total() > 0)
                 @php
-                  $branchKeys = collect(session('compbranch', []))->keys()->map(fn ($index) => 'q'.($index + 1));
+                  $reportBranches = $branches ?? collect();
+                  $reportBranchKeys = $branchKeys ?? collect();
                 @endphp
                 <div class="table-responsive">
                   <table class="table mt">
@@ -132,7 +133,7 @@
                       <tr>
                         <th>#</th>
                         <th>Item</th>
-                        @foreach (session('compbranch', []) as $br)
+                        @foreach ($reportBranches as $br)
                           <th>Br {{ $br->tag }}</th>
                         @endforeach
                         <th class="ryt">Date Distributed</th>
@@ -153,8 +154,7 @@
                                 <span class="text-muted">Item unavailable</span>
                               @endif
                             </td>
-                            @foreach (session('compbranch', []) as $branchIndex => $br)
-                              @php $qtyKey = 'q'.($branchIndex + 1); @endphp
+                            @foreach ($reportBranchKeys as $qtyKey)
                               <td>{{ $wbd->{$qtyKey} ?? 0 }}</td>
                             @endforeach
                             <td class="ryt">{{ date('M. d, Y', strtotime($wbd->created_at)) }}</td>
@@ -164,8 +164,8 @@
 
                       <tr>
                         <td></td>
-                        <td><b>Total Qty.:</b> {{ $branchKeys->sum(fn ($key) => $wbdreports->sum($key)) }}</td>
-                        @foreach ($branchKeys as $key)
+                        <td><b>Total Qty.:</b> {{ $reportBranchKeys->sum(fn ($key) => $wbdreports->sum($key)) }}</td>
+                        @foreach ($reportBranchKeys as $key)
                           <td><b>{{ number_format($wbdreports->sum($key)) }}</b></td>
                         @endforeach
                         <td></td>
