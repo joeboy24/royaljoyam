@@ -195,10 +195,59 @@ class DistReportPageTest extends TestCase
         $this->actingAs($this->admin)->get('/distreport')->assertOk();
 
         $this->actingAs($this->admin)
-            ->get('/distreportprint')
+            ->get('/distreportprint?date_from='.now()->toDateString())
             ->assertOk()
             ->assertSee('MT-PRINT-001')
             ->assertSee('Print Corp');
+    }
+
+    public function test_distreport_csv_export_includes_distribution_rows(): void
+    {
+        $waybill = Waybill::create([
+            'user_id' => (string) $this->admin->id,
+            'stock_no' => 'ST-CSV-001',
+            'comp_name' => 'CSV Corp',
+            'comp_add' => '12 Market Street',
+            'comp_contact' => '0244000000',
+            'drv_name' => 'John Driver',
+            'drv_contact' => '0244111111',
+            'vno' => 'GR-1234-20',
+            'bill_no' => 'WB-CSV-001',
+            'weight' => '10',
+            'nop' => '2',
+            'tot_qty' => '20',
+            'del_date' => '2026-07-15',
+            'status' => 'Delivered',
+            'del' => 'no',
+        ]);
+
+        $itemId = DB::table('items')->insertGetId([
+            'item_no' => 'MT-CSV-001',
+            'user_id' => (string) $this->admin->id,
+            'name' => 'CSV Item',
+            'qty' => '100',
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('wbdistributions')->insert([
+            'user_id' => (string) $this->admin->id,
+            'waybill_id' => (string) $waybill->id,
+            'item_id' => (string) $itemId,
+            'q1' => '4',
+            'q2' => '2',
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->admin)->get('/distreport/export');
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'text/csv; charset=UTF-8');
+        $this->assertStringContainsString('MT-CSV-001', $response->streamedContent());
+        $this->assertStringContainsString('CSV Corp', $response->streamedContent());
     }
 
     public function test_distreport_print_handles_missing_waybill(): void

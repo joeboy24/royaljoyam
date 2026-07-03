@@ -74,6 +74,26 @@ class Waybill extends Model
         return $this->distributionStatus() === 'pending' || $this->distributionStatus() === 'partial';
     }
 
+    public function canDistribute(): bool
+    {
+        return $this->status === 'Delivered';
+    }
+
+    public function syncTotQtyFromContents(): void
+    {
+        $total = (int) $this->activeWbcontents()->sum('qty');
+        $this->tot_qty = (string) $total;
+        $this->save();
+    }
+
+    public static function syncTotQtyFor(int|string $waybillId): void
+    {
+        $waybill = static::find($waybillId);
+        if ($waybill) {
+            $waybill->syncTotQtyFromContents();
+        }
+    }
+
     public static function distributionFilterOptions(): array
     {
         return ['pending', 'partial', 'complete'];
@@ -114,9 +134,7 @@ class Waybill extends Model
     public function scopeOrdered($query, ?string $sort, ?string $direction)
     {
         $columns = [
-            'bill_no' => 'bill_no',
             'del_date' => 'del_date',
-            'status' => 'status',
             'created_at' => 'created_at',
         ];
 

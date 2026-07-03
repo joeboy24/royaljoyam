@@ -199,10 +199,17 @@
                           </a>
                         </div>
 
-                        <div class="dist-callout">
-                          <i class="fa fa-info-circle" aria-hidden="true"></i>
-                          <span>Enter quantities to send to each branch (must not exceed remaining), then click <strong>Update</strong> on the row.</span>
-                        </div>
+                        @if (! $waybill->canDistribute())
+                          <div class="dist-callout dist-callout-warning">
+                            <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+                            <span>Branch distribution is available only after the waybill is marked <strong>Delivered</strong>. Current status: <strong>{{ $waybill->status }}</strong>.</span>
+                          </div>
+                        @else
+                          <div class="dist-callout">
+                            <i class="fa fa-info-circle" aria-hidden="true"></i>
+                            <span>Enter quantities to send to each branch (must not exceed remaining), then click <strong>Update</strong> on the row.</span>
+                          </div>
+                        @endif
 
                         @foreach ($wbcontents as $wbc)
                           @if ($wbc->del == 'no')
@@ -240,6 +247,7 @@
                                     $remaining = (int) $wbc->qty - (int) $wbc->qty_dist;
                                     $sent = $dist_sent[$wbc->item_id] ?? [];
                                     $itemStock = $cur_qtys[$loop->index] ?? null;
+                                    $canBranchUpdate = $waybill->canDistribute() && $remaining > 0;
                                   @endphp
                                   <tr @class(['rowColour' => $x % 2 === 0, 'dist-branch-row' => true]) data-remaining="{{ $remaining }}">
                                     <td>{{ $x++ }}</td>
@@ -265,7 +273,7 @@
                                           name="{{ $val.$wbc->item_id }}"
                                           form="distBranchForm_{{ $wbc->id }}"
                                           placeholder="0"
-                                          @disabled($remaining <= 0)
+                                          @disabled(! $canBranchUpdate)
                                         >
                                       </td>
                                     @endfor
@@ -277,7 +285,7 @@
                                         value="up_wbdist"
                                         class="inventory-action-btn inventory-action-btn-primary dist-branch-update-btn dash-tip"
                                         data-tip="Save branch quantities"
-                                        @disabled($remaining <= 0)
+                                        @disabled(! $canBranchUpdate)
                                         onclick="return distValidateBranchRow(this);"
                                       >
                                         <i class="fa fa-check"></i>

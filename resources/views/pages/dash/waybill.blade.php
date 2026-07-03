@@ -97,20 +97,20 @@
                         <div class="inventory-edit-field-row">
                           <label class="inventory-edit-field">
                             <span class="inventory-edit-label">Weight</span>
-                            <input type="text" class="inventory-edit-input @error('weight') is-invalid @enderror" name="weight" value="{{ old('weight') }}" placeholder="e.g. SACK or 12.5"/>
+                            <input type="number" class="inventory-edit-input @error('weight') is-invalid @enderror" name="weight" value="{{ old('weight') }}" placeholder="e.g. 12.5" min="0" step="any" inputmode="decimal"/>
                             @error('weight')<span class="inventory-edit-error">{{ $message }}</span>@enderror
                           </label>
 
                           <label class="inventory-edit-field">
                             <span class="inventory-edit-label">No. of pieces</span>
-                            <input type="text" class="inventory-edit-input @error('nop') is-invalid @enderror" name="nop" value="{{ old('nop') }}" placeholder="Pieces"/>
+                            <input type="number" class="inventory-edit-input @error('nop') is-invalid @enderror" name="nop" value="{{ old('nop') }}" placeholder="Pieces" min="0" step="1" inputmode="numeric"/>
                             @error('nop')<span class="inventory-edit-error">{{ $message }}</span>@enderror
                           </label>
                         </div>
 
                         <label class="inventory-edit-field">
                           <span class="inventory-edit-label">Total quantity</span>
-                          <input type="text" class="inventory-edit-input @error('tot_qty') is-invalid @enderror" name="tot_qty" value="{{ old('tot_qty') }}" placeholder="Total quantity"/>
+                          <input type="number" class="inventory-edit-input @error('tot_qty') is-invalid @enderror" name="tot_qty" value="{{ old('tot_qty') }}" placeholder="Total quantity" min="0" step="1" inputmode="numeric"/>
                           @error('tot_qty')<span class="inventory-edit-error">{{ $message }}</span>@enderror
                         </label>
 

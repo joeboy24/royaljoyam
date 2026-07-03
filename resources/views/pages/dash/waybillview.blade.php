@@ -171,11 +171,11 @@
                         <th>Stock No.</th>
                         <th>Company</th>
                         <th>Driver</th>
-                        <th><x-waybill-sort-link column="bill_no" label="Bill No." :sort="$sort" :dir="$dir" :list-query="$listQuery" /></th>
+                        <th>Bill No.</th>
                         <th>Weight</th>
                         <th>Pieces</th>
                         <th>Qty.</th>
-                        <th class="waybill-table-status-col"><x-waybill-sort-link column="status" label="Status" :sort="$sort" :dir="$dir" :list-query="$listQuery" /></th>
+                        <th class="waybill-table-status-col">Status</th>
                         @if (! $showRecycle)
                           <th class="waybill-table-dist-col">Distribution</th>
                         @endif
@@ -188,7 +188,7 @@
                         <tr @class([
                           'rowColour' => $c % 2 === 0,
                           'waybill-recycle-row' => $showRecycle,
-                          'waybill-row-dist-open' => ! $showRecycle && $waybill->hasOpenDistribution(),
+                          'waybill-row-dist-open' => ! $showRecycle && $waybill->canDistribute() && $waybill->hasOpenDistribution(),
                         ])>
                           <td>{{ $c++ }}</td>
                           <td>
@@ -231,17 +231,27 @@
                               </form>
                             @else
                               <div class="waybill-row-actions">
-                                <a
-                                  href="/distribution/{{ $waybill->id }}"
-                                  class="inventory-action-btn inventory-action-btn-icon waybill-distribute-btn dash-tip"
-                                  title="{{ $waybill->distributionRemaining() > 0 ? $waybill->distributionRemaining().' remaining to distribute' : 'Distribute' }}"
-                                  data-tip="{{ $waybill->distributionRemaining() > 0 ? 'Distribute · '.$waybill->distributionRemaining().' rem.' : 'Distribute' }}"
-                                >
-                                  <i class="fa fa-share-alt"></i>
-                                  @if ($waybill->distributionRemaining() > 0)
-                                    <span class="waybill-action-badge">{{ $waybill->distributionRemaining() }}</span>
-                                  @endif
-                                </a>
+                                @if ($waybill->canDistribute())
+                                  <a
+                                    href="/distribution/{{ $waybill->id }}"
+                                    class="inventory-action-btn inventory-action-btn-icon waybill-distribute-btn dash-tip"
+                                    title="{{ $waybill->distributionRemaining() > 0 ? $waybill->distributionRemaining().' remaining to distribute' : 'Distribute' }}"
+                                    data-tip="{{ $waybill->distributionRemaining() > 0 ? 'Distribute · '.$waybill->distributionRemaining().' rem.' : 'Distribute' }}"
+                                  >
+                                    <i class="fa fa-share-alt"></i>
+                                    @if ($waybill->distributionRemaining() > 0)
+                                      <span class="waybill-action-badge">{{ $waybill->distributionRemaining() }}</span>
+                                    @endif
+                                  </a>
+                                @else
+                                  <span
+                                    class="inventory-action-btn inventory-action-btn-icon is-disabled dash-tip"
+                                    title="Mark waybill as Delivered to distribute"
+                                    data-tip="Delivered status required"
+                                  >
+                                    <i class="fa fa-share-alt"></i>
+                                  </span>
+                                @endif
 
                                 <div class="waybill-actions-more">
                                   <button
@@ -346,18 +356,18 @@
                                             <div class="inventory-edit-field-row">
                                               <label class="inventory-edit-field">
                                                 <span class="inventory-edit-label">Weight</span>
-                                                <input type="text" class="inventory-edit-input" name="weight" value="{{ $waybill->weight }}"/>
+                                                <input type="number" class="inventory-edit-input" name="weight" value="{{ $waybill->weight }}" min="0" step="any" inputmode="decimal"/>
                                               </label>
 
                                               <label class="inventory-edit-field">
                                                 <span class="inventory-edit-label">No. of pieces</span>
-                                                <input type="text" class="inventory-edit-input" name="nop" value="{{ $waybill->nop }}"/>
+                                                <input type="number" class="inventory-edit-input" name="nop" value="{{ $waybill->nop }}" min="0" step="1" inputmode="numeric"/>
                                               </label>
                                             </div>
 
                                             <label class="inventory-edit-field">
                                               <span class="inventory-edit-label">Total quantity</span>
-                                              <input type="text" class="inventory-edit-input" name="tot_qty" value="{{ $waybill->tot_qty }}"/>
+                                              <input type="number" class="inventory-edit-input" name="tot_qty" value="{{ $waybill->tot_qty }}" min="0" step="1" inputmode="numeric"/>
                                             </label>
 
                                             <div class="inventory-edit-field-row">

@@ -98,9 +98,14 @@
                         <span>Clear</span>
                       </a>
 
-                      <a href="/waybillprint" class="inventory-search-btn inventory-search-btn-muted" title="Print report">
+                      <a href="{{ url('/waybillprint?' . http_build_query(array_filter(['date_from' => $date_from ?? null, 'date_to' => $date_to ?? null]))) }}" class="inventory-search-btn inventory-search-btn-muted" title="Print report" target="_blank" rel="noopener">
                         <i class="fa fa-print"></i>
                         <span>Print</span>
+                      </a>
+
+                      <a href="{{ url('/waybillreport/export?' . http_build_query(array_filter(['date_from' => $date_from ?? null, 'date_to' => $date_to ?? null]))) }}" class="inventory-search-btn inventory-search-btn-muted dash-tip" data-tip="Export CSV">
+                        <i class="fa fa-download"></i>
+                        <span>Export</span>
                       </a>
                     </div>
                   </div>
@@ -167,8 +172,17 @@
                 <div class="waybill-list-footer">
                   <p class="mb-0">
                     No. of records: <strong>{{ $waybills->total() }}</strong>
-                    &nbsp;&nbsp; Total qty.: <strong>{{ number_format(session('waybillreps')->sum('tot_qty')) }}</strong>
+                    &nbsp;&nbsp; Total qty.: <strong>{{ number_format($reportSummary['total_qty'] ?? 0) }}</strong>
                   </p>
+                  @if (! empty($reportSummary['by_status']))
+                    <div class="waybill-report-status-summary">
+                      @foreach ($reportSummary['by_status'] as $status => $statusCount)
+                        @if ($statusCount > 0)
+                          <span class="waybill-report-status-chip">{{ $status }}: <strong>{{ $statusCount }}</strong></span>
+                        @endif
+                      @endforeach
+                    </div>
+                  @endif
                   {{ $waybills->appends(['date_from' => request()->query('date_from'), 'date_to' => request()->query('date_to')])->links() }}
                 </div>
               @else

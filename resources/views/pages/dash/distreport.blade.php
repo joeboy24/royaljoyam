@@ -98,9 +98,14 @@
                         <span>Clear</span>
                       </a>
 
-                      <a href="/distreportprint" class="inventory-search-btn inventory-search-btn-muted" title="Print report">
+                      <a href="{{ url('/distreportprint?' . http_build_query(array_filter(['date_from' => $date_from ?? null, 'date_to' => $date_to ?? null]))) }}" class="inventory-search-btn inventory-search-btn-muted" title="Print report" target="_blank" rel="noopener">
                         <i class="fa fa-print"></i>
                         <span>Print</span>
+                      </a>
+
+                      <a href="{{ url('/distreport/export?' . http_build_query(array_filter(['date_from' => $date_from ?? null, 'date_to' => $date_to ?? null]))) }}" class="inventory-search-btn inventory-search-btn-muted dash-tip" data-tip="Export CSV">
+                        <i class="fa fa-download"></i>
+                        <span>Export</span>
                       </a>
                     </div>
                   </div>

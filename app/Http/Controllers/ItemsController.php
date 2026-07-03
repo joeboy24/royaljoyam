@@ -972,6 +972,7 @@ class ItemsController extends Controller
                     } catch (\Throwable $th) {
                         throw $th;
                     }
+                    Waybill::syncTotQtyFor($wb_id);
                     return redirect(url()->previous())->with('success', 'Item `'.$item->item_no.' - '.$item->name.'` successfully added.');
     
                 break;
@@ -1515,6 +1516,7 @@ class ItemsController extends Controller
                 }
                 $wb->qty = $newQty;
                 $wb->save();
+                Waybill::syncTotQtyFor($wb->waybill_id);
                 return redirect(url()->previous())->with('success', 'Waybill quantity update successful');
             break;
 
@@ -1526,7 +1528,9 @@ class ItemsController extends Controller
                 if ((int) $wb->qty_dist > 0) {
                     return redirect(url()->previous())->with('error', 'Cannot remove item — '.$wb->qty_dist.' already distributed to branches.');
                 }
+                $waybillId = $wb->waybill_id;
                 $wb->delete();
+                Waybill::syncTotQtyFor($waybillId);
                 return redirect(url()->previous())->with('success', 'Item removed from waybill');
             break;
 
@@ -1534,6 +1538,11 @@ class ItemsController extends Controller
                 $wbc = Wbcontent::find($id);
                 if (! $wbc) {
                     return redirect(url()->previous())->with('error', 'Waybill item not found.');
+                }
+
+                $waybill = Waybill::find($wbc->waybill_id);
+                if (! $waybill || ! $waybill->canDistribute()) {
+                    return redirect(url()->previous())->with('error', 'Waybill must be marked Delivered before distributing to branches.');
                 }
 
                 $branchQtys = [];
@@ -1613,9 +1622,9 @@ class ItemsController extends Controller
             'drv_contact' => 'required|string|max:255',
             'vno' => 'required|string|max:255',
             'bill_no' => $billNoRule,
-            'weight' => 'nullable|string|max:255',
-            'nop' => 'nullable|string|max:255',
-            'tot_qty' => 'nullable|string|max:255',
+            'weight' => 'nullable|numeric|min:0',
+            'nop' => 'nullable|integer|min:0',
+            'tot_qty' => 'nullable|integer|min:0',
             'del_date' => 'nullable|date|max:20',
             'status' => 'required|in:Pending,In Transit,Delivered',
         ]);

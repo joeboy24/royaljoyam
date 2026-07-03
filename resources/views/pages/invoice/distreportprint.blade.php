@@ -17,14 +17,25 @@
 
 <body style="background: #eee">
 
+    @php
+      $wbdreports = collect($wbdreports ?? session('wbdreports', []));
+      $company = $company ?? session('company');
+      $date_from = $date_from ?? session('date_from');
+      $date_to = $date_to ?? session('date_to');
+      $branches = collect(session('compbranch', []));
+      $branchKeys = $branches->keys()->map(fn ($index) => 'q'.($index + 1));
+    @endphp
+
     <section id="invoice">
         <div class="invoiceContent">
 
             <div class="invHeaderTop">
                 <h1>ROYAL JOYAM</h1>
                 <h4>Ventures</h4>
-                <P class="locInfo">{{session('company')->address}}</P>
-                <P class="contactInfo">{{session('company')->contact}}, {{session('company')->email}}</P>
+                @if ($company)
+                  <P class="locInfo">{{ $company->address }}</P>
+                  <P class="contactInfo">{{ $company->contact }}, {{ $company->email }}</P>
+                @endif
             </div>
 
             <div style="height: 50px">
@@ -36,16 +47,16 @@
                     <tbody>
                         <tr>
                             <td class="col-sm-3">Date From :</td>
-                            @if (session('date_from') != '')
-                                <td class="col-sm-3">{{ session('date_from') }}</td>
+                            @if (! empty($date_from))
+                                <td class="col-sm-3">{{ $date_from }}</td>
                             @else
-                                <td class="col-sm-3">Today</td>
+                                <td class="col-sm-3">All</td>
                             @endif
                             <td class="col-sm-4"></td>
                         </tr>
                         <tr>
                             <td class="col-sm-3">Date To :</td>
-                            <td class="col-sm-3">{{ session('date_to') }}</td>
+                            <td class="col-sm-3">{{ $date_to ?: '—' }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -56,17 +67,12 @@
                     <thead>
                         <th>#</th>
                         <th>Item</th>
-                        @foreach (session('compbranch', []) as $br)
-                            <th class="col-sm-1 pr">Br {{$br->tag}}</th>
+                        @foreach ($branches as $br)
+                            <th class="col-sm-1 pr">Br {{ $br->tag }}</th>
                         @endforeach
                         <th class="pr">Date Distributed</th>
                     </thead>
                     <tbody>
-                        @php
-                          $wbdreports = collect(session('wbdreports', []));
-                          $branches = collect(session('compbranch', []));
-                          $branchKeys = $branches->keys()->map(fn ($index) => 'q'.($index + 1));
-                        @endphp
                         @if ($wbdreports->count() > 0)
                             @foreach ($wbdreports as $wbd)
                                 @if ($wbd->del != 'yes')

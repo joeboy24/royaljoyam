@@ -444,14 +444,21 @@ class DashController extends Controller
         return view('pages.dash.stockfillinvoice')->with($pass);
     }
 
-    public function waybillprint(){
+    public function waybillprint(Request $request){
         if(auth()->user()->status != 'Administrator'){
             return redirect('/dashboard'); 
         }
-        $pass = [
-            'count' => 1
-        ];
-        return view('pages.invoice.waybillprint')->with($pass);
+
+        $date_from = $request->query('date_from', session('date_from'));
+        $date_to = $request->query('date_to', session('date_to'));
+
+        if (empty($date_from) && ! empty($date_to)) {
+            return redirect('/waybillreport')->with('error', 'Oops..! Provide *Date From* in order to proceed');
+        }
+
+        $waybills = $this->waybillReportQuery($date_from, $date_to)->get();
+
+        return view('pages.invoice.waybillprint', $this->waybillPrintViewData($waybills, $date_from, $date_to));
     }
 
     public function waybillPrintSingle($id){
@@ -461,28 +468,35 @@ class DashController extends Controller
 
         $waybill = Waybill::with('user')->active()->findOrFail($id);
 
-        Session::put('waybillreps', collect([$waybill]));
-        Session::put('date_from', $waybill->del_date ?: '');
-        Session::put('date_to', '');
-
-        if (! session('company')) {
-            Session::put('company', Company::find(1));
-        }
-
-        return view('pages.invoice.waybillprint', [
-            'count' => 1,
-        ]);
+        return view('pages.invoice.waybillprint', $this->waybillPrintViewData(
+            collect([$waybill]),
+            $waybill->del_date ?: '',
+            ''
+        ));
     }
 
-    public function distreportprint(){
+    public function distreportprint(Request $request){
         if(auth()->user()->status != 'Administrator'){
             return redirect('/dashboard'); 
         }
-        $pass = [
+
+        $date_from = $request->query('date_from', session('date_from'));
+        $date_to = $request->query('date_to', session('date_to'));
+
+        if (empty($date_from) && ! empty($date_to)) {
+            return redirect('/distreport')->with('error', 'Oops..! Provide *Date From* in order to proceed');
+        }
+
+        $wbdreports = $this->distributionReportQuery($date_from, $date_to)->get();
+
+        return view('pages.invoice.distreportprint', [
             'count' => 1,
             'sum' => 0,
-        ];
-        return view('pages.invoice.distreportprint')->with($pass);
+            'wbdreports' => $wbdreports,
+            'date_from' => $date_from,
+            'date_to' => $date_to,
+            'company' => Company::find(1),
+        ]);
     }
 
     public function returnprint(){
@@ -859,27 +873,10 @@ class DashController extends Controller
         if (empty($date_from) && ! empty($date_to)) {
             return redirect(url()->previous())->with('error', 'Oops..! Provide *Date From* in order to proceed');
         }
-        
-        $waybills = Waybill::active()
-            ->with('user')
-            ->when(! empty($date_from) && empty($date_to), function ($query) use ($date_from) {
-                $query->where('created_at', 'LIKE', '%'.$date_from.'%');
-            })
-            ->when(! empty($date_from) && ! empty($date_to), function ($query) use ($date_from, $date_to) {
-                $query->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')]);
-            })
-            ->orderBy('id', 'desc')
-            ->paginate(10);
 
-        $waybills_send = Waybill::active()
-            ->when(! empty($date_from) && empty($date_to), function ($query) use ($date_from) {
-                $query->where('created_at', 'LIKE', '%'.$date_from.'%');
-            })
-            ->when(! empty($date_from) && ! empty($date_to), function ($query) use ($date_from, $date_to) {
-                $query->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')]);
-            })
-            ->orderBy('id', 'desc')
-            ->get();
+        $reportQuery = $this->waybillReportQuery($date_from, $date_to);
+        $waybills = (clone $reportQuery)->paginate(10);
+        $waybills_send = (clone $reportQuery)->get();
 
         Session::put('waybillreps', $waybills_send);
         Session::put('date_from', $date_from);
@@ -895,6 +892,7 @@ class DashController extends Controller
             'company' => $company,
             'date_from' => $date_from,
             'date_to' => $date_to,
+            'reportSummary' => $this->waybillReportSummary($waybills_send),
         ];
         return view('pages.dash.waybillreport')->with($pass);
     }
@@ -958,20 +956,14 @@ class DashController extends Controller
         $date_from = $request->query('date_from');
         $date_to = $request->query('date_to');
         $match = ['del' => 'no'];
-        
-        if (!empty($date_from) && empty($date_to)) {
-            $wbds = Wbdistribution::with(['item', 'waybill'])->where($match)->where('created_at', 'LIKE', '%'.$date_from.'%')->orderBy('id', 'desc')->paginate(10);
-            $wbds_send = Wbdistribution::with(['item', 'waybill'])->where($match)->where('created_at', 'LIKE', '%'.$date_from.'%')->orderBy('id', 'desc')->get();
-        }elseif (empty($date_from) && !empty($date_to)) {
+
+        if (empty($date_from) && ! empty($date_to)) {
             return redirect(url()->previous())->with('error', 'Oops..! Provide *Date From* in order to proceed');
-        }elseif (!empty($date_from) && !empty($date_to)) {
-            $wbds = Wbdistribution::with(['item', 'waybill'])->where($match)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->orderBy('id', 'desc')->paginate(10);
-            $wbds_send = Wbdistribution::with(['item', 'waybill'])->where($match)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->orderBy('id', 'desc')->get();
-        }else{
-            // $match = ['del' => 'no'];
-            $wbds = Wbdistribution::with(['item', 'waybill'])->where($match)->orderBy('id', 'desc')->paginate(10);
-            $wbds_send = Wbdistribution::with(['item', 'waybill'])->where($match)->orderBy('id', 'desc')->get();
         }
+
+        $reportQuery = $this->distributionReportQuery($date_from, $date_to);
+        $wbds = (clone $reportQuery)->paginate(10);
+        $wbds_send = (clone $reportQuery)->get();
 
         Session::put('wbdreports', $wbds_send);
         Session::put('date_from', $date_from);
@@ -991,6 +983,126 @@ class DashController extends Controller
         ];
         return view('pages.dash.distreport')->with($pass);
         
+    }
+
+    public function exportWaybillReport(Request $request)
+    {
+        if (auth()->user()->status != 'Administrator') {
+            return redirect('/dashboard');
+        }
+
+        $date_from = $request->query('date_from');
+        $date_to = $request->query('date_to');
+
+        if (empty($date_from) && ! empty($date_to)) {
+            return redirect('/waybillreport')->with('error', 'Oops..! Provide *Date From* in order to proceed');
+        }
+
+        $waybills = $this->waybillReportQuery($date_from, $date_to)->get();
+        $filename = 'waybill-report-'.date('Y-m-d-His').'.csv';
+
+        return response()->streamDownload(function () use ($waybills) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, [
+                'Stock No',
+                'Bill No',
+                'Company',
+                'Company Address',
+                'Company Contact',
+                'Driver',
+                'Driver Contact',
+                'Vehicle No',
+                'Weight',
+                'Pieces',
+                'Total Qty',
+                'Status',
+                'Delivery Date',
+                'Created By',
+                'Created At',
+            ]);
+
+            foreach ($waybills as $waybill) {
+                fputcsv($handle, [
+                    $waybill->stock_no,
+                    $waybill->bill_no,
+                    $waybill->comp_name,
+                    $waybill->comp_add,
+                    $waybill->comp_contact,
+                    $waybill->drv_name,
+                    $waybill->drv_contact,
+                    $waybill->vno,
+                    $waybill->weight,
+                    $waybill->nop,
+                    $waybill->tot_qty,
+                    $waybill->status,
+                    $waybill->formattedDeliveryDate(),
+                    $waybill->user->name ?? '',
+                    $waybill->created_at ? \Carbon\Carbon::parse($waybill->created_at)->format('Y-m-d H:i') : '',
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    public function exportDistReport(Request $request)
+    {
+        if (auth()->user()->status != 'Administrator') {
+            return redirect('/dashboard');
+        }
+
+        $date_from = $request->query('date_from');
+        $date_to = $request->query('date_to');
+
+        if (empty($date_from) && ! empty($date_to)) {
+            return redirect('/distreport')->with('error', 'Oops..! Provide *Date From* in order to proceed');
+        }
+
+        $wbdreports = $this->distributionReportQuery($date_from, $date_to)->get();
+        $branches = collect(session('compbranch', []));
+        $filename = 'distribution-report-'.date('Y-m-d-His').'.csv';
+
+        return response()->streamDownload(function () use ($wbdreports, $branches) {
+            $handle = fopen('php://output', 'w');
+            $headers = [
+                'Item No',
+                'Item Name',
+                'Waybill Bill No',
+                'Company',
+            ];
+
+            foreach ($branches as $branch) {
+                $headers[] = 'Branch '.$branch->tag;
+            }
+
+            $headers[] = 'Date Distributed';
+
+            fputcsv($handle, $headers);
+
+            foreach ($wbdreports as $wbd) {
+                $row = [
+                    $wbd->item->item_no ?? '',
+                    $wbd->item->name ?? '',
+                    $wbd->waybill->bill_no ?? '',
+                    $wbd->waybill->comp_name ?? '',
+                ];
+
+                foreach ($branches->keys() as $branchIndex) {
+                    $qtyKey = 'q'.($branchIndex + 1);
+                    $row[] = $wbd->{$qtyKey} ?? 0;
+                }
+
+                $row[] = $wbd->created_at ? \Carbon\Carbon::parse($wbd->created_at)->format('Y-m-d H:i') : '';
+
+                fputcsv($handle, $row);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 
     public function closure(Request $request){
@@ -1018,6 +1130,53 @@ class DashController extends Controller
             }
         }
         return 'Done..!';
+    }
+
+    private function waybillReportQuery(?string $dateFrom, ?string $dateTo)
+    {
+        return Waybill::active()
+            ->with('user')
+            ->when(! empty($dateFrom) && empty($dateTo), function ($query) use ($dateFrom) {
+                $query->where('created_at', 'LIKE', '%'.$dateFrom.'%');
+            })
+            ->when(! empty($dateFrom) && ! empty($dateTo), function ($query) use ($dateFrom, $dateTo) {
+                $query->whereBetween('created_at', [$dateFrom, new \DateTime($dateTo.'+1 day')]);
+            })
+            ->orderBy('id', 'desc');
+    }
+
+    private function distributionReportQuery(?string $dateFrom, ?string $dateTo)
+    {
+        return Wbdistribution::with(['item', 'waybill'])
+            ->where('del', 'no')
+            ->when(! empty($dateFrom) && empty($dateTo), function ($query) use ($dateFrom) {
+                $query->where('created_at', 'LIKE', '%'.$dateFrom.'%');
+            })
+            ->when(! empty($dateFrom) && ! empty($dateTo), function ($query) use ($dateFrom, $dateTo) {
+                $query->whereBetween('created_at', [$dateFrom, new \DateTime($dateTo.'+1 day')]);
+            })
+            ->orderBy('id', 'desc');
+    }
+
+    private function waybillReportSummary($waybills): array
+    {
+        return [
+            'total_qty' => $waybills->sum(fn ($waybill) => (int) $waybill->tot_qty),
+            'by_status' => collect(Waybill::statusOptions())->mapWithKeys(function ($status) use ($waybills) {
+                return [$status => $waybills->where('status', $status)->count()];
+            })->all(),
+        ];
+    }
+
+    private function waybillPrintViewData($waybills, ?string $dateFrom, ?string $dateTo): array
+    {
+        return [
+            'count' => 1,
+            'waybills' => $waybills,
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
+            'company' => Company::find(1),
+        ];
     }
 
 }
