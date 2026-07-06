@@ -90,6 +90,15 @@ Route::delete('/waybill/contents/{wbcontent}', 'WaybillContentController@destroy
 Route::put('/waybill/contents/{wbcontent}/distribute', 'WaybillContentController@distribute');
 Route::post('/waybill/{waybill}/distribute-all', 'WaybillContentController@distributeAll');
 Route::get('/sales', 'DashController@sales');
+Route::post('/sales/cart', 'SalesController@addToCart');
+Route::post('/sales/checkout', 'SalesController@checkout');
+Route::post('/sales/pay-debt', 'SalesController@payDebt');
+Route::put('/sales/cart/{cart}', 'SalesController@updateCartQuantity');
+Route::delete('/sales/cart/{cart}', 'SalesController@removeCartItem');
+Route::put('/sales/{sale}', 'SalesController@updateSale');
+Route::put('/sales/history/{salesHistory}/deliver', 'SalesController@deliverLineItem');
+Route::put('/sales/history/{salesHistory}/undeliver', 'SalesController@undeliverLineItem');
+Route::delete('/sales/payments/{salesPayment}', 'SalesController@deletePaidDebtPayment');
 Route::get('/mpt_cart', 'DashController@empty_cart');
 Route::get('/stockbal', 'DashController@stockbal');
 Route::get('/genstockbal', 'DashController@genstockbal');

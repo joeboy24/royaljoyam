@@ -94,10 +94,7 @@ class CartStockTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $response = $this->actingAs($this->branchUser)->put('/items/' . $cartId, [
-            '_method' => 'PUT',
-            'store_action' => 'cart_del',
-        ]);
+        $response = $this->actingAs($this->branchUser)->delete('/sales/cart/' . $cartId);
 
         $response->assertRedirect();
         $this->assertNull(Cart::find($cartId));

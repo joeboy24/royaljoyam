@@ -179,9 +179,9 @@
                                                 <div style="height: 30px">
                                                 </div>
                                   
-                                                <form action="{{ action('ItemsController@update', $sale->id) }}" method="POST">
-                                                  <input type="hidden" name="_method" value="PUT">
+                                                <form action="{{ url('/sales/' . $sale->id) }}" method="POST">
                                                   @csrf
+                                                  @method('PUT')
                   
                                                   <div class="my_panel">
 
@@ -196,17 +196,22 @@
                                                     </div>
                         
                                                     <div class="input_div">
-                                                        <select name="pay_mode">
-                                                          <option selected>{{ $sale->pay_mode }}</option>
-                                                          <option>Cash</option>
-                                                          <option>Cheque</option>
-                                                          <option>Mobile Money</option>
-                                                          <option>Post Payment(Debt)</option>
+                                                        <select name="pay_mode" required>
+                                                          <option value="{{ $sale->pay_mode }}" selected>{{ $sale->pay_mode }}</option>
+                                                          <option value="Cash">Cash</option>
+                                                          <option value="Cheque">Cheque</option>
+                                                          <option value="Mobile Money">Mobile Money</option>
+                                                          <option value="Post Payment(Debt)">Post Payment(Debt)</option>
                                                         </select> 
                                                     </div>
 
                                                     <div class="input_div">
-                                                      <button type="submit" class="btn btn-info pull-left" name="store_action" value="update_sales"><i class="fa fa-save"></i> &nbsp; Update</button>
+                                                        <p>Notes: </p>
+                                                        <input type="text" class="sref2" name="notes" maxlength="255" placeholder="Purchase notes (optional)" value="{{ $sale->notes }}"/>
+                                                    </div>
+
+                                                    <div class="input_div">
+                                                      <button type="submit" class="btn btn-info pull-left"><i class="fa fa-save"></i> &nbsp; Update</button>
                                                     </div>
 
                                                   </div>

@@ -22,7 +22,7 @@
             'url' => '/dashuser',
             'icon' => 'fa-edit',
             'title' => 'Registry',
-            'desc' => 'Register users, items, and categories',
+            'desc' => 'Register users and categories',
             'modifier' => '',
           ],
           [
@@ -102,5 +102,5 @@
 @endsection
 
 @section('footer')
-  <link rel="stylesheet" href="/maindir/css/dash-dashboard.css?v=4">
+  <link rel="stylesheet" href="/maindir/css/dash-dashboard.css?v=7">
 @endsection

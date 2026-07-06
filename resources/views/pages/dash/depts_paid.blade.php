@@ -62,12 +62,12 @@
 
                                     <td class="ryt">
                                   
-                                      <form action="{{ action('ItemsController@update', $sl->id) }}" method="POST">
-                                        <input type="hidden" name="_method" value="PUT">
+                                      <form action="{{ url('/sales/payments/' . $sl->id) }}" method="POST">
                                         @csrf
+                                        @method('DELETE')
 
                                         @if ($sl->del == 'no')
-                                          <button name="store_action" value="del_paid_debt" rel="tooltip" title="Delete Record" class="icon_btn color6" title="Distribute" onclick="return confirm('Are you sure you want to permanently delete record?');"><i class="fa fa-trash"></i></button>
+                                          <button type="submit" rel="tooltip" title="Delete Record" class="icon_btn color6" title="Distribute" onclick="return confirm('Are you sure you want to permanently delete record?');"><i class="fa fa-trash"></i></button>
                                         @endif
                                       </form>                  
                                   

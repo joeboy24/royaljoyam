@@ -82,17 +82,11 @@ class DashController extends Controller
             return redirect('/dashboard'); 
         }
 
-        $i = 1;
-        $r = 1;
-        $items = Item::all();
         $users = User::all();
         $cat = Category::all();
         $branches = CompanyBranch::all();
 
         $pass = [
-            'i' => $i,
-            'r' => $r,
-            'items' => $items,
             'users' => $users,
             'branches' => $branches,
             'category' => $cat

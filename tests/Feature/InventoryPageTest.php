@@ -653,4 +653,54 @@ class InventoryPageTest extends TestCase
         $response->assertSee('dash-home-card--inventory', false);
         $response->assertSee('/maindir/css/dash-dashboard.css', false);
     }
+
+    public function test_registry_disables_category_delete_when_items_use_category(): void
+    {
+        $this->createItem(['name' => 'Assigned Item', 'cat' => 'General']);
+
+        $this->actingAs($this->admin)
+            ->get('/dashuser')
+            ->assertOk()
+            ->assertSee('1 item(s) assigned', false)
+            ->assertSee('Cannot delete — category is assigned to inventory items', false)
+            ->assertSee('is-disabled', false);
+    }
+
+    public function test_registry_blocks_category_delete_when_items_use_category(): void
+    {
+        $this->createItem(['name' => 'Assigned Item', 'cat' => 'General']);
+
+        $categoryId = DB::table('categories')->where('name', 'General')->value('id');
+
+        $this->actingAs($this->admin)
+            ->delete('/items/'.$categoryId, [
+                '_token' => csrf_token(),
+                'del_action' => 'cat_del',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('categories', ['id' => $categoryId, 'name' => 'General']);
+    }
+
+    public function test_registry_allows_category_delete_when_unused(): void
+    {
+        $categoryId = DB::table('categories')->insertGetId([
+            'user_id' => (string) $this->admin->id,
+            'name' => 'Unused Category',
+            'desc' => 'No items here',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($this->admin)
+            ->delete('/items/'.$categoryId, [
+                '_token' => csrf_token(),
+                'del_action' => 'cat_del',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('categories', ['id' => $categoryId]);
+    }
 }

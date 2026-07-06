@@ -1442,3 +1442,169 @@
     flex-wrap: wrap;
   }
 }
+
+/* Configuration page */
+.dash-config-layout {
+  align-items: flex-start;
+}
+
+.dash-config-form-grid {
+  max-width: none;
+}
+
+.dash-config-form-stack {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.dash-config-form-footer {
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+  justify-content: flex-start;
+}
+
+.dash-config-side-card {
+  margin-bottom: 22px;
+}
+
+.dash-config-side-card:last-child {
+  margin-bottom: 0;
+}
+
+.dash-config-side-body {
+  padding-top: 1.25rem;
+  padding-bottom: 1.5rem;
+}
+
+.dash-config-side-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.dash-config-file-field {
+  margin-bottom: 0;
+}
+
+.dash-config-file-input {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #555;
+  background: #fff;
+  border: 1px dashed rgba(var(--inv-accent-rgb), 0.35);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.dash-config-file-input:hover {
+  border-color: rgba(var(--inv-accent-rgb), 0.55);
+  background: rgba(var(--inv-accent-rgb), 0.03);
+}
+
+.dash-config-notice {
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+
+.dash-config-branch-count {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--inv-accent);
+  background: rgba(var(--inv-accent-rgb), 0.1);
+}
+
+.dash-config-branch-table-wrap {
+  margin-top: 12px;
+}
+
+.dash-config-branch-table td,
+.dash-config-branch-table th {
+  vertical-align: middle;
+}
+
+.dash-config-branch-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.dash-config-delete-form {
+  display: inline;
+  margin: 0;
+}
+
+.dash-config-delete-tip {
+  display: inline-flex;
+}
+
+.dash-config-delete-btn {
+  width: 34px;
+  height: 34px;
+  color: #c62828;
+  border-color: rgba(198, 40, 40, 0.18);
+}
+
+.dash-config-delete-btn:hover {
+  color: #b71c1c;
+  background: #ffebee;
+  border-color: rgba(198, 40, 40, 0.28);
+}
+
+.dash-config-empty {
+  padding: 36px 20px;
+}
+
+@media (max-width: 991px) {
+  .dash-config-side-card {
+    margin-top: 0;
+  }
+}
+
+.dash-registry-notice a {
+  color: var(--inv-accent, #00acc1);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.dash-registry-notice a:hover {
+  text-decoration: underline;
+}
+
+.dash-registry-notice-spaced {
+  margin-top: 18px;
+  margin-bottom: 0;
+}
+
+.dash-registry-users-dialog {
+  max-width: 720px;
+}
+
+.dash-registry-users-body {
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+}
+
+.dash-registry-user-deleted td {
+  opacity: 0.75;
+}
+
+.dash-registry-restore-btn {
+  color: var(--inv-accent, #00acc1);
+  border-color: rgba(var(--inv-accent-rgb), 0.25);
+}
+
+.dash-registry-restore-btn:hover {
+  color: var(--inv-accent-dark, #0097a7);
+  background: rgba(var(--inv-accent-rgb), 0.08);
+  border-color: rgba(var(--inv-accent-rgb), 0.35);
+}

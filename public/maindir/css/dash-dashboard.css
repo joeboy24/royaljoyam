@@ -1,9 +1,8 @@
-/* Royal Joyam dashboard home */
+/* Royal Joyam dashboard home — accents follow html[data-sidebar-theme] via --dash-header-from/to */
 
 .dash-home-content {
-  --dash-accent: #00acc1;
-  --dash-accent-dark: #0097a7;
-  --dash-accent-rgb: 0, 172, 193;
+  --dash-accent: var(--dash-header-from, #00acc1);
+  --dash-accent-dark: var(--dash-header-to, #0097a7);
   padding-top: 20px;
   padding-bottom: 40px;
 }
@@ -11,10 +10,16 @@
 .dash-home-header {
   margin-bottom: 28px;
   padding: 22px 26px;
-  background: linear-gradient(135deg, #ffffff 0%, #f3fafb 55%, #e8f6f8 100%);
-  border: 1px solid rgba(var(--dash-accent-rgb), 0.16);
+  background: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    color-mix(in srgb, var(--dash-accent) 6%, #ffffff) 55%,
+    color-mix(in srgb, var(--dash-accent) 12%, #ffffff) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--dash-accent) 28%, transparent);
+  border-bottom: 4px solid var(--dash-accent);
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(var(--dash-accent-rgb), 0.08);
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--dash-accent) 8%, transparent);
 }
 
 .dash-home-kicker {
@@ -42,7 +47,7 @@
 
 .dash-home-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 22px;
 }
 
@@ -53,7 +58,7 @@
   min-height: 156px;
   padding: 32px 24px;
   background: #fff;
-  border: 1px solid rgba(var(--dash-accent-rgb), 0.12);
+  border: 1px solid color-mix(in srgb, var(--dash-accent) 12%, transparent);
   border-radius: 14px;
   color: inherit;
   text-decoration: none !important;
@@ -64,8 +69,8 @@
 .dash-home-card:hover,
 .dash-home-card:focus {
   transform: translateY(-3px);
-  border-color: rgba(var(--dash-accent-rgb), 0.35);
-  box-shadow: 0 8px 24px rgba(var(--dash-accent-rgb), 0.14);
+  border-color: color-mix(in srgb, var(--dash-accent) 35%, transparent);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--dash-accent) 14%, transparent);
   color: inherit;
   text-decoration: none !important;
   outline: none;
@@ -81,11 +86,12 @@
   border-radius: 16px;
   background: linear-gradient(
     135deg,
-    rgba(var(--dash-accent-rgb), 0.16) 0%,
-    rgba(var(--dash-accent-rgb), 0.08) 100%
+    color-mix(in srgb, var(--dash-accent) 16%, transparent) 0%,
+    color-mix(in srgb, var(--dash-accent) 8%, transparent) 100%
   );
   color: var(--dash-accent);
   font-size: 1.65rem;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .dash-home-card-body {
@@ -111,7 +117,7 @@
   flex-shrink: 0;
   align-self: center;
   margin-left: auto;
-  color: rgba(var(--dash-accent-rgb), 0.4);
+  color: color-mix(in srgb, var(--dash-accent) 40%, transparent);
   font-size: 1.25rem;
   transition: color 0.2s ease, transform 0.2s ease;
 }
@@ -122,14 +128,28 @@
   transform: translateX(3px);
 }
 
+.dash-home-card:hover .dash-home-card-icon,
+.dash-home-card:focus .dash-home-card-icon {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--dash-accent) 22%, transparent) 0%,
+    color-mix(in srgb, var(--dash-accent) 10%, transparent) 100%
+  );
+  color: var(--dash-accent-dark);
+}
+
 .dash-home-card--inventory .dash-home-card-icon {
-  background: linear-gradient(135deg, rgba(var(--dash-accent-rgb), 0.22) 0%, rgba(var(--dash-accent-rgb), 0.1) 100%);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--dash-accent) 22%, transparent) 0%,
+    color-mix(in srgb, var(--dash-accent) 10%, transparent) 100%
+  );
   color: var(--dash-accent-dark);
 }
 
 @media (max-width: 1400px) {
   .dash-home-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

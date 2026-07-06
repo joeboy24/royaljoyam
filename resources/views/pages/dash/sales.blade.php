@@ -14,7 +14,7 @@
                 <div class="col-md-12 offset-md-0">
 
                     <div class="form-group row mb-0 searchRef">
-                        <form class="salesForm" action="{{action('ItemsController@store')}}" method="POST">
+                        <form class="salesForm" action="{{ url('/sales/cart') }}" method="POST">
                           @csrf
                           <div class="dropdown">
 
@@ -128,7 +128,7 @@
                             @if (auth()->user()->status == 'Administrator')
                               <button type="button" class="btn btn-primary" onclick="alert('Oops...! Administrator cannot make purchase')"><i class="fa fa-plus"></i> &nbsp; Add Item</button>
                             @else
-                                <button type="submit" class="btn btn-primary" name="store_action" value="add_to_cart"><i class="fa fa-plus"></i> &nbsp; Add Item</button>
+                                <button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> &nbsp; Add Item</button>
                               <a href="/mpt_cart"><button type="button" class="btn btn-info" name="store_action" value="empty_cart"><i class="fa fa-trash"></i> &nbsp; Empty Cart</button></a>
                             @endif
                             
@@ -183,12 +183,12 @@
                                   <td class="totAmt">{{$cart->tot}}</td>
                                   <td class="ryt">
                                     
-                                    <form action="{{ action('ItemsController@update', $cart->id) }}" method="POST">
-                                      <input type="hidden" name="_method" value="PUT">
+                                    <form action="{{ url('/sales/cart/' . $cart->id) }}" method="POST">
                                       @csrf
+                                      @method('DELETE')
 
                                       <a class="edit" rel="tooltip" title="Edit Record" data-toggle="modal" data-target="#changeModal_{{$cart->id}}">&nbsp;<i class="fa fa-pencil"></i>&nbsp;</a>
-                                      <button name="store_action" value="cart_del" rel="tooltip" title="Delete Record" class="icon_btn color6" title="Distribute" onclick="return confirm('Are you sure you want to delete record from cart?');"><i class="fa fa-trash"></i></button>
+                                      <button type="submit" rel="tooltip" title="Delete Record" class="icon_btn color6" title="Distribute" onclick="return confirm('Are you sure you want to delete record from cart?');"><i class="fa fa-trash"></i></button>
                                       
                                       {{-- <a href="/reporting/{{$sale->id}}/edit"><button type="button" title="Return Order" class="print_black" onclick="return confirm('Returning order will permanently delete record. Are you sure you want to return selected item?')"><i class="fa fa-mail-reply"></i></button></a> --}}
                                     
@@ -209,15 +209,14 @@
                                                             
                                                     <div class="col-sm-10 col-sm-offset-1">
                                                         <div class="login-form"><!--Item change form-->
-                                                            <form action="{{ action('ItemsController@update', $cart->id) }}" method="POST">
-                                                                <input type="hidden" name="_method" value="PUT">
-                                                                <input type="hidden" name="my_url" value="/checkout1">
+                                                            <form action="{{ url('/sales/cart/' . $cart->id) }}" method="POST">
                                                                 @csrf
+                                                                @method('PUT')
                                 
                                                                 <div class="cartIncrease">
                                                                     <input type="hidden" min="1" name="price" value="{{$cart->unit_price}}">
                                                                     <input type="number" min="1" name="change" value="{{$cart->qty}}">
-                                                                    <button class="black_btn" type="submit" name="store_action" value="qty_change"><i class="fa fa-save"></i> &nbsp; SAVE</button>
+                                                                    <button class="black_btn" type="submit"><i class="fa fa-save"></i> &nbsp; SAVE</button>
                                                                 </div>
                                                                   
                                                             </form>
@@ -270,26 +269,27 @@
                 </div>
 
                 <div class="form-group row mb-0 searchRef2">
-                  <form class="salesForm2" action="{{action('ItemsController@store')}}" method="POST">
+                  <form class="salesForm2" action="{{ url('/sales/checkout') }}" method="POST">
                     @csrf
-                    <select name="pay_mode">
-                      <option selected>-- Mode of Payment --</option>
-                      <option>Cash</option>
-                      <option>Cheque</option>
-                      <option>Mobile Money</option>
-                      <option>Post Payment(Debt)</option>
+                    <select name="pay_mode" required>
+                      <option value="" disabled selected>-- Mode of Payment --</option>
+                      <option value="Cash">Cash</option>
+                      <option value="Cheque">Cheque</option>
+                      <option value="Mobile Money">Mobile Money</option>
+                      <option value="Post Payment(Debt)">Post Payment(Debt)</option>
                     </select> 
                       <input type="text" class="sref2" name="buy_name" placeholder="Buyer's Name" required/>
                       <input type="number" class="sref2" name="buy_contact" placeholder="Contact" min="0" required/>
-                    <select name="del_status">
-                      <option selected>-- Delivery Status --</option>
-                      <option>Delivered</option>
-                      <option>Not Delivered</option>
+                    <select name="del_status" required>
+                      <option value="" disabled selected>-- Delivery Status --</option>
+                      <option value="Delivered">Delivered</option>
+                      <option value="Not Delivered">Not Delivered</option>
                     </select>
                     <input class="sref2" type="number" name="discount" step="any" placeholder="Discount Gh₵" min="0" />
                     <input class="sref2" type="number" name="payment" step="any" placeholder="Payment Amt." min="0" required/>
+                    <input class="sref2" type="text" name="notes" maxlength="255" placeholder="Purchase notes (optional)" />
                       @if(count($carts) > 0)
-                        <button type="submit" class="btn btn-primary" name="store_action" value="add_to_sales"><i class="fa fa-money"></i> &nbsp; Pay Bill</button>
+                        <button type="submit" class="btn btn-primary"><i class="fa fa-money"></i> &nbsp; Pay Bill</button>
                       @endif
                       {{-- <button type="submit" class="btn btn-info"  data-toggle="modal" data-target="#orderModal"><i class="fa fa-users"></i> &nbsp; Add Order Details</button> --}}
                   </form>
@@ -316,6 +316,7 @@
                             <th>Quantity</th>
                             <th>Pay Mode</th>
                             <th>Buyer</th>
+                            <th>Notes</th>
                             <th>Payment</th>
                             <th>Status</th>
                             <th>Total Gh₵</th>
@@ -367,6 +368,7 @@
                                     @endif
                                   </td>  
                                   <td>{{$sale->buy_name}}<br><p class="gray_p">{{$sale->buy_contact}}</p></td>
+                                  <td>@if(filled($sale->notes))<span title="{{ $sale->notes }}">{{ \Illuminate\Support\Str::limit($sale->notes, 40) }}</span>@else<span class="gray_p">—</span>@endif</td>
                                   <td>Payment: {{$sale->payment}}<br><p class="gray_p">Change:&nbsp; {{$sale->change}}</p></td>
                                   <form action="{{ url('/deliverer') }}" method="GET">
                                     <td>{{$sale->del_status}}&nbsp;
@@ -431,14 +433,14 @@
                                                     <div style="height: 30px">
                                                     </div>
                                       
-                                                    <form action="{{ action('ItemsController@store') }}" method="POST">
+                                                    <form action="{{ url('/sales/pay-debt') }}" method="POST">
                                                       @csrf
                       
                                                       <div class="cartIncrease">
                                                         <input type="hidden" name="send_id" value="{{$sale->id}}">
                                                         <input type="hidden" name="send_tot" value="{{$sale->tot}}">
                                                         <input type="number" min="1" step="any" name="amt_paid" placeholder="Amount" value="{{$sale->tot - $sale->paid_debt}}" max="{{$sale->tot - $sale->paid_debt}}">
-                                                        <button class="black_btn" type="submit" name="store_action" value="pay_debt" onclick="return confirm('Are you sure you want to proceed payment?');"><i class="fa fa-money"></i> &nbsp; Pay</button>
+                                                        <button class="black_btn" type="submit" onclick="return confirm('Are you sure you want to proceed payment?');"><i class="fa fa-money"></i> &nbsp; Pay</button>
                                                       </div>
                                                         
                                                     </form>
@@ -471,9 +473,9 @@
                                                   <div style="height: 30px">
                                                   </div>
                                     
-                                                  <form action="{{ action('ItemsController@update', $sale->id) }}" method="POST">
-                                                    <input type="hidden" name="_method" value="PUT">
+                                                  <form action="{{ url('/sales/' . $sale->id) }}" method="POST">
                                                     @csrf
+                                                    @method('PUT')
                     
                                                     <div class="my_panel">
 
@@ -488,17 +490,22 @@
                                                       </div>
                           
                                                       <div class="input_div">
-                                                          <select name="pay_mode">
-                                                            <option selected>{{ $sale->pay_mode }}</option>
-                                                            <option>Cash</option>
-                                                            <option>Cheque</option>
-                                                            <option>Mobile Money</option>
-                                                            <option>Post Payment(Debt)</option>
+                                                          <select name="pay_mode" required>
+                                                            <option value="{{ $sale->pay_mode }}" selected>{{ $sale->pay_mode }}</option>
+                                                            <option value="Cash">Cash</option>
+                                                            <option value="Cheque">Cheque</option>
+                                                            <option value="Mobile Money">Mobile Money</option>
+                                                            <option value="Post Payment(Debt)">Post Payment(Debt)</option>
                                                           </select> 
                                                       </div>
 
                                                       <div class="input_div">
-                                                        <button type="submit" class="btn btn-info pull-left" name="store_action" value="update_sales"><i class="fa fa-save"></i> &nbsp; Update</button>
+                                                          <p>Notes: </p>
+                                                          <input type="text" class="sref2" name="notes" maxlength="255" placeholder="Purchase notes (optional)" value="{{ $sale->notes }}"/>
+                                                      </div>
+
+                                                      <div class="input_div">
+                                                        <button type="submit" class="btn btn-info pull-left"><i class="fa fa-save"></i> &nbsp; Update</button>
                                                       </div>
 
                                                     </div>
@@ -541,16 +548,21 @@
                                       <td>{{$sh->qty}}</td>
                                       <td>{{$sh->del_status}}</td>
                                       <td>{{$sh->created_at}}</td>
-                                      <form action="{{ action('ItemsController@update', $sh->id) }}" method="POST">
-                                        <input type="hidden" name="_method" value="PUT">
+                                      @if($sh->del_status == 'Delivered')
+                                      <form action="{{ url('/sales/history/' . $sh->id . '/undeliver') }}" method="POST">
                                         @csrf
+                                        @method('PUT')
                                         <input type="hidden" name="send_sale_id" value="{{$sale->id}}">
-                                        @if($sh->del_status == 'Delivered')
-                                          <td><button class="btn btn-info" name="store_action" value="undeliver"><i class="fa fa-suitcase"></i> &nbsp; Undeliver</button></td>  
-                                        @else
-                                          <td><button class="btn btn-warning" name="store_action" value="deliver"><i class="fa fa-suitcase"></i> &nbsp; Deliver Now</button></td>  
-                                        @endif
+                                          <td><button class="btn btn-info" type="submit"><i class="fa fa-suitcase"></i> &nbsp; Undeliver</button></td>
                                       </form>
+                                      @else
+                                      <form action="{{ url('/sales/history/' . $sh->id . '/deliver') }}" method="POST">
+                                        @csrf
+                                        @method('PUT')
+                                        <input type="hidden" name="send_sale_id" value="{{$sale->id}}">
+                                          <td><button class="btn btn-warning" type="submit"><i class="fa fa-suitcase"></i> &nbsp; Deliver Now</button></td>
+                                      </form>
+                                      @endif
                                     </tr>
                                   @endforeach
                                 @else
