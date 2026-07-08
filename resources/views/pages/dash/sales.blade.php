@@ -2,760 +2,842 @@
 
 @section('content')
 
-  <!-- End Navbar -->
-  <div class="content">
-        <div class="container-fluid">
-          <div class="row">
-            <div class="col-md-11">
+  @php
+    $salesDate = session('date_today') ?: now()->format('Y-m-d');
+    $cartTotal = count($carts) > 0 ? $carts->sum('tot') : 0;
+    $cartQty = count($carts) > 0 ? $carts->sum('qty') : 0;
+    $netTotal = $sum_ex_dbt + $debts_paid - $expenses->sum('expense_cost');
+    $branchBv = auth()->user()->bv;
+    $activeSalesFilterCount = ($filterPayMode ?? '') !== '' ? 1 : 0;
+    $activeSalesFilterCount += ($filterStatus ?? '') !== '' ? 1 : 0;
+    $salesHasFilters = $activeSalesFilterCount > 0;
+  @endphp
 
-              @include('inc.messages')
-
-
-                <div class="col-md-12 offset-md-0">
-
-                    <div class="form-group row mb-0 searchRef">
-                        <form class="salesForm" action="{{ url('/sales/cart') }}" method="POST">
-                          @csrf
-                          <div class="dropdown">
-
-                              <input type="text" class="sref" name="item_name" placeholder="Search Item...." id="mySearch" onkeyup="filterFunction()" required/>
-                            
-                              @if (count($items) > 0)
-
-                                <div id="myDropdown" class="dropdown_content" onselect="myFunction()">
-                                  <button type="button" onclick="closeDropdown()" class="btn print_black"><i class="fa fa-times"></i></button>
-
-                                  @foreach ($items as $item)
-                                    <a id="selItem{{$item->id}}" onclick="selFunction{{$item->id}}()">
-                                      <table class="itemlist_tbl">
-                                        <tbody>
-                                          <tr>
-                                            <td><img class="img" style="width: 30px" src="/storage/rjv_items/{{$item->thumb_img}}" /></td>
-                                            <td><b>{{$item->name}}</b><br>{{$item->desc}}</td>
-                                          </tr>
-                                        </tbody>
-                                      </table>
-                                    </a>
-
-                                    <input id="b1{{$item->id}}" type="hidden" value="{{$item->b1}}"/>
-                                    <input id="b2{{$item->id}}" type="hidden" value="{{$item->b2}}"/>
-                                    <input id="b3{{$item->id}}" type="hidden" value="{{$item->b3}}"/>
-                                    <input id="b4{{$item->id}}" type="hidden" value="{{$item->b4}}"/>
-                                    <input id="b5{{$item->id}}" type="hidden" value="{{$item->b5}}"/>
-                                    <input id="b6{{$item->id}}" type="hidden" value="{{$item->b6}}"/>
-                                    <input id="b7{{$item->id}}" type="hidden" value="{{$item->b7}}"/>
-
-                                    <input id="q1{{$item->id}}" type="hidden" value="{{$item->q1}}"/>
-                                    <input id="q2{{$item->id}}" type="hidden" value="{{$item->q2}}"/>
-                                    <input id="q3{{$item->id}}" type="hidden" value="{{$item->q3}}"/>
-                                    <input id="q4{{$item->id}}" type="hidden" value="{{$item->q4}}"/>
-                                    <input id="q5{{$item->id}}" type="hidden" value="{{$item->q5}}"/>
-                                    <input id="q6{{$item->id}}" type="hidden" value="{{$item->q6}}"/>
-                                    <input id="q7{{$item->id}}" type="hidden" value="{{$item->q7}}"/>
-                                    <script>
-                                      
-                                      function myFunction() {
-                                        var drp = document.getElementById("myDropdown");
-                                        drp.style.display = "none";
-                                      }
-
-                                      function closeDropdown() {
-                                        document.getElementById('myDropdown').style.display = 'none';
-                                      }
-                                      
-                                      function selFunction{{$item->id}}() {
-                                        var avlQty = "'q" + "{{auth()->user()->bv}}'"
-
-                                        var selItem = document.getElementById("selItem{{$item->id}}");
-                                        document.getElementById("mySearch").value = "{{$item->name}}";
-                                        document.getElementById("myDropdown").style.display = "none";
-
-                                        document.getElementById("item_id").value = "{{$item->id}}"
-                                        document.getElementById("item_no").value = "{{$item->item_no}}"
-                                        document.getElementById("name").value = "{{$item->name}}"
-                                        document.getElementById("cost_price").value = "{{$item->price}}"
-                                        document.getElementById("price").value = document.getElementById("b{{auth()->user()->bv}}{{$item->id}}").value;
-                                        document.getElementById("amt").value = "Gh₵ "+document.getElementById("b{{auth()->user()->bv}}{{$item->id}}").value;
-                                        // document.getElementById("rem").innerHTML = document.getElementById("q{{auth()->user()->bv}}{{$item->id}}").value;
-                                        document.getElementById("qty_avl").innerHTML = document.getElementById("q{{auth()->user()->bv}}{{$item->id}}").value;
-
-                                        document.getElementById("brand").innerHTML = " {{$item->brand}}"
-                                        document.getElementById("desc").innerHTML = " {{$item->desc}}"
-                                        document.getElementById("mp").style.display = "block";
-                                        document.getElementById("mp2").style.display = "block";
-                                        document.getElementById("mp3").style.display = "block";
-                                      }
-                                      
-                                      function filterFunction() {
-                                      
-                                        document.getElementById("myDropdown").style.display = "block";
-                                        
-                                        var input, filter, ul, li, a, i;
-                                        input = document.getElementById("mySearch");
-                                        filter = input.value.toUpperCase();
-                                        div = document.getElementById("myDropdown");
-                                        a = div.getElementsByTagName("a");
-                                        for (i = 0; i < a.length; i++) {
-                                          txtValue = a[i].textContent || a[i].innerText;
-                                          if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                                            a[i].style.display = "";
-                                          } else {
-                                            a[i].style.display = "none";
-                                          }
-                                        }
-                                      }
-
-                                    </script>
-                                    
-                                  @endforeach
-                                </div>
-                              @endif
-                            
-                              {{-- <select>
-                                <option selected>Cement Bag</option>
-                                <option>Wood Nails Pack</option>
-                                <option>Pipe Tube(Size 2)</option>
-                              </select>   --}}
-                            <input id="item_id" name="item_id" type="hidden"/>
-                            <input id="name" name="name" type="hidden"/>
-                            <input id="price" name="price" type="hidden"/>
-                            <input id="cost_price" name="cost_price" type="hidden"/>
-
-                            <input class="sref" id="item_no" name="item_no" type="text" placeholder="Reference" readonly/>
-                            <input class="sqty" type="number" name="qty" placeholder="Qty" value="1" min="1" />
-                            <input class="sqty" type="text" id="amt" placeholder="Gh₵" readonly/>
-                            <!--button type="button" id="rem" class="btn">Rem</button-->
-                            @if (auth()->user()->status == 'Administrator')
-                              <button type="button" class="btn btn-primary" onclick="alert('Oops...! Administrator cannot make purchase')"><i class="fa fa-plus"></i> &nbsp; Add Item</button>
-                            @else
-                                <button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> &nbsp; Add Item</button>
-                              <a href="/mpt_cart"><button type="button" class="btn btn-info" name="store_action" value="empty_cart"><i class="fa fa-trash"></i> &nbsp; Empty Cart</button></a>
-                            @endif
-                            
-                            {{-- <button type="submit" class="btn btn-info"  data-toggle="modal" data-target="#orderModal"><i class="fa fa-users"></i> &nbsp; Add Order Details</button> --}}
-                        
-                          </div>
-
-                          <div id="item_info">
-                            <p id="mp3">Qty Available: &nbsp;<b id="qty_avl" class="my_b2">C</b></p>
-                            <p id="mp">Brand: <b id="brand" class="my_b">A</b></p>
-                            <p id="mp2">Description: <b id="desc" class="my_b">B</b></p>
-                          </div>
-
-                        </form>
-                    </div>
-
-                </div>
-
-              <div class="card">
-                <x-dash-page-header
-                  title="Sales"
-                  subtitle="Search items, manage your cart, and complete orders."
-                  icon="fa fa-shopping-cart"
-                />
-                <div id="printarea1" class="card-body">
-            
-                    {{-- @if (count($orders) > 0) --}}
-                      @if (count($carts) > 0)
-                        <table class="table mt">
-                          <thead class=" text-secondary hideMe">
-                            <th>#</th>
-                            <th>Item No.</th>
-                            <th>Name</th>
-                            <th>Qty</th>
-                            <th>Unit Price(Gh₵)</th>
-                            <th class="totAmt">Total(Gh₵)</th>
-                            <th class="ryt">Actions</th>
-                          </thead>
-                          <tbody id="tb">
-
-                              @foreach ($carts as $cart)
-                                  
-                                @if ($i%2==0)
-                                  <tr class="rowColour"><td>{{$i}}</td>
-                                @else
-                                  <tr><td>{{$i}}</td>
-                                @endif
-                                  <td>{{$cart->item_no}}</td>
-                                  <td>{{$cart->name}}</td>
-                                  <td>{{$cart->qty}}</td>
-                                  <td>{{$cart->unit_price}}</td>
-                                  <td class="totAmt">{{$cart->tot}}</td>
-                                  <td class="ryt">
-                                    
-                                    <form action="{{ url('/sales/cart/' . $cart->id) }}" method="POST">
-                                      @csrf
-                                      @method('DELETE')
-
-                                      <a class="edit" rel="tooltip" title="Edit Record" data-toggle="modal" data-target="#changeModal_{{$cart->id}}">&nbsp;<i class="fa fa-pencil"></i>&nbsp;</a>
-                                      <button type="submit" rel="tooltip" title="Delete Record" class="icon_btn color6" title="Distribute" onclick="return confirm('Are you sure you want to delete record from cart?');"><i class="fa fa-trash"></i></button>
-                                      
-                                      {{-- <a href="/reporting/{{$sale->id}}/edit"><button type="button" title="Return Order" class="print_black" onclick="return confirm('Returning order will permanently delete record. Are you sure you want to return selected item?')"><i class="fa fa-mail-reply"></i></button></a> --}}
-                                    
-                                    </form>  
-
-                                      <div class="modal fade" id="changeModal_{{$cart->id}}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                        <div class="modal-dialog" role="document">
-                                          <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="exampleModalLabel"><i class="fa fa-edit"></i>&nbsp;&nbsp; Edit Item Quantity</h5>
-                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                  <span aria-hidden="true">&times;</span>
-                                                </button>
-                                              </div>
-                                            <div class="modal-body myModalBody">
-                                    
-                                                <div class="row">
-                                                            
-                                                    <div class="col-sm-10 col-sm-offset-1">
-                                                        <div class="login-form"><!--Item change form-->
-                                                            <form action="{{ url('/sales/cart/' . $cart->id) }}" method="POST">
-                                                                @csrf
-                                                                @method('PUT')
-                                
-                                                                <div class="cartIncrease">
-                                                                    <input type="hidden" min="1" name="price" value="{{$cart->unit_price}}">
-                                                                    <input type="number" min="1" name="change" value="{{$cart->qty}}">
-                                                                    <button class="black_btn" type="submit"><i class="fa fa-save"></i> &nbsp; SAVE</button>
-                                                                </div>
-                                                                  
-                                                            </form>
-                                                        </div><!--/Item change form-->
-                                                    
-                                                    </div>
-                                                    
-                                                </div>        
-                                                
-                                                
-                                            </div>
-                                    
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                
-                                    
-                                  </td>
-                                </tr>
-
-                              @endforeach
-                              
-                              <tr>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td><b>{{$carts->sum('qty')}}</b></td>
-                                <td></td>
-                                <td class="totAmt"><b>{{$carts->sum('tot')}}</b></td>
-                                <td class="ryt">      
-                                </td>
-                              </tr>
-                              
-
-                          </tbody>
-                        </table>
-                      @else
-                        <p>Add items to start purchase</p>
-                      @endif
-                        {{-- <p>Total Records : <b style="color: #000000">{{count($orders)}}</b></p> --}}
-
-                        <div style="height: 30px">
-                        </div>
-      
-
-                    {{-- @else
-                      <p>No Records Found</p>
-                    @endif --}}
-                </div>
-
-                <div class="form-group row mb-0 searchRef2">
-                  <form class="salesForm2" action="{{ url('/sales/checkout') }}" method="POST">
-                    @csrf
-                    <select name="pay_mode" required>
-                      <option value="" disabled selected>-- Mode of Payment --</option>
-                      <option value="Cash">Cash</option>
-                      <option value="Cheque">Cheque</option>
-                      <option value="Mobile Money">Mobile Money</option>
-                      <option value="Post Payment(Debt)">Post Payment(Debt)</option>
-                    </select> 
-                      <input type="text" class="sref2" name="buy_name" placeholder="Buyer's Name" required/>
-                      <input type="number" class="sref2" name="buy_contact" placeholder="Contact" min="0" required/>
-                    <select name="del_status" required>
-                      <option value="" disabled selected>-- Delivery Status --</option>
-                      <option value="Delivered">Delivered</option>
-                      <option value="Not Delivered">Not Delivered</option>
-                    </select>
-                    <input class="sref2" type="number" name="discount" step="any" placeholder="Discount Gh₵" min="0" />
-                    <input class="sref2" type="number" name="payment" step="any" placeholder="Payment Amt." min="0" required/>
-                    <input class="sref2" type="text" name="notes" maxlength="255" placeholder="Purchase notes (optional)" />
-                      @if(count($carts) > 0)
-                        <button type="submit" class="btn btn-primary"><i class="fa fa-money"></i> &nbsp; Pay Bill</button>
-                      @endif
-                      {{-- <button type="submit" class="btn btn-info"  data-toggle="modal" data-target="#orderModal"><i class="fa fa-users"></i> &nbsp; Add Order Details</button> --}}
-                  </form>
-                </div>
-
-              </div>
-              
-              <form action="{{url('/changedate')}}" method="GET">
-                <div class="form-group row mb-0 searchRef">
-                  <input class="sref" id="item_no" name="date_today" type="date" style="height: 37px; margin: 5px" placeholder="yyyy-mm-dd"/>
-                    <button type="submit" class="btn btn-primary"><i class="fa fa-calendar"></i> &nbsp; Change Today's Date</button>
-                </div>
-              </form>
-
-              <div class="col-md-12 offset-md-0">
-                <div class="card">
-                  <div id="printarea1" class="card-body">
-              
-                    @if (count($sales) > 0)
-                        <table class="table mt">
-                          <thead class=" text-secondary hideMe">
-                            <th>#</th>
-                            <th>Order No.</th>
-                            <th>Quantity</th>
-                            <th>Pay Mode</th>
-                            <th>Buyer</th>
-                            <th>Notes</th>
-                            <th>Payment</th>
-                            <th>Status</th>
-                            <th>Total Gh₵</th>
-                            <th>Date/Time Created</th>
-                            <th class="ryt actsize">Actions</th>
-                          </thead>
-                          <tbody id="tb">
-
-                            @foreach ($sales as $sale)
-
-                              @if ($sale->del == 'no')
-                                
-                                @if ($c%2==0)
-                                  @if ($sale->del_status == 'Not Delivered')
-                                    @if ($sale->paid != 'Paid' || ($sale->pay_mode == 'Post Payment(Debt)' && $sale->paid != 'Paid'))
-                                      <tr class="debt_alert">
-                                    @else
-                                    <tr class="not_delivered">
-                                    @endif
-                                  @else
-                                    @if ($sale->paid != 'Paid' || ($sale->pay_mode == 'Post Payment(Debt)' && $sale->paid != 'Paid'))
-                                      <tr class="debt_alert">
-                                    @else
-                                      <tr class="rowColour">
-                                    @endif
-                                  @endif
-                                @else
-                                  @if ($sale->del_status == 'Not Delivered')
-                                    @if ($sale->paid != 'Paid' || ($sale->pay_mode == 'Post Payment(Debt)' && $sale->paid != 'Paid'))
-                                      <tr class="debt_alert">
-                                    @else
-                                    <tr class="not_delivered">
-                                    @endif
-                                  @else
-                                    @if ($sale->paid != 'Paid' || ($sale->pay_mode == 'Post Payment(Debt)' && $sale->paid != 'Paid'))
-                                      <tr class="debt_alert">
-                                    @else
-                                      <tr>
-                                    @endif
-                                  @endif
-                                @endif
-                                  <td>{{$c++}}</td>
-                                  <td>{{$sale->order_no}}<br><p class="small_p">User : {{$sale->user->name}}</p></td>
-                                  <td>{{$sale->qty}}</td>
-                                  <td>{{$sale->pay_mode}}<br>
-                                    @if($sale->pay_mode == 'Post Payment(Debt)' && $sale->paid == 'Paid')
-                                      <b>{{$sale->paid}}</b>
-                                      &nbsp; <i class="fa fa-check" style="color: rgb(0, 163, 0)"></i>
-                                    @endif
-                                  </td>  
-                                  <td>{{$sale->buy_name}}<br><p class="gray_p">{{$sale->buy_contact}}</p></td>
-                                  <td>@if(filled($sale->notes))<span title="{{ $sale->notes }}">{{ \Illuminate\Support\Str::limit($sale->notes, 40) }}</span>@else<span class="gray_p">—</span>@endif</td>
-                                  <td>Payment: {{$sale->payment}}<br><p class="gray_p">Change:&nbsp; {{$sale->change}}</p></td>
-                                  <form action="{{ url('/deliverer') }}" method="GET">
-                                    <td>{{$sale->del_status}}&nbsp;
-                                    {{-- <button type="submit" data-toggle="modal" data-target="#pay_debt" title="Pay Debt" class="btn btn-warning"><i class="fa fa-money"></i></button> --}}
-                                    
-                                      @csrf
-                                      @if($sale->del_status == 'Delivered')
-                                        <input type="hidden" name="deliverer" value="{{$sale->id}}">
-                                        <input type="hidden" name="deliverer_text" value="Not Delivered">
-                                        <button type="submit" class="btn btn-success"><i class="fa fa-times"></i></button>
-                                      @else
-                                        <input type="hidden" name="deliverer" value="{{$sale->id}}">
-                                        <input type="hidden" name="deliverer_text" value="Delivered">
-                                        <button type="submit" class="btn btn-warning"><i class="fa fa-check"></i></button>
-                                      @endif
-                                    </td>
-                                  </form>
-                                  {{-- <td></td> --}}
-
-
-                                  @if($sale->pay_mode == 'Post Payment(Debt)' && $sale->paid != 'Paid')
-                                    <td>{{number_format($sale->tot, 2)}}<br>
-                                      <p class="small_p">Bal.:&nbsp;{{number_format($sale->tot - $sale->paid_debt, 2)}}</del></p>
-                                      @if ($sale->discount != 0)
-                                        <p class="gray_p">Dis.:&nbsp;{{number_format($sale->discount, 2)}}</p>
-                                      @endif
-                                    </td>
-                                  @else
-                                    <td>{{number_format($sale->tot, 2)}}<br>
-                                      @if ($sale->discount != 0)
-                                        <p class="gray_p">Dis.:{{number_format($sale->discount, 2)}}</p>
-                                      @endif
-                                    </td>
-                                  @endif
-                                  
-                                  <td>{{$sale->created_at}}<br><p style="color: #0071ce; margin: 0">{{$sale->updated_at}}</p></td>  
-
-                                  {{-- <form action="{{ action('ItemsController@update', $sale->id) }}" method="POST">
-                                    <!--input type="hidden" name="_method" value="PUT"-->
-                                    @csrf --}}
-                                    <td>
-                                      <a href="/reporting/{{$sale->id}}"><button type="button" title="Print Order" class="print_black"><i class="fa fa-print"></i></button></a>
-                                      
-                                      @if ($sale->paid != 'Paid' && $sale->pay_mode == 'Post Payment(Debt)')
-                                        {{-- @if ($sale->tot - ())
-                                            
-                                        @endif --}}
-                                        <button type="submit" data-toggle="modal" data-target="#pay_debt{{$sale->id}}" title="Pay Debt" class="print_black"><i class="fa fa-money"></i></button>
-                                        
-                                        <div class="modal fade" id="pay_debt{{$sale->id}}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                          <div class="modal-dialog modtop" role="document">
-                                            <div id="printarea" class="modal-content">
-                                              <div class="modal-header">
-                                                <h6 class="modal-title" id="exampleModalLabel"><i class="fa fa-save"></i>&nbsp;&nbsp; Make Payment for {{$sale->buy_name}}</h6>
-                                              </div>
-                                                <div class="card card-profile">
-                                                  <div class="card-avatar">
-                                                    <a href="#">                                                    </a>
-                                                  </div>
-                                                  <div class="card-body">
-                                                    <h6 class="card-category text-gray"></h6>
-                                                    <div style="height: 30px">
-                                                    </div>
-                                      
-                                                    <form action="{{ url('/sales/pay-debt') }}" method="POST">
-                                                      @csrf
-                      
-                                                      <div class="cartIncrease">
-                                                        <input type="hidden" name="send_id" value="{{$sale->id}}">
-                                                        <input type="hidden" name="send_tot" value="{{$sale->tot}}">
-                                                        <input type="number" min="1" step="any" name="amt_paid" placeholder="Amount" value="{{$sale->tot - $sale->paid_debt}}" max="{{$sale->tot - $sale->paid_debt}}">
-                                                        <button class="black_btn" type="submit" onclick="return confirm('Are you sure you want to proceed payment?');"><i class="fa fa-money"></i> &nbsp; Pay</button>
-                                                      </div>
-                                                        
-                                                    </form>
-                                      
-                                                  </div>
-                                                </div>
-                                            </div>
-                                      
-                                          </div>
-                                        </div>
-                                      @endif
-
-                                      <button type="submit" data-toggle="modal" data-target="#edit_order{{ $sale->id }}" title="Edit Order" class="print_black">&nbsp;<i class="fa fa-pencil"></i>&nbsp;</button>
-                                      @if (Auth()->user()->status == 'Administrator')
-                                        <a href="/reporting/{{$sale->id}}/edit"><button type="button" title="Return Order" class="print_black" onclick="return confirm('Returning order will permanently delete record. Are you sure you want to return selected item?')"><i class="fa fa-mail-reply"></i></button></a>
-                                      @endif
-                                      <div class="modal fade" id="edit_order{{ $sale->id }}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                        
-                                        <div class="modal-dialog modtop" role="document">
-                                          <div id="printarea" class="modal-content">
-                                            <div class="modal-header">
-                                              <h6 class="modal-title" id="exampleModalLabel"><i class="fa fa-save"></i>&nbsp;&nbsp; Edit {{ $sale->buy_name }}'s order details</h6>
-                                            </div>
-                                              <div class="card card-profile">
-                                                <div class="card-avatar">
-                                                  <a href="#">                                                  </a>
-                                                </div>
-                                                <div class="card-body">
-                                                  <h6 class="card-category text-gray"></h6>
-                                                  <div style="height: 30px">
-                                                  </div>
-                                    
-                                                  <form action="{{ url('/sales/' . $sale->id) }}" method="POST">
-                                                    @csrf
-                                                    @method('PUT')
-                    
-                                                    <div class="my_panel">
-
-                                                      <div class="input_div">
-                                                          <p>Buyer's Name: </p>
-                                                          <input type="text" class="sref2" name="buy_name" placeholder="Buyer's Name" value="{{ $sale->buy_name }}" required/>
-                                                      </div>
-                          
-                                                      <div class="input_div">
-                                                          <p>Contact: </p>
-                                                          <input type="number" class="sref2" name="buy_contact" placeholder="Contact" min="0" value="{{ $sale->buy_contact }}" required/>
-                                                      </div>
-                          
-                                                      <div class="input_div">
-                                                          <select name="pay_mode" required>
-                                                            <option value="{{ $sale->pay_mode }}" selected>{{ $sale->pay_mode }}</option>
-                                                            <option value="Cash">Cash</option>
-                                                            <option value="Cheque">Cheque</option>
-                                                            <option value="Mobile Money">Mobile Money</option>
-                                                            <option value="Post Payment(Debt)">Post Payment(Debt)</option>
-                                                          </select> 
-                                                      </div>
-
-                                                      <div class="input_div">
-                                                          <p>Notes: </p>
-                                                          <input type="text" class="sref2" name="notes" maxlength="255" placeholder="Purchase notes (optional)" value="{{ $sale->notes }}"/>
-                                                      </div>
-
-                                                      <div class="input_div">
-                                                        <button type="submit" class="btn btn-info pull-left"><i class="fa fa-save"></i> &nbsp; Update</button>
-                                                      </div>
-
-                                                    </div>
-
-                                                  </form>
-                                    
-                                                </div>
-                                              </div>
-                                          </div>
-                                    
-                                        </div>
-                                      </div>
-                                    </td> 
-                                  {{-- </form> --}}
-
-                                </tr>
-
-                                @if($sale->del_status == 'Not Delivered' && $sale->pay_mode == 'Post Payment(Debt)')
-                                
-                                  <tr id="showTR2">
-                                    <td></td>
-                                    <td><b>Items Delivery Status</b></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td><b>Item No.</b></td>
-                                    <td><b>Name</b></td>
-                                    <td>Qty.</td>
-                                    <td><b>Status</b></td>
-                                    <td><b>Date</b></td>
-                                    <td><b>Action</b></td>  
-                                  </tr>
-                                  @foreach ($sale->saleshistory as $sh)
-                                    <tr>
-                                      <td></td>
-                                      <td></td>
-                                      <td></td>
-                                      <td></td>
-                                      <td>{{$sh->item_no}}</td>
-                                      <td>{{$sh->name}}</td>
-                                      <td>{{$sh->qty}}</td>
-                                      <td>{{$sh->del_status}}</td>
-                                      <td>{{$sh->created_at}}</td>
-                                      @if($sh->del_status == 'Delivered')
-                                      <form action="{{ url('/sales/history/' . $sh->id . '/undeliver') }}" method="POST">
-                                        @csrf
-                                        @method('PUT')
-                                        <input type="hidden" name="send_sale_id" value="{{$sale->id}}">
-                                          <td><button class="btn btn-info" type="submit"><i class="fa fa-suitcase"></i> &nbsp; Undeliver</button></td>
-                                      </form>
-                                      @else
-                                      <form action="{{ url('/sales/history/' . $sh->id . '/deliver') }}" method="POST">
-                                        @csrf
-                                        @method('PUT')
-                                        <input type="hidden" name="send_sale_id" value="{{$sale->id}}">
-                                          <td><button class="btn btn-warning" type="submit"><i class="fa fa-suitcase"></i> &nbsp; Deliver Now</button></td>
-                                      </form>
-                                      @endif
-                                    </tr>
-                                  @endforeach
-                                @else
-                                    
-                                @endif
-                              
-                              @endif
-
-                            @endforeach
-
-                          </tbody>
-                        </table>
-                        <p>Sales Count : <b style="color: #000000">{{count($sales)}}</b></p>
-                        {{ $sales->links() }}
-
-                        <div style="height: 30px">
-                        </div>
-      
-
-                    @else
-                      <p>No Records Found</p>
-                    @endif
-                  </div>
-                </div>
-              </div>
-
-              <div class="container-fluid hideMe">
-
-                <div class="row">
-      
-                  <div class="col-lg-3 col-md-6 col-sm-6">
-                    <a data-toggle="modal" data-target="#totbreakdownModal" class="myA">
-                      <div class="card card-stats">
-                        <button class="btn salesBtn purple"><i class="fa fa-folder-open salesI"></i></button>
-                        <h4 class='config2'>Gh₵ {{number_format($sum_ex_dbt, 2)}}</h4>
-                        
-                        <div class="card-footer">
-                          <div class="stats">Daily Sales {{session('date_today')}}</div>
-                        </div>
-                      </div>
-                    </a>
-                  </div>
-
-                  <div class="col-lg-3 col-md-6 col-sm-6">
-                    <a href="/paid_debts" class="myA">
-                      <div class="card card-stats">
-                        <button class="btn salesBtn pink"><i class="fa fa-dollar salesI"></i></button>
-                        <h4 class='config2'>Gh₵ {{number_format($debts_paid, 2)}}</h4>
-                        
-                        <div class="card-footer">
-                          <div class="stats">Paid Debts</div>
-                        </div>
-                      </div>
-                    </a>
-                  </div>
-      
-                  <div class="col-lg-3 col-md-6 col-sm-6">
-                    <a href="/expenses" class="myA">
-                      <div class="card card-stats">
-                        <button class="btn salesBtn mygreen"><i class="fa fa-money salesI"></i></button>
-                        <h4 class='config2'>Gh₵ {{number_format($expenses->sum('expense_cost'), 2)}}</h4>
-                        
-                        <div class="card-footer">
-                          <div class="stats">Daily Expenditure</div>
-                        </div>
-                      </div>
-                    </a>
-                  </div>
-      
-                  <div class="col-lg-3 col-md-6 col-sm-6">
-                    <a href="#" class="myA">
-                      <div class="card card-stats">
-                        <button class="btn salesBtn seablue"><i class="fa fa-money salesI"></i></button>
-                        <h4 class='config2'>Gh₵ {{number_format($sum_ex_dbt + $debts_paid - $expenses->sum('expense_cost'), 2)}}</h4>
-                        
-                        <div class="card-footer">
-                          <div class="stats">Net Total</div>
-                        </div>
-                      </div>
-                    </a>
-                  </div>
-      
-                </div>
-
-              </div>
-
-            </div>
-
-
+  <div class="content dash-sales-content">
+    <div class="dash-sales-sticky-header">
+      <div class="container-fluid">
+        <div class="dash-sales-kpi-grid">
+          <a href="#" class="dash-sales-kpi" data-toggle="modal" data-target="#totbreakdownModal">
+            <span class="dash-sales-kpi-icon dash-sales-kpi-icon--purple"><i class="fa fa-folder-open"></i></span>
+            <p class="dash-sales-kpi-value">Gh₵ {{ number_format($sum_ex_dbt, 2) }}</p>
+            <p class="dash-sales-kpi-label">Daily sales · {{ $salesDate }}</p>
+          </a>
+          <a href="/paid_debts" class="dash-sales-kpi">
+            <span class="dash-sales-kpi-icon dash-sales-kpi-icon--pink"><i class="fa fa-dollar"></i></span>
+            <p class="dash-sales-kpi-value">Gh₵ {{ number_format($debts_paid, 2) }}</p>
+            <p class="dash-sales-kpi-label">Paid debts</p>
+          </a>
+          <a href="/expenses" class="dash-sales-kpi">
+            <span class="dash-sales-kpi-icon dash-sales-kpi-icon--green"><i class="fa fa-money"></i></span>
+            <p class="dash-sales-kpi-value">Gh₵ {{ number_format($expenses->sum('expense_cost'), 2) }}</p>
+            <p class="dash-sales-kpi-label">Daily expenditure</p>
+          </a>
+          <div class="dash-sales-kpi">
+            <span class="dash-sales-kpi-icon dash-sales-kpi-icon--blue"><i class="fa fa-line-chart"></i></span>
+            <p class="dash-sales-kpi-value">Gh₵ {{ number_format($netTotal, 2) }}</p>
+            <p class="dash-sales-kpi-label">Net total</p>
           </div>
         </div>
+
+        <div class="dash-sales-date-bar">
+          <div class="dash-sales-date-info">
+            <span class="dash-sales-date-icon" aria-hidden="true"><i class="fa fa-calendar-check-o"></i></span>
+            <div class="dash-sales-date-copy">
+              <p class="dash-sales-date-bar-label">Sales date</p>
+              <p class="dash-sales-date-bar-value">{{ \Carbon\Carbon::parse($salesDate)->format('l, d M Y') }}</p>
+            </div>
+          </div>
+
+          <form action="{{ url('/changedate') }}" method="GET" class="dash-sales-date-form">
+            <label class="dash-sales-date-picker" for="sales_date_picker">
+              <span class="sr-only">Set sales date</span>
+              <input
+                id="sales_date_picker"
+                class="dash-sales-date-input"
+                name="date_today"
+                type="date"
+                value="{{ $salesDate }}"
+                aria-label="Set sales date"
+              />
+            </label>
+            <button type="submit" class="inventory-action-btn inventory-action-btn-primary dash-sales-date-submit">
+              <i class="fa fa-calendar"></i>
+              <span>Change date</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid dash-sales-body">
+      @include('inc.messages')
+
+      <div class="card dash-sales-card">
+        <x-dash-page-header
+          title="Sales"
+          subtitle="Search items, manage your cart, and complete orders."
+          icon="fa fa-shopping-cart"
+        />
+        <div class="card-body dash-form-body">
+
+          <div class="dash-sales-section-toolbar">
+            <h6 class="inventory-edit-section-title"><i class="fa fa-search"></i> Add to cart</h6>
+          </div>
+
+          <form class="dash-sales-pos-panel" action="{{ url('/sales/cart') }}" method="POST">
+            @csrf
+
+            <input id="item_id" name="item_id" type="hidden"/>
+            <input id="name" name="name" type="hidden"/>
+            <input id="price" name="price" type="hidden"/>
+            <input id="cost_price" name="cost_price" type="hidden"/>
+
+            <div class="dash-sales-pos-toolbar">
+              <div class="dash-sales-search-wrap dash-sales-toolbar-search">
+                <span class="dash-sales-search-icon"><i class="fa fa-search"></i></span>
+                <input
+                  type="text"
+                  class="dash-sales-search-input"
+                  name="item_name"
+                  placeholder="Search item..."
+                  id="mySearch"
+                  onkeyup="filterFunction()"
+                  autocomplete="off"
+                  required
+                />
+
+                @if (count($items) > 0)
+                  <div id="myDropdown" class="dash-sales-dropdown dropdown_content">
+                    <div class="dash-sales-dropdown-close">
+                      <button type="button" onclick="closeDropdown()" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Close results" aria-label="Close results">
+                        <i class="fa fa-times"></i>
+                      </button>
+                    </div>
+
+                    @foreach ($items as $item)
+                      <a id="selItem{{ $item->id }}" class="dash-sales-dropdown-item" onclick="selFunction{{ $item->id }}()">
+                        <span class="dash-sales-dropdown-item-inner">
+                          <img class="dash-sales-dropdown-thumb" src="/storage/rjv_items/{{ $item->thumb_img }}" alt="" />
+                          <span>
+                            <span class="dash-sales-dropdown-name">{{ $item->name }}</span>
+                            <span class="dash-sales-dropdown-desc">{{ $item->desc }}</span>
+                          </span>
+                        </span>
+                      </a>
+
+                      @for ($b = 1; $b <= 7; $b++)
+                        <input id="b{{ $b }}{{ $item->id }}" type="hidden" value="{{ $item->{'b'.$b} }}"/>
+                        <input id="q{{ $b }}{{ $item->id }}" type="hidden" value="{{ $item->{'q'.$b} }}"/>
+                      @endfor
+
+                      <script>
+                        function selFunction{{ $item->id }}() {
+                          document.getElementById("mySearch").value = @json($item->name);
+                          document.getElementById("myDropdown").classList.remove("is-open");
+                          document.getElementById("item_id").value = "{{ $item->id }}";
+                          document.getElementById("item_no").value = "{{ $item->item_no }}";
+                          document.getElementById("name").value = @json($item->name);
+                          document.getElementById("cost_price").value = "{{ $item->price }}";
+                          document.getElementById("price").value = document.getElementById("b{{ $branchBv }}{{ $item->id }}").value;
+                          document.getElementById("amt").value = "Gh₵ " + document.getElementById("b{{ $branchBv }}{{ $item->id }}").value;
+                          document.getElementById("qty_avl").textContent = document.getElementById("q{{ $branchBv }}{{ $item->id }}").value;
+                          document.getElementById("brand").textContent = @json($item->brand);
+                          document.getElementById("desc").textContent = @json($item->desc);
+                          document.getElementById("item_info").classList.add("is-visible");
+                        }
+                      </script>
+                    @endforeach
+                  </div>
+                @endif
+              </div>
+
+              <input
+                class="inventory-edit-input dash-sales-pos-ref-input"
+                id="item_no"
+                name="item_no"
+                type="text"
+                placeholder="Ref"
+                title="Reference"
+                readonly
+              />
+              <input
+                class="inventory-edit-input dash-sales-pos-qty-input"
+                type="number"
+                name="qty"
+                value="1"
+                min="1"
+                placeholder="Qty"
+                title="Quantity"
+              />
+              <input
+                class="inventory-edit-input dash-sales-pos-price-input"
+                type="text"
+                id="amt"
+                placeholder="Gh₵"
+                title="Unit price"
+                readonly
+              />
+
+              @if (auth()->user()->status == 'Administrator')
+                <button
+                  type="button"
+                  class="inventory-action-btn inventory-action-btn-primary dash-sales-toolbar-btn dash-tip"
+                  data-tip="Add item"
+                  title="Add item"
+                  onclick="alert('Oops...! Administrator cannot make purchase')"
+                >
+                  <i class="fa fa-plus"></i>
+                  <span>Add</span>
+                </button>
+              @else
+                <button
+                  type="submit"
+                  class="inventory-action-btn inventory-action-btn-primary dash-sales-toolbar-btn dash-tip"
+                  data-tip="Add item"
+                  title="Add item"
+                >
+                  <i class="fa fa-plus"></i>
+                  <span>Add</span>
+                </button>
+                <a
+                  href="/mpt_cart"
+                  class="inventory-action-btn dash-sales-toolbar-btn dash-tip"
+                  data-tip="Empty cart"
+                  title="Empty cart"
+                >
+                  <i class="fa fa-trash"></i>
+                  <span>Clear</span>
+                </a>
+              @endif
+            </div>
+
+            <dl id="item_info" class="dash-sales-item-info">
+              <div>
+                <dt>Qty available</dt>
+                <dd id="qty_avl">—</dd>
+              </div>
+              <div>
+                <dt>Brand</dt>
+                <dd id="brand">—</dd>
+              </div>
+              <div>
+                <dt>Description</dt>
+                <dd id="desc">—</dd>
+              </div>
+            </dl>
+          </form>
+
+          <div class="dash-sales-section-toolbar inventory-edit-section-title-spaced">
+            <h6 class="inventory-edit-section-title"><i class="fa fa-shopping-basket"></i> Cart</h6>
+            @if (count($carts) > 0)
+              <span class="dash-sales-section-count">{{ $cartQty }} items · Gh₵ {{ number_format($cartTotal, 2) }}</span>
+            @endif
+          </div>
+
+          @if (count($carts) > 0)
+            <div class="dash-sales-table-wrap table-responsive">
+              <table class="table mt">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Item No.</th>
+                    <th>Name</th>
+                    <th>Qty</th>
+                    <th>Unit (Gh₵)</th>
+                    <th class="totAmt">Total (Gh₵)</th>
+                    <th class="ryt">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @foreach ($carts as $cart)
+                    <tr @class(['rowColour' => $loop->even])>
+                      <td>{{ $loop->iteration }}</td>
+                      <td>{{ $cart->item_no }}</td>
+                      <td>{{ $cart->name }}</td>
+                      <td>{{ $cart->qty }}</td>
+                      <td>{{ $cart->unit_price }}</td>
+                      <td class="totAmt">{{ $cart->tot }}</td>
+                      <td class="ryt">
+                        <div class="dash-sales-actions">
+                          <button type="button" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-toggle="modal" data-target="#changeModal_{{ $cart->id }}" data-tip="Edit qty" title="Edit quantity">
+                            <i class="fa fa-pencil"></i>
+                          </button>
+                          <form action="{{ url('/sales/cart/' . $cart->id) }}" method="POST" style="display:inline;">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Remove" title="Remove from cart" onclick="return confirm('Remove this item from the cart?');">
+                              <i class="fa fa-trash"></i>
+                            </button>
+                          </form>
+                        </div>
+
+                        <div class="modal fade" id="changeModal_{{ $cart->id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                          <div class="modal-dialog inventory-edit-dialog modal-dialog-centered" role="document">
+                            <div class="modal-content inventory-edit-modal">
+                              <div class="inventory-edit-header">
+                                <div class="inventory-edit-header-inner">
+                                  <div class="inventory-edit-header-text">
+                                    <span class="inventory-edit-kicker">Cart</span>
+                                    <h4 class="inventory-edit-title">Edit quantity</h4>
+                                    <p class="inventory-edit-meta">{{ $cart->name }}</p>
+                                  </div>
+                                </div>
+                                <button type="button" class="inventory-edit-close" data-dismiss="modal" aria-label="Close">
+                                  <i class="fa fa-times"></i>
+                                </button>
+                              </div>
+                              <div class="inventory-edit-body">
+                                <form action="{{ url('/sales/cart/' . $cart->id) }}" method="POST">
+                                  @csrf
+                                  @method('PUT')
+                                  <input type="hidden" name="price" value="{{ $cart->unit_price }}">
+                                  <label class="inventory-edit-field">
+                                    <span class="inventory-edit-label">Quantity</span>
+                                    <input class="inventory-edit-input" type="number" min="1" name="change" value="{{ $cart->qty }}">
+                                  </label>
+                                  <div class="inventory-edit-footer" style="padding: 0; border: 0; margin-top: 8px;">
+                                    <button type="button" class="inventory-edit-btn inventory-edit-btn-muted" data-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary">
+                                      <i class="fa fa-save"></i> Save
+                                    </button>
+                                  </div>
+                                </form>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  @endforeach
+                  <tr class="dash-sales-cart-total-row">
+                    <td colspan="3"></td>
+                    <td><strong>{{ $cartQty }}</strong></td>
+                    <td></td>
+                    <td class="totAmt"><strong>{{ number_format($cartTotal, 2) }}</strong></td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          @else
+            <p class="dash-sales-empty">Add items above to start a purchase.</p>
+          @endif
+
+          @if (count($carts) > 0)
+            <div class="dash-sales-checkout-bar">
+              <div class="dash-sales-checkout-bar-summary">
+                <span class="dash-sales-checkout-bar-kicker">Ready to checkout</span>
+                <p class="dash-sales-checkout-bar-total">
+                  <strong>{{ $cartQty }}</strong> {{ $cartQty === 1 ? 'item' : 'items' }}
+                  · <strong>Gh₵ {{ number_format($cartTotal, 2) }}</strong>
+                </p>
+              </div>
+              <button
+                type="button"
+                class="inventory-action-btn inventory-action-btn-primary"
+                id="openCheckoutDrawer"
+                aria-controls="checkoutDrawer"
+                aria-expanded="false"
+              >
+                <i class="fa fa-credit-card"></i>
+                <span>Checkout</span>
+              </button>
+            </div>
+          @endif
+
+        </div>
+      </div>
+
+      <div class="card dash-sales-card">
+        <div class="card-body dash-form-body">
+          <div class="dash-sales-section-toolbar">
+            <h6 class="inventory-edit-section-title"><i class="fa fa-list"></i> Today&rsquo;s sales</h6>
+            <div class="dash-sales-section-actions">
+              <form method="GET" action="{{ url('/sales') }}" class="dash-sales-log-filter-form inventory-list-toolbar">
+                <div class="inventory-filters-panel is-collapsed" data-collapsible-filters>
+                  <button
+                    type="button"
+                    class="inventory-filters-toggle inventory-search-btn inventory-search-btn-muted dash-tip"
+                    aria-expanded="false"
+                    aria-controls="salesLogFilters"
+                    data-tip="Filter sales"
+                  >
+                    <i class="fa fa-filter"></i>
+                    @if ($salesHasFilters)
+                      <span class="inventory-filters-count">{{ $activeSalesFilterCount }}</span>
+                    @endif
+                  </button>
+
+                  <div class="inventory-filters-body" id="salesLogFilters">
+                    <div class="inventory-filters-controls">
+                      <label class="inventory-filter-field">
+                        <span class="inventory-filter-field-icon"><i class="fa fa-credit-card"></i></span>
+                        <select name="pay_mode" class="inventory-filter-select" title="Filter by pay mode">
+                          <option value="">All pay modes</option>
+                          <option value="Cash" @selected(($filterPayMode ?? '') === 'Cash')>Cash</option>
+                          <option value="Cheque" @selected(($filterPayMode ?? '') === 'Cheque')>Cheque</option>
+                          <option value="Mobile Money" @selected(($filterPayMode ?? '') === 'Mobile Money')>Mobile Money</option>
+                          <option value="Post Payment(Debt)" @selected(($filterPayMode ?? '') === 'Post Payment(Debt)')>Post Payment (Debt)</option>
+                        </select>
+                      </label>
+
+                      <label class="inventory-filter-field">
+                        <span class="inventory-filter-field-icon"><i class="fa fa-truck"></i></span>
+                        <select name="status" class="inventory-filter-select" title="Filter by delivery status">
+                          <option value="">All statuses</option>
+                          <option value="Delivered" @selected(($filterStatus ?? '') === 'Delivered')>Delivered</option>
+                          <option value="Not Delivered" @selected(($filterStatus ?? '') === 'Not Delivered')>Undelivered</option>
+                        </select>
+                      </label>
+
+                      <button type="submit" class="inventory-search-btn inventory-search-btn-primary inventory-filters-apply">
+                        <i class="fa fa-filter"></i>
+                        <span>Apply</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                @if ($salesHasFilters)
+                  <a href="{{ url('/sales') }}" class="inventory-search-btn inventory-search-btn-clear inventory-search-btn-icon dash-tip" data-tip="Clear filters">
+                    <i class="fa fa-refresh"></i>
+                  </a>
+                @endif
+              </form>
+
+              <span class="dash-sales-section-count">{{ $sales->total() }} records</span>
+            </div>
+          </div>
+
+          @if (count($sales) > 0)
+            <div class="dash-sales-table-wrap table-responsive">
+              <table class="table mt">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Order</th>
+                    <th>Qty</th>
+                    <th>Pay mode</th>
+                    <th>Buyer</th>
+                    <th>Notes</th>
+                    <th>Payment</th>
+                    <th>Status</th>
+                    <th>Total</th>
+                    <th>Date</th>
+                    <th class="ryt actsize">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @foreach ($sales as $sale)
+                    @if ($sale->del == 'no')
+                      @php
+                        $isDebt = $sale->paid != 'Paid' || ($sale->pay_mode == 'Post Payment(Debt)' && $sale->paid != 'Paid');
+                        $rowClass = $isDebt ? 'debt_alert' : ($sale->del_status == 'Not Delivered' ? 'not_delivered' : ($loop->even ? 'rowColour' : ''));
+                      @endphp
+                      <tr class="{{ $rowClass }}">
+                        <td>{{ $loop->iteration + ($sales->currentPage() - 1) * $sales->perPage() }}</td>
+                        <td>
+                          <strong>{{ $sale->order_no }}</strong>
+                          <p class="dash-sales-log-meta">User: {{ $sale->user->name }}</p>
+                        </td>
+                        <td>{{ $sale->qty }}</td>
+                        <td>
+                          {{ $sale->pay_mode }}
+                          @if ($sale->pay_mode == 'Post Payment(Debt)' && $sale->paid == 'Paid')
+                            <br><strong>{{ $sale->paid }}</strong> <i class="fa fa-check" style="color: rgb(0, 163, 0)"></i>
+                          @endif
+                        </td>
+                        <td>
+                          {{ $sale->buy_name }}
+                          <p class="dash-sales-log-meta">{{ $sale->buy_contact }}</p>
+                        </td>
+                        <td class="dash-sales-notes-cell">
+                          @if (filled($sale->notes))
+                            <span title="{{ $sale->notes }}">{{ \Illuminate\Support\Str::limit($sale->notes, 40) }}</span>
+                          @else
+                            <span class="gray_p">—</span>
+                          @endif
+                        </td>
+                        <td>
+                          Gh₵ {{ $sale->payment }}
+                          <p class="dash-sales-log-meta">{{ $sale->changeOrBalanceLabel() }}: {{ number_format($sale->changeOrBalanceAmount(), 2) }}</p>
+                        </td>
+                        <td>
+                          <form action="{{ url('/deliverer') }}" method="GET" class="dash-sales-delivery-form">
+                            <input type="hidden" name="deliverer" value="{{ $sale->id }}">
+                            @if ($sale->del_status == 'Delivered')
+                              <input type="hidden" name="deliverer_text" value="Not Delivered">
+                              <button
+                                type="submit"
+                                class="dash-sales-status-pill dash-sales-status-pill--delivered dash-tip"
+                                data-tip="Click to mark as undelivered"
+                                onclick="return confirm('Mark this order as undelivered?');"
+                              >
+                                Delivered
+                              </button>
+                            @else
+                              <input type="hidden" name="deliverer_text" value="Delivered">
+                              <button
+                                type="submit"
+                                class="dash-sales-status-pill dash-sales-status-pill--undelivered dash-tip"
+                                data-tip="Click to mark as delivered"
+                                onclick="return confirm('Mark this order as delivered?');"
+                              >
+                                Undelivered
+                              </button>
+                            @endif
+                          </form>
+                        </td>
+                        <td>
+                          <strong>Gh₵ {{ number_format($sale->tot, 2) }}</strong>
+                          @if ($sale->pay_mode == 'Post Payment(Debt)' && $sale->paid != 'Paid')
+                            <p class="dash-sales-log-meta">Bal.: Gh₵ {{ number_format($sale->debtBalance(), 2) }}</p>
+                          @endif
+                          @if ($sale->discount != 0)
+                            <p class="dash-sales-log-meta">Dis.: Gh₵ {{ number_format($sale->discount, 2) }}</p>
+                          @endif
+                        </td>
+                        <td>
+                          {{ $sale->created_at }}
+                          <p class="dash-sales-log-meta">{{ $sale->updated_at }}</p>
+                        </td>
+                        <td class="ryt">
+                          <div class="dash-sales-actions">
+                            <a href="/reporting/{{ $sale->id }}" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Print" title="Print order">
+                              <i class="fa fa-print"></i>
+                            </a>
+                            @if ($sale->paid != 'Paid' && $sale->pay_mode == 'Post Payment(Debt)')
+                              <button type="button" data-toggle="modal" data-target="#pay_debt{{ $sale->id }}" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Pay debt" title="Pay debt">
+                                <i class="fa fa-money"></i>
+                              </button>
+                            @endif
+                            <button type="button" data-toggle="modal" data-target="#edit_order{{ $sale->id }}" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Edit" title="Edit order">
+                              <i class="fa fa-pencil"></i>
+                            </button>
+                            @if (Auth()->user()->status == 'Administrator')
+                              <a href="/reporting/{{ $sale->id }}/edit" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Return" title="Return order" onclick="return confirm('Returning order will permanently delete record. Continue?');">
+                                <i class="fa fa-mail-reply"></i>
+                              </a>
+                            @endif
+                          </div>
+
+                          @if ($sale->paid != 'Paid' && $sale->pay_mode == 'Post Payment(Debt)')
+                            @php($debtRemaining = $sale->debtBalance())
+                            <div class="modal fade" id="pay_debt{{ $sale->id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                              <div class="modal-dialog inventory-edit-dialog modal-dialog-centered" role="document">
+                                <div class="modal-content inventory-edit-modal">
+                                  <div class="inventory-edit-header">
+                                    <div class="inventory-edit-header-inner">
+                                      <div class="inventory-edit-header-text">
+                                        <span class="inventory-edit-kicker">Debt payment</span>
+                                        <h4 class="inventory-edit-title">{{ $sale->buy_name }}</h4>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div class="inventory-edit-body">
+                                    <form action="{{ url('/sales/pay-debt') }}" method="POST">
+                                      @csrf
+                                      <input type="hidden" name="send_id" value="{{ $sale->id }}">
+                                      <input type="hidden" name="send_tot" value="{{ $sale->tot }}">
+                                      <label class="inventory-edit-field">
+                                        <span class="inventory-edit-label">Amount (Gh₵)</span>
+                                        <input class="inventory-edit-input" type="number" min="0.01" step="any" name="amt_paid" value="{{ number_format($debtRemaining, 2, '.', '') }}" max="{{ number_format($debtRemaining, 2, '.', '') }}">
+                                      </label>
+                                      <div class="inventory-edit-footer" style="padding: 0; border: 0; margin-top: 8px;">
+                                        <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary" onclick="return confirm('Proceed with payment?');">
+                                          <i class="fa fa-money"></i> Pay
+                                        </button>
+                                      </div>
+                                    </form>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          @endif
+
+                          <div class="modal fade" id="edit_order{{ $sale->id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                            <div class="modal-dialog inventory-edit-dialog modal-dialog-centered" role="document">
+                              <div class="modal-content inventory-edit-modal">
+                                <div class="inventory-edit-header">
+                                  <div class="inventory-edit-header-inner">
+                                    <div class="inventory-edit-header-text">
+                                      <span class="inventory-edit-kicker">Edit order</span>
+                                      <h4 class="inventory-edit-title">{{ $sale->buy_name }}</h4>
+                                    </div>
+                                  </div>
+                                  <button type="button" class="inventory-edit-close" data-dismiss="modal" aria-label="Close">
+                                    <i class="fa fa-times"></i>
+                                  </button>
+                                </div>
+                                <div class="inventory-edit-body">
+                                  <form action="{{ url('/sales/' . $sale->id) }}" method="POST">
+                                    @csrf
+                                    @method('PUT')
+                                    <label class="inventory-edit-field">
+                                      <span class="inventory-edit-label">Buyer&rsquo;s name</span>
+                                      <input class="inventory-edit-input" type="text" name="buy_name" value="{{ $sale->buy_name }}" required/>
+                                    </label>
+                                    <label class="inventory-edit-field">
+                                      <span class="inventory-edit-label">Contact</span>
+                                      <input class="inventory-edit-input" type="number" name="buy_contact" min="0" value="{{ $sale->buy_contact }}" required/>
+                                    </label>
+                                    <label class="inventory-edit-field">
+                                      <span class="inventory-edit-label">Pay mode</span>
+                                      <select class="inventory-edit-input inventory-edit-select" name="pay_mode" required>
+                                        <option value="{{ $sale->pay_mode }}" selected>{{ $sale->pay_mode }}</option>
+                                        <option value="Cash">Cash</option>
+                                        <option value="Cheque">Cheque</option>
+                                        <option value="Mobile Money">Mobile Money</option>
+                                        <option value="Post Payment(Debt)">Post Payment (Debt)</option>
+                                      </select>
+                                    </label>
+                                    <label class="inventory-edit-field">
+                                      <span class="inventory-edit-label">Notes</span>
+                                      <input class="inventory-edit-input" type="text" name="notes" maxlength="255" value="{{ $sale->notes }}" placeholder="Optional"/>
+                                    </label>
+                                    <div class="inventory-edit-footer" style="padding: 0; border: 0; margin-top: 8px;">
+                                      <button type="button" class="inventory-edit-btn inventory-edit-btn-muted" data-dismiss="modal">Cancel</button>
+                                      <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary">
+                                        <i class="fa fa-save"></i> Update
+                                      </button>
+                                    </div>
+                                  </form>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+
+                      @if ($sale->del_status == 'Not Delivered' && $sale->pay_mode == 'Post Payment(Debt)')
+                        <tr class="dash-sales-delivery-header">
+                          <td colspan="11"><strong>Line-item delivery</strong></td>
+                        </tr>
+                        @foreach ($sale->saleshistory as $sh)
+                          <tr>
+                            <td></td>
+                            <td colspan="2">{{ $sh->item_no }}</td>
+                            <td colspan="2">{{ $sh->name }}</td>
+                            <td>{{ $sh->qty }}</td>
+                            <td>{{ $sh->del_status }}</td>
+                            <td colspan="2">{{ $sh->created_at }}</td>
+                            <td colspan="2">
+                              @if ($sh->del_status == 'Delivered')
+                                <form action="{{ url('/sales/history/' . $sh->id . '/undeliver') }}" method="POST" style="display:inline;">
+                                  @csrf
+                                  @method('PUT')
+                                  <input type="hidden" name="send_sale_id" value="{{ $sale->id }}">
+                                  <button class="inventory-action-btn" type="submit"><i class="fa fa-suitcase"></i> Undeliver</button>
+                                </form>
+                              @else
+                                <form action="{{ url('/sales/history/' . $sh->id . '/deliver') }}" method="POST" style="display:inline;">
+                                  @csrf
+                                  @method('PUT')
+                                  <input type="hidden" name="send_sale_id" value="{{ $sale->id }}">
+                                  <button class="inventory-action-btn inventory-action-btn-primary" type="submit"><i class="fa fa-suitcase"></i> Deliver</button>
+                                </form>
+                              @endif
+                            </td>
+                          </tr>
+                        @endforeach
+                      @endif
+                    @endif
+                  @endforeach
+                </tbody>
+              </table>
+            </div>
+            {{ $sales->links() }}
+          @else
+            <p class="dash-sales-empty">
+              @if ($salesHasFilters)
+                No sales match your filters for {{ $salesDate }}.
+              @else
+                No sales recorded for {{ $salesDate }}.
+              @endif
+            </p>
+          @endif
+        </div>
+      </div>
+
+    </div>
   </div>
 
+  @if (count($carts) > 0)
+    <div class="dash-sales-drawer-backdrop" id="checkoutDrawerBackdrop" hidden aria-hidden="true"></div>
+    <aside class="dash-sales-drawer" id="checkoutDrawer" aria-hidden="true" aria-labelledby="checkoutDrawerTitle" role="dialog">
+      <div class="dash-sales-drawer-header">
+        <div class="dash-sales-drawer-header-text">
+          <span class="inventory-edit-kicker">Checkout</span>
+          <h2 class="dash-sales-drawer-title" id="checkoutDrawerTitle">Complete purchase</h2>
+          <p class="dash-sales-drawer-meta">{{ $cartQty }} {{ $cartQty === 1 ? 'item' : 'items' }} · Gh₵ {{ number_format($cartTotal, 2) }}</p>
+        </div>
+        <button type="button" class="inventory-edit-close" id="closeCheckoutDrawer" aria-label="Close checkout">
+          <i class="fa fa-times"></i>
+        </button>
+      </div>
 
+      <div class="dash-sales-drawer-body">
+        <form id="checkoutDrawerForm" action="{{ url('/sales/checkout') }}" method="POST" class="dash-sales-drawer-form">
+          @csrf
+          <label class="inventory-edit-field">
+            <span class="inventory-edit-label">Mode of payment</span>
+            <select class="inventory-edit-input inventory-edit-select" name="pay_mode" required>
+              <option value="" disabled selected>Select payment mode</option>
+              <option value="Cash">Cash</option>
+              <option value="Cheque">Cheque</option>
+              <option value="Mobile Money">Mobile Money</option>
+              <option value="Post Payment(Debt)">Post Payment (Debt)</option>
+            </select>
+          </label>
+          <label class="inventory-edit-field">
+            <span class="inventory-edit-label">Delivery status</span>
+            <select class="inventory-edit-input inventory-edit-select" name="del_status" required>
+              <option value="" disabled selected>Select delivery status</option>
+              <option value="Delivered">Delivered</option>
+              <option value="Not Delivered">Not Delivered</option>
+            </select>
+          </label>
+          <label class="inventory-edit-field">
+            <span class="inventory-edit-label">Buyer&rsquo;s name</span>
+            <input class="inventory-edit-input" type="text" name="buy_name" placeholder="Full name" required/>
+          </label>
+          <label class="inventory-edit-field">
+            <span class="inventory-edit-label">Contact</span>
+            <input class="inventory-edit-input" type="number" name="buy_contact" placeholder="Phone number" min="0" required/>
+          </label>
+          <label class="inventory-edit-field">
+            <span class="inventory-edit-label">Discount (Gh₵)</span>
+            <input class="inventory-edit-input" type="number" name="discount" step="any" min="0" placeholder="0.00" value="0"/>
+          </label>
+          <label class="inventory-edit-field">
+            <span class="inventory-edit-label">Payment amount (Gh₵)</span>
+            <input class="inventory-edit-input" id="checkoutPaymentAmount" type="number" name="payment" step="any" min="0" value="{{ $cartTotal }}" required/>
+          </label>
+          <label class="inventory-edit-field">
+            <span class="inventory-edit-label">Purchase notes (optional)</span>
+            <input class="inventory-edit-input" type="text" name="notes" maxlength="255" placeholder="Delivery instructions, reference, etc."/>
+          </label>
+        </form>
+      </div>
 
-  <div class="modal fade" id="totbreakdownModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel"><i class="fa fa-plus-circle"></i>&nbsp;&nbsp; Total Amount(Gh₵) Breakdown</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
+      <div class="dash-sales-drawer-footer">
+        <button type="button" class="inventory-edit-btn inventory-edit-btn-muted" id="cancelCheckoutDrawer">Cancel</button>
+        <button type="submit" form="checkoutDrawerForm" class="inventory-edit-btn inventory-edit-btn-primary">
+          <i class="fa fa-money"></i>
+          Pay bill · Gh₵ {{ number_format($cartTotal, 2) }}
+        </button>
+      </div>
+    </aside>
+  @endif
+
+  <div class="modal fade" id="totbreakdownModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog inventory-edit-dialog modal-dialog-centered" role="document">
+      <div class="modal-content inventory-edit-modal">
+        <div class="inventory-edit-header">
+          <div class="inventory-edit-header-inner">
+            <div class="inventory-edit-header-text">
+              <span class="inventory-edit-kicker">Daily sales</span>
+              <h4 class="inventory-edit-title">Payment breakdown</h4>
+            </div>
+          </div>
+          <button type="button" class="inventory-edit-close" data-dismiss="modal" aria-label="Close">
+            <i class="fa fa-times"></i>
           </button>
         </div>
-        <div class="modal-body">
-
-          <table class="breakdown">
-            <tr><td class="tt">Cash</td><td><b class="pr">Gh₵ {{number_format($cash, 2)}}</b></td></tr>
-            <tr><td class="tt">Cheque</td><td><b class="pr">Gh₵ {{number_format($cheque, 2)}}</b></td></tr>
-            <tr><td class="tt">Mobile Money</td><td><b class="pr">Gh₵ {{number_format($momo, 2)}}</b></td></tr>
-            <tr><td class="tt">Post Payment(Debt)</td><td><b class="pr">Gh₵ {{number_format($sum_dbt, 2)}}</b></td></tr>
+        <div class="inventory-edit-body">
+          <table class="dash-sales-breakdown-table">
+            <tr><td>Cash</td><td>Gh₵ {{ number_format($cash, 2) }}</td></tr>
+            <tr><td>Cheque</td><td>Gh₵ {{ number_format($cheque, 2) }}</td></tr>
+            <tr><td>Mobile Money</td><td>Gh₵ {{ number_format($momo, 2) }}</td></tr>
+            <tr><td>Post Payment (Debt)</td><td>Gh₵ {{ number_format($sum_dbt, 2) }}</td></tr>
           </table>
-
         </div>
       </div>
     </div>
   </div>
-
-  <div class="modal fade" id="orderModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel"><i class="fa fa-plus-circle"></i>&nbsp;&nbsp; Record Order Details Here</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-
-          
-            <form action="{{action('ItemsController@store')}}" method="POST" enctype="multipart/form-data">
-                @csrf
-
-                <div class="form-group row">
-                    <div class="col-md-12">
-                        <input id="" placeholder="Reference No/Id" type="text" class="form-control" name="ref" required autofocus>
-                    </div>
-                </div>
-
-                <div class="form-group row">
-                    <div class="col-md-12">
-                        <input id="company_name" placeholder="From: Company Name" type="text" class="form-control" name="company_name" required>
-                    </div>
-                </div>
-
-                <div class="form-group row">
-                    <div class="col-md-12">
-                        <input id="contact" placeholder="From: Company's Contact" type="text" class="form-control" name="contact" required>
-                    </div>
-                </div>
-
-                <div class="form-group row">
-                    <div class="col-md-12">
-                    <textarea name="desc" class="form-control" rows="3" placeholder="Description"></textarea>
-                    </div>
-                </div>
-
-                <div class="form-group row">
-                    <div class="col-md-12">
-                        <input id="tot" placeholder="Total Amt. Gh₵" type="number" class="form-control" name="tot" required>
-                    </div>
-                </div>
-
-                <div class="col-md-12">
-                    <label class="upfiles">Upload Receipt: &nbsp; </label>
-                    <input type="file" name="repfile" required>
-                </div>
-
-                <div class="form-group row mb-0">
-                    <div class="col-md-6 offset-md-4">
-                        <button type="submit" class="btn btn-info" name="store_action" value="add_order"><i class="fa fa-save"></i> &nbsp; Submit</button>
-                    </div>
-                </div>
-            </form>
-
-        </div>
-      </div>
-    </div>
-  </div>
-
 
 @endsection
 
 @section('footer')
+  <script type="text/javascript">
+    $.ajaxSetup({ headers: { 'csrftoken': '{{ csrf_token() }}' } });
 
+    function closeDropdown() {
+      var drp = document.getElementById('myDropdown');
+      if (drp) {
+        drp.classList.remove('is-open');
+      }
+    }
 
-<script type="text/javascript">
-  $.ajaxSetup({ headers: { 'csrftoken' : '{{ csrf_token() }}' } });
+    function filterFunction() {
+      var drp = document.getElementById('myDropdown');
+      if (!drp) return;
 
-  function showsubdet() {
-    document.getElementById('showTR').style.display = 'block';
-  }
+      drp.classList.add('is-open');
 
-</script>
+      var input = document.getElementById('mySearch');
+      var filter = input.value.toUpperCase();
+      var items = drp.getElementsByClassName('dash-sales-dropdown-item');
 
+      for (var i = 0; i < items.length; i++) {
+        var txtValue = items[i].textContent || items[i].innerText;
+        items[i].style.display = txtValue.toUpperCase().indexOf(filter) > -1 ? '' : 'none';
+      }
+    }
+
+    document.addEventListener('click', function (event) {
+      var wrap = document.querySelector('.dash-sales-search-wrap');
+      var drp = document.getElementById('myDropdown');
+      if (!wrap || !drp) return;
+      if (!wrap.contains(event.target)) {
+        drp.classList.remove('is-open');
+      }
+    });
+
+    (function () {
+      var drawer = document.getElementById('checkoutDrawer');
+      var backdrop = document.getElementById('checkoutDrawerBackdrop');
+      var openBtn = document.getElementById('openCheckoutDrawer');
+      var closeBtn = document.getElementById('closeCheckoutDrawer');
+      var cancelBtn = document.getElementById('cancelCheckoutDrawer');
+
+      if (!drawer || !backdrop || !openBtn) return;
+
+      function openCheckoutDrawer() {
+        backdrop.hidden = false;
+        requestAnimationFrame(function () {
+          backdrop.classList.add('is-visible');
+          drawer.classList.add('is-open');
+        });
+        drawer.setAttribute('aria-hidden', 'false');
+        openBtn.setAttribute('aria-expanded', 'true');
+        document.body.classList.add('dash-sales-drawer-open');
+      }
+
+      function closeCheckoutDrawer() {
+        backdrop.classList.remove('is-visible');
+        drawer.classList.remove('is-open');
+        drawer.setAttribute('aria-hidden', 'true');
+        openBtn.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('dash-sales-drawer-open');
+        window.setTimeout(function () {
+          if (!drawer.classList.contains('is-open')) {
+            backdrop.hidden = true;
+          }
+        }, 280);
+      }
+
+      openBtn.addEventListener('click', openCheckoutDrawer);
+      closeBtn.addEventListener('click', closeCheckoutDrawer);
+      cancelBtn.addEventListener('click', closeCheckoutDrawer);
+      backdrop.addEventListener('click', closeCheckoutDrawer);
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && drawer.classList.contains('is-open')) {
+          closeCheckoutDrawer();
+        }
+      });
+    })();
+  </script>
+  <script src="/maindir/js/inventory-collapsible-filters.js?v=2"></script>
 @endsection

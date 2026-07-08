@@ -122,7 +122,7 @@ class DashController extends Controller
         return view('pages.dash.depts_paid')->with($pass);
     }
 
-    public function sales(){
+    public function sales(Request $request){
 
         if(session('date_today') == ''){
             Session::put('date_today', date('Y-m-d'));
@@ -132,6 +132,8 @@ class DashController extends Controller
             return redirect('/dashboard')->with('error', 'Oops..! Contact administrator to initialize '.date('F, Y').' opening');
         }
 
+        $filterPayMode = trim((string) $request->query('pay_mode', ''));
+        $filterStatus = trim((string) $request->query('status', ''));
 
         if(auth()->user()->status == 'Administrator'){
             $uid_hold = 'no';
@@ -148,7 +150,17 @@ class DashController extends Controller
         $uidMatch = [
             $field => $uid_hold
         ];
-        $sales = Sale::where($uidMatch)->where('created_at', 'LIKE', '%'.session('date_today').'%')->orderBy('id', 'desc')->paginate(10);
+        $salesQuery = Sale::where($uidMatch)->where('created_at', 'LIKE', '%'.session('date_today').'%');
+
+        if ($filterPayMode !== '') {
+            $salesQuery->where('pay_mode', $filterPayMode);
+        }
+
+        if ($filterStatus !== '') {
+            $salesQuery->where('del_status', $filterStatus);
+        }
+
+        $sales = $salesQuery->orderBy('id', 'desc')->paginate(10)->withQueryString();
         $sales2 = Sale::where($uidMatch)->where('created_at', 'LIKE', '%'.session('date_today').'%')->get();
         // return $sales;
         // $debts = SalesPayment::where($uidMatch)->where('updated_at', 'LIKE', '%'.session('date_today').'%')->get();
@@ -206,7 +218,9 @@ class DashController extends Controller
             'debts_paid' => $debts_paid,
             'sum_ex_dbt' => $sum_ex_dbt,
             'sum_inc_dbt' => $sum_inc_dbt,
-            'carts' => $carts
+            'carts' => $carts,
+            'filterPayMode' => $filterPayMode,
+            'filterStatus' => $filterStatus,
         ];
         return view('pages.dash.sales')->with($pass);
     }

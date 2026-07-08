@@ -1,0 +1,779 @@
+/* Sales page — POS, cart, checkout, daily log */
+
+.dash-sales-content {
+  --sales-accent: var(--dash-header-from, #00acc1);
+  --sales-accent-dark: var(--dash-header-to, #0097a7);
+  --sales-accent-rgb: 0, 172, 193;
+  --sales-sticky-top: 0;
+  padding-top: 0;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 36px;
+}
+
+.dash-sales-sticky-header {
+  position: sticky;
+  top: var(--sales-sticky-top);
+  z-index: 45;
+  width: 100%;
+  padding: 14px 0 16px;
+  background: rgba(248, 250, 252, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.7);
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.05);
+}
+
+.dash-sales-sticky-header .dash-sales-kpi-grid {
+  margin-bottom: 16px;
+}
+
+.dash-sales-sticky-header .dash-sales-date-bar {
+  margin-bottom: 0;
+}
+
+.dash-sales-body {
+  padding-top: 8px;
+}
+
+.dash-sales-card {
+  border: 1px solid color-mix(in srgb, var(--sales-accent) 14%, #e8ecef);
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(26, 37, 48, 0.05);
+  margin-bottom: 22px;
+  overflow: visible;
+}
+
+.dash-sales-card > .card-body {
+  padding: 20px 22px 24px;
+}
+
+.dash-sales-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.dash-sales-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 108px;
+  padding: 18px 18px 14px;
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--sales-accent) 12%, transparent);
+  border-radius: 14px;
+  color: inherit;
+  text-decoration: none !important;
+  box-shadow: 0 2px 8px rgba(26, 37, 48, 0.04);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+a.dash-sales-kpi:hover,
+a.dash-sales-kpi:focus {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--sales-accent) 32%, transparent);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--sales-accent) 12%, transparent);
+  color: inherit;
+  text-decoration: none !important;
+}
+
+.dash-sales-kpi-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  font-size: 15px;
+  color: #fff;
+}
+
+.dash-sales-kpi-icon--purple { background: linear-gradient(135deg, #7e57c2, #5e35b1); }
+.dash-sales-kpi-icon--pink { background: linear-gradient(135deg, #ec407a, #d81b60); }
+.dash-sales-kpi-icon--green { background: linear-gradient(135deg, #66bb6a, #43a047); }
+.dash-sales-kpi-icon--blue { background: linear-gradient(135deg, #29b6f6, #0288d1); }
+
+.dash-sales-kpi-value {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1a2530;
+  line-height: 1.2;
+}
+
+.dash-sales-kpi-label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7c85;
+}
+
+.dash-sales-date-bar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 22px;
+  padding: 16px 20px;
+  background: linear-gradient(
+    135deg,
+    #fff 0%,
+    color-mix(in srgb, var(--sales-accent) 7%, #fff) 55%,
+    color-mix(in srgb, var(--sales-accent) 11%, #fff) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--sales-accent) 22%, transparent);
+  border-left: 4px solid var(--sales-accent);
+  border-radius: 14px;
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--sales-accent) 8%, transparent);
+}
+
+.dash-sales-date-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.dash-sales-date-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  font-size: 18px;
+  color: var(--sales-accent);
+  background: color-mix(in srgb, var(--sales-accent) 14%, #fff);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sales-accent) 18%, transparent);
+}
+
+.dash-sales-date-copy {
+  min-width: 0;
+}
+
+.dash-sales-date-bar-label {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sales-accent);
+}
+
+.dash-sales-date-bar-value {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a2530;
+  line-height: 1.3;
+}
+
+.dash-sales-date-form {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.dash-sales-date-picker {
+  display: block;
+  margin: 0;
+}
+
+.dash-sales-date-picker-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #7a8a92;
+}
+
+.dash-sales-date-input {
+  display: block;
+  width: 168px;
+  height: 40px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  background: #fff;
+  border: 1px solid #dce3e8;
+  border-radius: 10px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dash-sales-date-input:hover {
+  border-color: color-mix(in srgb, var(--sales-accent) 35%, #dce3e8);
+}
+
+.dash-sales-date-input:focus {
+  outline: none;
+  border-color: var(--sales-accent);
+  box-shadow: 0 0 0 3px rgba(var(--sales-accent-rgb), 0.12);
+}
+
+.dash-sales-date-submit {
+  height: 40px;
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+
+.dash-sales-pos-panel {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.dash-sales-pos-toolbar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.dash-sales-search-wrap {
+  position: relative;
+}
+
+.dash-sales-toolbar-search {
+  flex: 1 1 auto;
+  min-width: 120px;
+}
+
+.dash-sales-search-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px 0 36px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dash-sales-search-input:focus {
+  outline: none;
+  border-color: var(--sales-accent);
+  box-shadow: 0 0 0 3px rgba(var(--sales-accent-rgb), 0.12);
+}
+
+.dash-sales-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--sales-accent);
+  font-size: 13px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.dash-sales-pos-ref-input {
+  width: 100px;
+  flex-shrink: 0;
+}
+
+.dash-sales-pos-qty-input {
+  width: 64px;
+  flex-shrink: 0;
+}
+
+.dash-sales-pos-price-input {
+  width: 84px;
+  flex-shrink: 0;
+}
+
+.dash-sales-pos-toolbar .inventory-action-btn-icon {
+  flex-shrink: 0;
+}
+
+.dash-sales-toolbar-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+  height: 40px;
+}
+
+.dash-sales-item-info {
+  display: none;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+  padding: 14px 16px;
+  background: color-mix(in srgb, var(--sales-accent) 6%, #f8fafb);
+  border: 1px solid color-mix(in srgb, var(--sales-accent) 16%, transparent);
+  border-radius: 12px;
+}
+
+.dash-sales-item-info.is-visible {
+  display: grid;
+}
+
+.dash-sales-item-info dt {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #7a8a92;
+}
+
+.dash-sales-item-info dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a2530;
+}
+
+.dash-sales-dropdown {
+  display: none;
+  position: absolute;
+  z-index: 40;
+  left: 0;
+  right: 0;
+  max-height: 280px;
+  margin-top: 6px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(26, 37, 48, 0.12);
+}
+
+/* Beats legacy #myDropdown { display: none } in style.css */
+#myDropdown.dash-sales-dropdown.is-open {
+  display: block;
+}
+
+.dash-sales-dropdown-close {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 10px 4px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.dash-sales-dropdown-item {
+  display: block;
+  padding: 10px 14px;
+  color: inherit;
+  text-decoration: none !important;
+  border-bottom: 1px solid #f5f5f5;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.dash-sales-dropdown-item:hover {
+  background: color-mix(in srgb, var(--sales-accent) 8%, #fff);
+}
+
+.dash-sales-dropdown-item-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dash-sales-dropdown-thumb {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #eee;
+  flex-shrink: 0;
+}
+
+.dash-sales-dropdown-name {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a2530;
+}
+
+.dash-sales-dropdown-desc {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: #7a8a92;
+  line-height: 1.35;
+}
+
+.dash-sales-cart-total-row td {
+  background: color-mix(in srgb, var(--sales-accent) 6%, #fff);
+  font-weight: 700;
+  border-top: 2px solid color-mix(in srgb, var(--sales-accent) 20%, transparent);
+}
+
+.dash-sales-checkout-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 16px 18px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--sales-accent) 8%, #fff) 0%,
+    #fff 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--sales-accent) 22%, transparent);
+  border-radius: 12px;
+}
+
+.dash-sales-checkout-bar-kicker {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sales-accent);
+}
+
+.dash-sales-checkout-bar-total {
+  margin: 0;
+  font-size: 15px;
+  color: #1a2530;
+}
+
+.dash-sales-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1040;
+  background: rgba(20, 30, 38, 0.45);
+  opacity: 0;
+  transition: opacity 0.24s ease;
+}
+
+.dash-sales-drawer-backdrop.is-visible {
+  opacity: 1;
+}
+
+.dash-sales-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  width: min(100vw, 420px);
+  height: 100vh;
+  background: #fff;
+  border-left: 1px solid #e8ecef;
+  box-shadow: -8px 0 32px rgba(26, 37, 48, 0.14);
+  transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dash-sales-drawer.is-open {
+  transform: translateX(0);
+}
+
+.dash-sales-drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 22px 22px 16px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--sales-accent) 10%, #fff) 0%,
+    #fff 100%
+  );
+  border-bottom: 1px solid #eee;
+}
+
+.dash-sales-drawer-title {
+  margin: 4px 0 6px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a2530;
+}
+
+.dash-sales-drawer-meta {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7c85;
+}
+
+.dash-sales-drawer-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 20px 22px;
+}
+
+.dash-sales-drawer-form .inventory-edit-field:last-child {
+  margin-bottom: 0;
+}
+
+.dash-sales-drawer-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 22px;
+  background: #fff;
+  border-top: 1px solid #eee;
+  box-shadow: 0 -4px 16px rgba(26, 37, 48, 0.04);
+}
+
+body.dash-sales-drawer-open {
+  overflow: hidden;
+}
+
+.dash-sales-empty {
+  margin: 0;
+  padding: 28px 16px;
+  text-align: center;
+  font-size: 14px;
+  color: #7a8a92;
+  background: #fafbfc;
+  border: 1px dashed #e0e0e0;
+  border-radius: 12px;
+}
+
+.dash-sales-checkout-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 14px;
+  margin-top: 4px;
+}
+
+.dash-sales-checkout-grid .inventory-edit-field {
+  margin-bottom: 0;
+}
+
+.dash-sales-checkout-notes {
+  grid-column: 1 / -1;
+}
+
+.dash-sales-checkout-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 6px;
+}
+
+.dash-sales-log-meta {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: #8a9aa3;
+}
+
+.dash-sales-delivery-form {
+  display: inline;
+  margin: 0;
+}
+
+.dash-sales-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dash-sales-status-pill--delivered {
+  color: #2e7d32;
+  background: #e8f5e9;
+  border-color: #a5d6a7;
+}
+
+.dash-sales-status-pill--delivered:hover {
+  background: #c8e6c9;
+  border-color: #81c784;
+  box-shadow: 0 1px 4px rgba(46, 125, 50, 0.15);
+}
+
+.dash-sales-status-pill--undelivered {
+  color: #f57f17;
+  background: #fff8e1;
+  border-color: #ffe082;
+}
+
+.dash-sales-status-pill--undelivered:hover {
+  background: #ffecb3;
+  border-color: #ffd54f;
+  box-shadow: 0 1px 4px rgba(245, 127, 23, 0.15);
+}
+
+.dash-sales-notes-cell {
+  max-width: 160px;
+  font-size: 12px;
+  color: #555;
+}
+
+.dash-sales-section-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  overflow: visible;
+}
+
+.dash-sales-section-toolbar .inventory-edit-section-title {
+  margin-bottom: 0;
+}
+
+.dash-sales-section-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.dash-sales-log-filter-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  overflow: visible;
+}
+
+.dash-sales-section-actions .inventory-filters-toggle,
+.dash-sales-section-actions .inventory-search-btn-icon {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  padding: 0;
+}
+
+.dash-sales-section-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sales-accent);
+  background: color-mix(in srgb, var(--sales-accent) 12%, #fff);
+}
+
+.dash-sales-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #eee;
+  border-radius: 12px;
+}
+
+.dash-sales-table-wrap .table {
+  margin-bottom: 0;
+}
+
+.dash-sales-table-wrap .table > thead > tr > th {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #7a8a92;
+  background: #fafbfc;
+  border-bottom: 1px solid #eee;
+  white-space: nowrap;
+}
+
+.dash-sales-table-wrap .table > tbody > tr > td {
+  vertical-align: middle;
+  font-size: 13px;
+}
+
+.dash-sales-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.dash-sales-breakdown-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dash-sales-breakdown-table td {
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+}
+
+.dash-sales-breakdown-table td:last-child {
+  text-align: right;
+  font-weight: 700;
+  color: #1a2530;
+}
+
+@media (max-width: 1199px) {
+  .dash-sales-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 991px) {
+  .dash-sales-pos-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .dash-sales-toolbar-search {
+    flex: 1 1 100%;
+  }
+
+  .dash-sales-checkout-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .dash-sales-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-sales-item-info.is-visible {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-sales-pos-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .dash-sales-pos-ref-input,
+  .dash-sales-pos-qty-input,
+  .dash-sales-pos-price-input {
+    flex: 1 1 calc(33.333% - 8px);
+    min-width: 72px;
+    width: auto;
+  }
+
+  .dash-sales-checkout-grid {
+
+  .dash-sales-date-bar {
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  .dash-sales-date-form {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

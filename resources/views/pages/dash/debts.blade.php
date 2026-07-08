@@ -191,7 +191,7 @@
                                                       <div class="cartIncrease">
                                                         <input type="hidden" name="send_id" value="{{$sale->id}}">
                                                         <input type="hidden" name="send_tot" value="{{$sale->tot}}">
-                                                        <input type="number" min="1" step="any" name="amt_paid" placeholder="Amount" value="{{$sale->tot - $sale->paid_debt}}" max="{{$sale->tot - $sale->paid_debt}}">
+                                                        <input type="number" min="0.01" step="any" name="amt_paid" placeholder="Amount" value="{{ number_format($sale->debtBalance(), 2, '.', '') }}" max="{{ number_format($sale->debtBalance(), 2, '.', '') }}">
                                                         <button class="black_btn" type="submit" onclick="return confirm('Are you sure you want to proceed payment?');"><i class="fa fa-money"></i> &nbsp; Pay</button>
                                                       </div>
                                                         

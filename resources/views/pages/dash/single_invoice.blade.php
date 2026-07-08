@@ -153,8 +153,8 @@
                             <td class="col-sm-1"></td>
                             <td class="col-sm-6"></td>
                             <td class="col-sm-1 pr"></td>
-                            <td class="col-sm-2 pr">Change&nbsp;:</td>
-                            <td class="col-sm-2 pr">{{number_format($order->change, 2)}}</td>
+                            <td class="col-sm-2 pr">{{ $order->changeOrBalanceLabel() }}&nbsp;:</td>
+                            <td class="col-sm-2 pr">{{ number_format($order->changeOrBalanceAmount(), 2) }}</td>
                         </tr>
                         <tr class="invTot">
                             <td class="col-sm-1"><h4>Total Gh₵</h4><br></td>
