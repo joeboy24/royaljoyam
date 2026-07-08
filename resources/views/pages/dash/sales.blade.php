@@ -6,11 +6,24 @@
     $salesDate = session('date_today') ?: now()->format('Y-m-d');
     $cartTotal = count($carts) > 0 ? $carts->sum('tot') : 0;
     $cartQty = count($carts) > 0 ? $carts->sum('qty') : 0;
-    $netTotal = $sum_ex_dbt + $debts_paid - $expenses->sum('expense_cost');
+    $netTotal = $net_total ?? ($sum_ex_dbt + $debts_paid - $expenses->sum('expense_cost'));
     $branchBv = auth()->user()->bv;
     $activeSalesFilterCount = ($filterPayMode ?? '') !== '' ? 1 : 0;
     $activeSalesFilterCount += ($filterStatus ?? '') !== '' ? 1 : 0;
     $salesHasFilters = $activeSalesFilterCount > 0;
+    $posCatalog = $items->map(function ($item) use ($branchBv) {
+      return [
+        'id' => $item->id,
+        'itemNo' => $item->item_no,
+        'name' => $item->name,
+        'brand' => $item->brand,
+        'desc' => $item->desc,
+        'costPrice' => $item->price,
+        'thumb' => $item->thumb_img ?: 'no_image.png',
+        'branchPrice' => $item->{'b'.$branchBv},
+        'branchQty' => $item->{'q'.$branchBv},
+      ];
+    })->values();
   @endphp
 
   <div class="content dash-sales-content">
@@ -101,7 +114,6 @@
                   name="item_name"
                   placeholder="Search item..."
                   id="mySearch"
-                  onkeyup="filterFunction()"
                   autocomplete="off"
                   required
                 />
@@ -109,43 +121,26 @@
                 @if (count($items) > 0)
                   <div id="myDropdown" class="dash-sales-dropdown dropdown_content">
                     <div class="dash-sales-dropdown-close">
-                      <button type="button" onclick="closeDropdown()" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Close results" aria-label="Close results">
+                      <button type="button" data-pos-close class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Close results" aria-label="Close results">
                         <i class="fa fa-times"></i>
                       </button>
                     </div>
 
                     @foreach ($items as $item)
-                      <a id="selItem{{ $item->id }}" class="dash-sales-dropdown-item" onclick="selFunction{{ $item->id }}()">
+                      <button
+                        type="button"
+                        id="selItem{{ $item->id }}"
+                        class="dash-sales-dropdown-item"
+                        data-item-id="{{ $item->id }}"
+                      >
                         <span class="dash-sales-dropdown-item-inner">
-                          <img class="dash-sales-dropdown-thumb" src="/storage/rjv_items/{{ $item->thumb_img }}" alt="" />
+                          <img class="dash-sales-dropdown-thumb" src="/storage/rjv_items/{{ $item->thumb_img ?: 'no_image.png' }}" alt="" />
                           <span>
                             <span class="dash-sales-dropdown-name">{{ $item->name }}</span>
                             <span class="dash-sales-dropdown-desc">{{ $item->desc }}</span>
                           </span>
                         </span>
-                      </a>
-
-                      @for ($b = 1; $b <= 7; $b++)
-                        <input id="b{{ $b }}{{ $item->id }}" type="hidden" value="{{ $item->{'b'.$b} }}"/>
-                        <input id="q{{ $b }}{{ $item->id }}" type="hidden" value="{{ $item->{'q'.$b} }}"/>
-                      @endfor
-
-                      <script>
-                        function selFunction{{ $item->id }}() {
-                          document.getElementById("mySearch").value = @json($item->name);
-                          document.getElementById("myDropdown").classList.remove("is-open");
-                          document.getElementById("item_id").value = "{{ $item->id }}";
-                          document.getElementById("item_no").value = "{{ $item->item_no }}";
-                          document.getElementById("name").value = @json($item->name);
-                          document.getElementById("cost_price").value = "{{ $item->price }}";
-                          document.getElementById("price").value = document.getElementById("b{{ $branchBv }}{{ $item->id }}").value;
-                          document.getElementById("amt").value = "Gh₵ " + document.getElementById("b{{ $branchBv }}{{ $item->id }}").value;
-                          document.getElementById("qty_avl").textContent = document.getElementById("q{{ $branchBv }}{{ $item->id }}").value;
-                          document.getElementById("brand").textContent = @json($item->brand);
-                          document.getElementById("desc").textContent = @json($item->desc);
-                          document.getElementById("item_info").classList.add("is-visible");
-                        }
-                      </script>
+                      </button>
                     @endforeach
                   </div>
                 @endif
@@ -749,7 +744,7 @@
             <tr><td>Cash</td><td>Gh₵ {{ number_format($cash, 2) }}</td></tr>
             <tr><td>Cheque</td><td>Gh₵ {{ number_format($cheque, 2) }}</td></tr>
             <tr><td>Mobile Money</td><td>Gh₵ {{ number_format($momo, 2) }}</td></tr>
-            <tr><td>Post Payment (Debt)</td><td>Gh₵ {{ number_format($sum_dbt, 2) }}</td></tr>
+            <tr><td>Post Payment (Debt)</td><td>Gh₵ {{ number_format($collected_debt ?? $debts_paid, 2) }}</td></tr>
           </table>
         </div>
       </div>
@@ -761,83 +756,8 @@
 @section('footer')
   <script type="text/javascript">
     $.ajaxSetup({ headers: { 'csrftoken': '{{ csrf_token() }}' } });
-
-    function closeDropdown() {
-      var drp = document.getElementById('myDropdown');
-      if (drp) {
-        drp.classList.remove('is-open');
-      }
-    }
-
-    function filterFunction() {
-      var drp = document.getElementById('myDropdown');
-      if (!drp) return;
-
-      drp.classList.add('is-open');
-
-      var input = document.getElementById('mySearch');
-      var filter = input.value.toUpperCase();
-      var items = drp.getElementsByClassName('dash-sales-dropdown-item');
-
-      for (var i = 0; i < items.length; i++) {
-        var txtValue = items[i].textContent || items[i].innerText;
-        items[i].style.display = txtValue.toUpperCase().indexOf(filter) > -1 ? '' : 'none';
-      }
-    }
-
-    document.addEventListener('click', function (event) {
-      var wrap = document.querySelector('.dash-sales-search-wrap');
-      var drp = document.getElementById('myDropdown');
-      if (!wrap || !drp) return;
-      if (!wrap.contains(event.target)) {
-        drp.classList.remove('is-open');
-      }
-    });
-
-    (function () {
-      var drawer = document.getElementById('checkoutDrawer');
-      var backdrop = document.getElementById('checkoutDrawerBackdrop');
-      var openBtn = document.getElementById('openCheckoutDrawer');
-      var closeBtn = document.getElementById('closeCheckoutDrawer');
-      var cancelBtn = document.getElementById('cancelCheckoutDrawer');
-
-      if (!drawer || !backdrop || !openBtn) return;
-
-      function openCheckoutDrawer() {
-        backdrop.hidden = false;
-        requestAnimationFrame(function () {
-          backdrop.classList.add('is-visible');
-          drawer.classList.add('is-open');
-        });
-        drawer.setAttribute('aria-hidden', 'false');
-        openBtn.setAttribute('aria-expanded', 'true');
-        document.body.classList.add('dash-sales-drawer-open');
-      }
-
-      function closeCheckoutDrawer() {
-        backdrop.classList.remove('is-visible');
-        drawer.classList.remove('is-open');
-        drawer.setAttribute('aria-hidden', 'true');
-        openBtn.setAttribute('aria-expanded', 'false');
-        document.body.classList.remove('dash-sales-drawer-open');
-        window.setTimeout(function () {
-          if (!drawer.classList.contains('is-open')) {
-            backdrop.hidden = true;
-          }
-        }, 280);
-      }
-
-      openBtn.addEventListener('click', openCheckoutDrawer);
-      closeBtn.addEventListener('click', closeCheckoutDrawer);
-      cancelBtn.addEventListener('click', closeCheckoutDrawer);
-      backdrop.addEventListener('click', closeCheckoutDrawer);
-
-      document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape' && drawer.classList.contains('is-open')) {
-          closeCheckoutDrawer();
-        }
-      });
-    })();
+    window.dashSalesConfig = { catalog: @json($posCatalog) };
   </script>
+  <script src="/maindir/js/dash-sales.js?v=1"></script>
   <script src="/maindir/js/inventory-collapsible-filters.js?v=2"></script>
 @endsection

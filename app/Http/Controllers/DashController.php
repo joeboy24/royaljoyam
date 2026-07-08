@@ -134,15 +134,16 @@ class DashController extends Controller
 
         $filterPayMode = trim((string) $request->query('pay_mode', ''));
         $filterStatus = trim((string) $request->query('status', ''));
+        $salesDate = session('date_today');
 
         if(auth()->user()->status == 'Administrator'){
             $uid_hold = 'no';
             $field = "del";
-            $debts = SalesPayment::where('del', 'no')->where('created_at', 'LIKE', '%'.session('date_today').'%')->get();
+            $debts = SalesPayment::where('del', 'no')->where('created_at', 'LIKE', '%'.$salesDate.'%')->get();
         }else{
             $uid_hold = auth()->user()->id;
             $field = "user_id";
-            $debts = SalesPayment::where('user_id', $uid_hold)->where('del', 'no')->where('created_at', 'LIKE', '%'.session('date_today').'%')->get();
+            $debts = SalesPayment::where('user_id', $uid_hold)->where('del', 'no')->where('created_at', 'LIKE', '%'.$salesDate.'%')->get();
         }
 
         $items = Item::where('del', 'no')->get();
@@ -150,7 +151,7 @@ class DashController extends Controller
         $uidMatch = [
             $field => $uid_hold
         ];
-        $salesQuery = Sale::where($uidMatch)->where('created_at', 'LIKE', '%'.session('date_today').'%');
+        $salesQuery = Sale::where($uidMatch)->where('created_at', 'LIKE', '%'.$salesDate.'%');
 
         if ($filterPayMode !== '') {
             $salesQuery->where('pay_mode', $filterPayMode);
@@ -161,47 +162,47 @@ class DashController extends Controller
         }
 
         $sales = $salesQuery->orderBy('id', 'desc')->paginate(10)->withQueryString();
-        $sales2 = Sale::where($uidMatch)->where('created_at', 'LIKE', '%'.session('date_today').'%')->get();
-        // return $sales;
-        // $debts = SalesPayment::where($uidMatch)->where('updated_at', 'LIKE', '%'.session('date_today').'%')->get();
-        // 2021-05-12 18:50:28
+        $sales2 = Sale::where($uidMatch)->where('created_at', 'LIKE', '%'.$salesDate.'%')->get();
         $cashMatch = [
             'pay_mode' => 'Cash',
             $field => $uid_hold
         ];
-        $cash = Sale::where($cashMatch)->where('created_at', 'LIKE', '%'.session('date_today').'%')->sum('tot');
+        $cash = (float) Sale::where($cashMatch)->where('created_at', 'LIKE', '%'.$salesDate.'%')->sum('tot');
         $chequeMatch = [
             'pay_mode' => 'Cheque',
             $field => $uid_hold
         ];
-        $cheque = Sale::where($chequeMatch)->where('created_at', 'LIKE', '%'.session('date_today').'%')->sum('tot');
+        $cheque = (float) Sale::where($chequeMatch)->where('created_at', 'LIKE', '%'.$salesDate.'%')->sum('tot');
         $momoMatch = [
             'pay_mode' => 'Mobile Money',
             $field => $uid_hold
         ];
-        $momo = Sale::where($momoMatch)->where('created_at', 'LIKE', '%'.session('date_today').'%')->sum('tot');
+        $momo = (float) Sale::where($momoMatch)->where('created_at', 'LIKE', '%'.$salesDate.'%')->sum('tot');
         $debtMatch = [
             'pay_mode' => 'Post Payment(Debt)',
             $field => $uid_hold
         ];
-        $sum_dbt = Sale::where($debtMatch)->where('created_at', 'LIKE', '%'.session('date_today').'%')->sum('tot');
-        // $profits = SalesHistory::where($field, $uid_hold)->where('created_at', 'LIKE', '%'.session('date_today').'%')->get();
+        $sum_dbt = (float) Sale::where($debtMatch)->where('created_at', 'LIKE', '%'.$salesDate.'%')->sum('tot');
 
-        // Select for both where and %like%
-        $expenses = Expense::where('user_id', auth()->user()->id)->where('created_at', 'LIKE', '%'.date('Y-m-d').'%');
+        $expenses = Expense::where('user_id', auth()->user()->id)->where('created_at', 'LIKE', '%'.$salesDate.'%');
 
-        // br
+        $debts_paid = (float) $debts->sum('amt_paid');
+        $debtCheckoutWithoutPaymentRow = (float) Sale::where($debtMatch)
+            ->where('created_at', 'LIKE', '%'.$salesDate.'%')
+            ->whereDoesntHave('salespayment', function ($query) {
+                $query->where('del', 'no');
+            })
+            ->sum('payment');
+        $collected_debt = $debts_paid + $debtCheckoutWithoutPaymentRow;
 
-        //$sales2 = Sale::where($match);
-        $sum_ex_dbt = $sales2->sum('tot') - $sum_dbt;
-        $sum_inc_dbt = $sum_ex_dbt + $debts->sum('amt_paid');
-        $debts_paid = $debts->sum('amt_paid');
-        // $sum_ex_dbt = $sales->sum('tot') - ($sum_dbt + $cheque);
-        // End select both
+        $sum_ex_dbt = (float) $sales2->sum('tot') - $sum_dbt;
+        $gross_collected = $cash + $cheque + $momo + $collected_debt;
+        $sum_inc_dbt = $sum_ex_dbt + $collected_debt;
+        $net_total = $gross_collected - (float) $expenses->sum('expense_cost');
         $uidMatch = [
             $field => $uid_hold
         ];
-        $carts = Cart::where($uidMatch)->where('created_at', 'LIKE', '%'.session('date_today').'%')->get();
+        $carts = Cart::where($uidMatch)->where('created_at', 'LIKE', '%'.$salesDate.'%')->get();
 
         $pass = [
             'i' => 1,
@@ -214,10 +215,12 @@ class DashController extends Controller
             'cheque' => $cheque,
             'momo' => $momo,
             'sum_dbt' => $sum_dbt,
-            'sum_dbt' => $sum_dbt,
-            'debts_paid' => $debts_paid,
+            'debts_paid' => $collected_debt,
+            'collected_debt' => $collected_debt,
+            'gross_collected' => $gross_collected,
             'sum_ex_dbt' => $sum_ex_dbt,
             'sum_inc_dbt' => $sum_inc_dbt,
+            'net_total' => $net_total,
             'carts' => $carts,
             'filterPayMode' => $filterPayMode,
             'filterStatus' => $filterStatus,
