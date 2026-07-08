@@ -674,9 +674,31 @@
       <div class="dash-sales-drawer-body">
         <form id="checkoutDrawerForm" action="{{ url('/sales/checkout') }}" method="POST" class="dash-sales-drawer-form">
           @csrf
+
+          <div class="dash-sales-checkout-summary" id="checkoutSummary" aria-live="polite">
+            <div class="dash-sales-checkout-summary-row">
+              <span>Subtotal</span>
+              <strong id="checkoutSubtotal">Gh₵ {{ number_format($cartTotal, 2) }}</strong>
+            </div>
+            <div class="dash-sales-checkout-summary-row" id="checkoutDiscountRow" hidden>
+              <span>Discount</span>
+              <strong id="checkoutDiscountDisplay">Gh₵ 0.00</strong>
+            </div>
+            <div class="dash-sales-checkout-summary-row dash-sales-checkout-summary-total">
+              <span>Total due</span>
+              <strong id="checkoutTotalDue">Gh₵ {{ number_format($cartTotal, 2) }}</strong>
+            </div>
+            <div class="dash-sales-checkout-summary-row dash-sales-checkout-summary-diff" id="checkoutDiffRow">
+              <span id="checkoutDiffLabel">Change</span>
+              <strong id="checkoutDiffAmount">Gh₵ 0.00</strong>
+            </div>
+            <p class="dash-sales-checkout-hint" id="checkoutHint" hidden></p>
+          </div>
+
+          <div class="dash-sales-checkout-grid">
           <label class="inventory-edit-field">
             <span class="inventory-edit-label">Mode of payment</span>
-            <select class="inventory-edit-input inventory-edit-select" name="pay_mode" required>
+            <select class="inventory-edit-input inventory-edit-select" id="checkoutPayMode" name="pay_mode" required>
               <option value="" disabled selected>Select payment mode</option>
               <option value="Cash">Cash</option>
               <option value="Cheque">Cheque</option>
@@ -692,6 +714,7 @@
               <option value="Not Delivered">Not Delivered</option>
             </select>
           </label>
+          </div>
           <label class="inventory-edit-field">
             <span class="inventory-edit-label">Buyer&rsquo;s name</span>
             <input class="inventory-edit-input" type="text" name="buy_name" placeholder="Full name" required/>
@@ -700,15 +723,17 @@
             <span class="inventory-edit-label">Contact</span>
             <input class="inventory-edit-input" type="number" name="buy_contact" placeholder="Phone number" min="0" required/>
           </label>
+          <div class="dash-sales-checkout-grid">
           <label class="inventory-edit-field">
             <span class="inventory-edit-label">Discount (Gh₵)</span>
-            <input class="inventory-edit-input" type="number" name="discount" step="any" min="0" placeholder="0.00" value="0"/>
+            <input class="inventory-edit-input" id="checkoutDiscount" type="number" name="discount" step="any" min="0" placeholder="0.00" value="0"/>
           </label>
           <label class="inventory-edit-field">
             <span class="inventory-edit-label">Payment amount (Gh₵)</span>
-            <input class="inventory-edit-input" id="checkoutPaymentAmount" type="number" name="payment" step="any" min="0" value="{{ $cartTotal }}" required/>
+            <input class="inventory-edit-input" id="checkoutPaymentAmount" type="number" name="payment" step="any" min="0" value="{{ number_format($cartTotal, 2, '.', '') }}" required/>
           </label>
-          <label class="inventory-edit-field">
+          </div>
+          <label class="inventory-edit-field dash-sales-checkout-notes">
             <span class="inventory-edit-label">Purchase notes (optional)</span>
             <input class="inventory-edit-input" type="text" name="notes" maxlength="255" placeholder="Delivery instructions, reference, etc."/>
           </label>
@@ -717,9 +742,9 @@
 
       <div class="dash-sales-drawer-footer">
         <button type="button" class="inventory-edit-btn inventory-edit-btn-muted" id="cancelCheckoutDrawer">Cancel</button>
-        <button type="submit" form="checkoutDrawerForm" class="inventory-edit-btn inventory-edit-btn-primary">
+        <button type="submit" form="checkoutDrawerForm" class="inventory-edit-btn inventory-edit-btn-primary" id="checkoutSubmitBtn">
           <i class="fa fa-money"></i>
-          Pay bill · Gh₵ {{ number_format($cartTotal, 2) }}
+          <span id="checkoutSubmitLabel">Pay bill · Gh₵ {{ number_format($cartTotal, 2) }}</span>
         </button>
       </div>
     </aside>
@@ -756,8 +781,13 @@
 @section('footer')
   <script type="text/javascript">
     $.ajaxSetup({ headers: { 'csrftoken': '{{ csrf_token() }}' } });
-    window.dashSalesConfig = { catalog: @json($posCatalog) };
+    window.dashSalesConfig = {
+      catalog: @json($posCatalog),
+      checkout: {
+        cartTotal: {{ json_encode((float) $cartTotal) }},
+      },
+    };
   </script>
-  <script src="/maindir/js/dash-sales.js?v=1"></script>
+  <script src="/maindir/js/dash-sales.js?v=2"></script>
   <script src="/maindir/js/inventory-collapsible-filters.js?v=2"></script>
 @endsection

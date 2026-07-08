@@ -522,6 +522,75 @@ a.dash-sales-kpi:focus {
   padding: 20px 22px;
 }
 
+.dash-sales-checkout-summary {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  background: color-mix(in srgb, var(--sales-accent) 6%, #fff);
+  border: 1px solid color-mix(in srgb, var(--sales-accent) 16%, transparent);
+  border-radius: 12px;
+}
+
+.dash-sales-checkout-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+  font-size: 13px;
+  color: #5f6f78;
+}
+
+.dash-sales-checkout-summary-row strong {
+  font-size: 14px;
+  color: #1a2530;
+}
+
+.dash-sales-checkout-summary-total {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px dashed color-mix(in srgb, var(--sales-accent) 20%, transparent);
+  font-weight: 600;
+  color: #1a2530;
+}
+
+.dash-sales-checkout-summary-total strong {
+  font-size: 1.05rem;
+  color: var(--sales-accent-dark, var(--sales-accent));
+}
+
+.dash-sales-checkout-summary-diff {
+  margin-top: 6px;
+}
+
+.dash-sales-checkout-summary-diff.is-change strong {
+  color: #2e7d32;
+}
+
+.dash-sales-checkout-summary-diff.is-balance strong {
+  color: #f57f17;
+}
+
+.dash-sales-checkout-summary-diff.is-shortfall strong {
+  color: #c62828;
+}
+
+.dash-sales-checkout-hint {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #8a4b00;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+}
+
+.dash-sales-checkout-hint.is-error {
+  color: #b71c1c;
+  background: #ffebee;
+  border-color: #ef9a9a;
+}
+
 .dash-sales-drawer-form .inventory-edit-field:last-child {
   margin-bottom: 0;
 }
@@ -554,13 +623,13 @@ body.dash-sales-drawer-open {
 
 .dash-sales-checkout-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px 14px;
-  margin-top: 4px;
+  margin-bottom: 0;
 }
 
 .dash-sales-checkout-grid .inventory-edit-field {
-  margin-bottom: 0;
+  margin-bottom: 14px;
 }
 
 .dash-sales-checkout-notes {
@@ -775,16 +844,16 @@ body.dash-sales-drawer-open {
   }
 
   .dash-sales-checkout-grid {
-
-    .dash-sales-date-bar {
-      flex-wrap: wrap;
-      gap: 14px;
-    }
-
-    .dash-sales-date-form {
-      width: 100%;
-      justify-content: flex-start;
-    }
+    grid-template-columns: 1fr;
   }
 
+  .dash-sales-date-bar {
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  .dash-sales-date-form {
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
