@@ -27,14 +27,13 @@ class WaybillReportController extends Controller
     {
         $this->authorize('viewAny', Waybill::class);
 
-        $dateFrom = $request->query('date_from');
-        $dateTo = $request->query('date_to');
+        [$dateFrom, $dateTo, $waybillsearch] = $this->waybillReportFilters($request);
 
         if (empty($dateFrom) && ! empty($dateTo)) {
             return redirect(url()->previous())->with('error', 'Oops..! Provide *Date From* in order to proceed');
         }
 
-        $reportQuery = $this->waybillReportQuery($dateFrom, $dateTo);
+        $reportQuery = $this->waybillReportQuery($dateFrom, $dateTo, $waybillsearch);
         $waybills = (clone $reportQuery)->paginate(10);
         $waybillsAll = (clone $reportQuery)->get();
 
@@ -46,6 +45,7 @@ class WaybillReportController extends Controller
             'company' => Company::find(1),
             'date_from' => $dateFrom,
             'date_to' => $dateTo,
+            'waybillsearch' => $waybillsearch,
             'reportSummary' => $this->waybillReportSummary($waybillsAll),
         ]);
     }
@@ -54,14 +54,13 @@ class WaybillReportController extends Controller
     {
         $this->authorize('viewAny', Waybill::class);
 
-        $dateFrom = $request->query('date_from');
-        $dateTo = $request->query('date_to');
+        [$dateFrom, $dateTo, $waybillsearch] = $this->waybillReportFilters($request);
 
         if (empty($dateFrom) && ! empty($dateTo)) {
             return redirect('/waybillreport')->with('error', 'Oops..! Provide *Date From* in order to proceed');
         }
 
-        $waybills = $this->waybillReportQuery($dateFrom, $dateTo)->get();
+        $waybills = $this->waybillReportQuery($dateFrom, $dateTo, $waybillsearch)->get();
 
         return view('pages.invoice.waybillprint', $this->waybillPrintViewData($waybills, $dateFrom, $dateTo));
     }
@@ -83,14 +82,13 @@ class WaybillReportController extends Controller
     {
         $this->authorize('viewAny', Waybill::class);
 
-        $dateFrom = $request->query('date_from');
-        $dateTo = $request->query('date_to');
+        [$dateFrom, $dateTo, $waybillsearch] = $this->waybillReportFilters($request);
 
         if (empty($dateFrom) && ! empty($dateTo)) {
             return redirect('/waybillreport')->with('error', 'Oops..! Provide *Date From* in order to proceed');
         }
 
-        $waybills = $this->waybillReportQuery($dateFrom, $dateTo)->get();
+        $waybills = $this->waybillReportQuery($dateFrom, $dateTo, $waybillsearch)->get();
         $filename = 'waybill-report-'.date('Y-m-d-His').'.csv';
 
         return response()->streamDownload(function () use ($waybills) {
@@ -245,10 +243,20 @@ class WaybillReportController extends Controller
         ]);
     }
 
-    private function waybillReportQuery(?string $dateFrom, ?string $dateTo)
+    private function waybillReportFilters(Request $request): array
+    {
+        return [
+            $request->query('date_from'),
+            $request->query('date_to'),
+            trim((string) $request->query('waybillsearch', '')),
+        ];
+    }
+
+    private function waybillReportQuery(?string $dateFrom, ?string $dateTo, ?string $search = null)
     {
         return Waybill::active()
             ->with('user')
+            ->search($search)
             ->when(! empty($dateFrom) && empty($dateTo), function ($query) use ($dateFrom) {
                 $query->where('created_at', 'LIKE', '%'.$dateFrom.'%');
             })

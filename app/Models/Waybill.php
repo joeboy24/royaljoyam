@@ -154,6 +154,8 @@ class Waybill extends Model
 
         return $query->where(function ($builder) use ($like) {
             $builder->where('comp_name', 'like', $like)
+                ->orWhere('comp_add', 'like', $like)
+                ->orWhere('comp_contact', 'like', $like)
                 ->orWhere('vno', 'like', $like)
                 ->orWhere('drv_name', 'like', $like)
                 ->orWhere('drv_contact', 'like', $like)

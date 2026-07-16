@@ -145,8 +145,19 @@ class SalesReportPageTest extends TestCase
         $this->actingAs($this->admin)
             ->get('/reporting')
             ->assertOk()
-            ->assertSee('General sales report')
-            ->assertSee('Load Data');
+            ->assertSee('dash-reports-nav', false)
+            ->assertSee('Sales Report')
+            ->assertSee('Load data');
+    }
+
+    public function test_sales_report_filter_toolbar_includes_validation_markup(): void
+    {
+        $this->actingAs($this->admin)
+            ->get('/reporting')
+            ->assertOk()
+            ->assertSee('data-report-filter-form', false)
+            ->assertSee('dash-reports-filter-actions', false)
+            ->assertSee('Sales filters', false);
     }
 
     public function test_cash_sales_with_canonical_pay_mode_are_included_in_totals(): void
@@ -160,8 +171,25 @@ class SalesReportPageTest extends TestCase
         $this->actingAs($this->admin)
             ->get('/reporting?date_from=' . now()->format('Y-m-d'))
             ->assertOk()
-            ->assertSee('Total Amount')
+            ->assertSee('Total amount:', false)
             ->assertSee('Gh₵ 250.00');
+    }
+
+    public function test_sales_report_table_shows_notes_and_modern_columns(): void
+    {
+        $this->createSale([
+            'order_no' => 'RPT-NOTES-001',
+            'tot' => '120',
+            'notes' => 'Leave at front desk',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get('/reporting?date_from=' . now()->format('Y-m-d'))
+            ->assertOk()
+            ->assertSee('dash-reports-sales-table', false)
+            ->assertSee('Leave at front desk', false)
+            ->assertSee('reportEditOrderModal', false)
+            ->assertSee('Pay mode', false);
     }
 
     public function test_date_to_without_date_from_redirects_with_error(): void
@@ -200,7 +228,8 @@ class SalesReportPageTest extends TestCase
         $this->actingAs($this->admin)
             ->get('/reporting?date_from=' . $today . '&page=1')
             ->assertOk()
-            ->assertSee('<p>75</p>', false)
+            ->assertSee('Paid debts collected', false)
+            ->assertSee('75.00', false)
             ->assertSee('1,100.00');
     }
 
@@ -235,5 +264,52 @@ class SalesReportPageTest extends TestCase
             ->assertSee('date_from=' . $today, false)
             ->assertSee('branch=All%20Branches', false)
             ->assertSee('delvr=Del.', false);
+    }
+
+    public function test_changedate_updates_report_when_no_date_filters_are_applied(): void
+    {
+        $sessionDate = now()->subDay()->format('Y-m-d');
+
+        $sessionSale = $this->createSale([
+            'order_no' => 'RPT-SESSION-DATE',
+            'tot' => '432',
+        ]);
+        $sessionSale->forceFill([
+            'created_at' => $sessionDate . ' 09:30:00',
+            'updated_at' => $sessionDate . ' 09:30:00',
+        ])->saveQuietly();
+
+        $this->createSale([
+            'order_no' => 'RPT-TODAY-ONLY',
+            'tot' => '888',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->from('/reporting')
+            ->get('/changedate?date_today=' . $sessionDate)
+            ->assertRedirect('/reporting')
+            ->assertSessionHas('date_today', $sessionDate);
+
+        $this->actingAs($this->admin)
+            ->withSession(['date_today' => $sessionDate])
+            ->get('/reporting')
+            ->assertOk()
+            ->assertSee('432.00', false)
+            ->assertDontSee('888.00', false);
+    }
+
+    public function test_breakdown_modal_includes_cash_at_hand_row(): void
+    {
+        $today = now()->format('Y-m-d');
+
+        $this->createSale([
+            'order_no' => 'RPT-CASH-HAND',
+            'tot' => '500',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get('/reporting?date_from=' . $today)
+            ->assertOk()
+            ->assertSee('Cash in drawer (est.)', false);
     }
 }

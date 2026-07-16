@@ -559,9 +559,9 @@ class DashController extends Controller
         // $exp_b7 = 0;
 
         $branch = $request->input('branch');
-        if($branch == 'All Branches'){
+        if ($branch === null || $branch === '' || $branch == 'All Branches') {
             $match = ['del' => 'no'];
-        }else{
+        } else {
             $match = ['del' => 'no', 'companybranch_id' => $branch];
         }
 
@@ -606,15 +606,15 @@ class DashController extends Controller
             // $exp_b7 = Expense::where($exp_b7_match)->where('companybranch_id', 7)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('expense_cost');
             // return $exp_b5;
         }else{
-            $expenses = Expense::where('del', 'no')->orderBy('id', 'desc')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->paginate(10);
-            $expenses_send = Expense::where('del', 'no')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->orderBy('id', 'desc')->get();
-            // $items = ItemAudit::where('del', 'no')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->orderBy('id', 'desc')->paginate(10);
+            $today = session('date_today') ?: date('Y-m-d');
+            $expenses = Expense::where('del', 'no')->orderBy('id', 'desc')->where('created_at', 'LIKE', '%'.$today.'%')->paginate(10);
+            $expenses_send = Expense::where('del', 'no')->where('created_at', 'LIKE', '%'.$today.'%')->orderBy('id', 'desc')->get();
 
-            $exp_b1 = Expense::where($exp_b1_match)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('expense_cost');
-            $exp_b2 = Expense::where($exp_b2_match)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('expense_cost');
-            $exp_b3 = Expense::where($exp_b3_match)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('expense_cost');
-            $exp_b4 = Expense::where($exp_b4_match)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('expense_cost');
-            $exp_b5 = Expense::where($exp_b5_match)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('expense_cost');
+            $exp_b1 = Expense::where($exp_b1_match)->where('created_at', 'LIKE', '%'.$today.'%')->sum('expense_cost');
+            $exp_b2 = Expense::where($exp_b2_match)->where('created_at', 'LIKE', '%'.$today.'%')->sum('expense_cost');
+            $exp_b3 = Expense::where($exp_b3_match)->where('created_at', 'LIKE', '%'.$today.'%')->sum('expense_cost');
+            $exp_b4 = Expense::where($exp_b4_match)->where('created_at', 'LIKE', '%'.$today.'%')->sum('expense_cost');
+            $exp_b5 = Expense::where($exp_b5_match)->where('created_at', 'LIKE', '%'.$today.'%')->sum('expense_cost');
             // $exp_b6 = Expense::where($exp_b6_match)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('expense_cost');
             // $exp_b7 = Expense::where($exp_b7_match)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('expense_cost');
         }
@@ -655,32 +655,44 @@ class DashController extends Controller
         }
 
         $branch = $request->input('branch');
-        if($branch == 'All Branches'){
+        if ($branch === null || $branch === '' || $branch == 'All Branches') {
             $match = ['del' => 'no', 'pay_mode' => 'Post Payment(Debt)', 'paid' => 'no'];
-        }else{
+        } else {
             $match = ['del' => 'no', 'user_bv' => $branch, 'pay_mode' => 'Post Payment(Debt)', 'paid' => 'no'];
         }
         
         $c = 1;
         $date_from = $request->query('date_from');
         $date_to = $request->query('date_to');
-        
-        if (!empty($date_from) && empty($date_to)) {
-            // return 12345;
-            # code...
-            $sales = Sale::where($match)->where('created_at', 'LIKE', '%'.$date_from.'%')->orderBy('id', 'desc')->paginate(10);
-            $sales_send = Sale::where($match)->where('created_at', 'LIKE', '%'.$date_from.'%')->orderBy('id', 'desc')->get();
-        }elseif (empty($date_from) && !empty($date_to)) {
-            return redirect(url()->previous())->with('error', 'Oops..! Provide *Date From* in order to proceed');
-        }elseif (!empty($date_from) && !empty($date_to)) {
-            // $expenses = Expense::where('user_id', auth()->user()->bv)->where('created_at', 'LIKE', '%'.session('date_today').'%');
-            $sales = Sale::where($match)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->orderBy('id', 'desc')->paginate(10);
-            $sales_send = Sale::where($match)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->orderBy('id', 'desc')->get();
-        }else{
+        $debtsearch = trim((string) $request->query('debtsearch', ''));
+
+        if (empty($date_from) && empty($date_to)) {
             $match = ['del' => 'no', 'pay_mode' => 'Post Payment(Debt)', 'paid' => 'no'];
-            $sales = Sale::where($match)->orderBy('id', 'desc')->paginate(10);
-            $sales_send = Sale::where($match)->orderBy('id', 'desc')->get();
-            // $items = ItemAudit::where('del', 'no')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->orderBy('id', 'desc')->paginate(10);
+        }
+
+        $debtsQuery = function () use ($match, $debtsearch, $date_from, $date_to) {
+            $query = Sale::with('user')->where($match)->reportSearch($debtsearch);
+
+            if (! empty($date_from) && empty($date_to)) {
+                $query->where('created_at', 'LIKE', '%'.$date_from.'%');
+            } elseif (! empty($date_from) && ! empty($date_to)) {
+                $query->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')]);
+            }
+
+            return $query->orderBy('id', 'desc');
+        };
+
+        if (! empty($date_from) && empty($date_to)) {
+            $sales = $debtsQuery()->paginate(10);
+            $sales_send = $debtsQuery()->get();
+        } elseif (empty($date_from) && ! empty($date_to)) {
+            return redirect(url()->previous())->with('error', 'Oops..! Provide *Date From* in order to proceed');
+        } elseif (! empty($date_from) && ! empty($date_to)) {
+            $sales = $debtsQuery()->paginate(10);
+            $sales_send = $debtsQuery()->get();
+        } else {
+            $sales = $debtsQuery()->paginate(10);
+            $sales_send = $debtsQuery()->get();
         }
 
         Session::put('debts', $sales_send);
@@ -710,24 +722,37 @@ class DashController extends Controller
         
         $date_from = $request->query('date_from');
         $date_to = $request->query('date_to');
+        $returnsearch = trim((string) $request->query('returnsearch', ''));
         $branch = $request->query('branch');
-        if($branch == 'All Branches'){
+        if ($branch === null || $branch === '' || $branch == 'All Branches') {
             $match = ['del' => 'no'];
-        }else{
-            $match = ['del' => 'no', 'user_bv' => $branch,];
+        } else {
+            $match = ['del' => 'no', 'user_bv' => $branch];
         }
-        
-        if (!empty($date_from) && empty($date_to)) {
-            $returns = OrderReturn::where($match)->where('created_at', 'LIKE', '%'.$date_from.'%')->orderBy('id', 'desc')->paginate(10);
-            $returns_send = OrderReturn::where($match)->where('created_at', 'LIKE', '%'.$date_from.'%')->orderBy('id', 'desc')->get();
-        }elseif (empty($date_from) && !empty($date_to)) {
+
+        $returnsQuery = function () use ($match, $returnsearch, $date_from, $date_to) {
+            $query = OrderReturn::with('user')->where($match)->reportSearch($returnsearch);
+
+            if (! empty($date_from) && empty($date_to)) {
+                $query->where('created_at', 'LIKE', '%'.$date_from.'%');
+            } elseif (! empty($date_from) && ! empty($date_to)) {
+                $query->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')]);
+            }
+
+            return $query->orderBy('id', 'desc');
+        };
+
+        if (! empty($date_from) && empty($date_to)) {
+            $returns = $returnsQuery()->paginate(10);
+            $returns_send = $returnsQuery()->get();
+        } elseif (empty($date_from) && ! empty($date_to)) {
             return redirect(url()->previous())->with('error', 'Oops..! Provide *Date From* in order to proceed');
-        }elseif (!empty($date_from) && !empty($date_to)) {
-            $returns = OrderReturn::where($match)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->orderBy('id', 'desc')->paginate(10);
-            $returns_send = OrderReturn::where($match)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->orderBy('id', 'desc')->get();
-        }else{
-            $returns = OrderReturn::where($match)->orderBy('id', 'desc')->paginate(10);
-            $returns_send = OrderReturn::where($match)->orderBy('id', 'desc')->get();
+        } elseif (! empty($date_from) && ! empty($date_to)) {
+            $returns = $returnsQuery()->paginate(10);
+            $returns_send = $returnsQuery()->get();
+        } else {
+            $returns = $returnsQuery()->paginate(10);
+            $returns_send = $returnsQuery()->get();
         }
 
         Session::put('returnsrep', $returns_send);

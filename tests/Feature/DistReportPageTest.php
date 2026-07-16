@@ -120,6 +120,7 @@ class DistReportPageTest extends TestCase
         $this->actingAs($this->admin)
             ->get('/distreport')
             ->assertOk()
+            ->assertSee('dash-reports-nav', false)
             ->assertSee('Distribution Report')
             ->assertSee('Load data')
             ->assertSee('MT-DIST-001')

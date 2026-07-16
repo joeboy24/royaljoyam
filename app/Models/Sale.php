@@ -141,6 +141,27 @@ class Sale extends Model
         return $query->whereIn('pay_mode', $variants);
     }
 
+    public function scopeReportSearch($query, ?string $term)
+    {
+        $term = trim((string) $term);
+
+        if ($term === '') {
+            return $query;
+        }
+
+        $like = '%'.$term.'%';
+
+        return $query->where(function ($builder) use ($like) {
+            $builder->where('order_no', 'like', $like)
+                ->orWhere('buy_name', 'like', $like)
+                ->orWhere('buy_contact', 'like', $like)
+                ->orWhere('notes', 'like', $like)
+                ->orWhereHas('user', function ($userQuery) use ($like) {
+                    $userQuery->where('name', 'like', $like);
+                });
+        });
+    }
+
     public function saleshistory(){
         return $this->hasMany('App\Models\SalesHistory');
     }

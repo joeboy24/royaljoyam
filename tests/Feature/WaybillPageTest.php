@@ -99,6 +99,31 @@ class WaybillPageTest extends TestCase
             ->assertSee($waybill->stock_no);
     }
 
+    public function test_waybill_history_search_finds_company_details(): void
+    {
+        $this->createWaybill([
+            'bill_no' => 'WB-COMP-001',
+            'comp_name' => 'Sunrise Trading Co.',
+            'comp_add' => '14 Industrial Area, Kumasi',
+            'comp_contact' => '0244999888',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get('/waybillview?waybillsearch='.urlencode('Sunrise Trading'))
+            ->assertOk()
+            ->assertSee('WB-COMP-001');
+
+        $this->actingAs($this->admin)
+            ->get('/waybillview?waybillsearch='.urlencode('Industrial Area'))
+            ->assertOk()
+            ->assertSee('WB-COMP-001');
+
+        $this->actingAs($this->admin)
+            ->get('/waybillview?waybillsearch=0244999888')
+            ->assertOk()
+            ->assertSee('WB-COMP-001');
+    }
+
     public function test_waybill_history_search_excludes_deleted_records(): void
     {
         $this->createWaybill([
@@ -689,6 +714,26 @@ class WaybillPageTest extends TestCase
             ->assertSee('waybill-report-status-summary', false)
             ->assertSee('Pending:')
             ->assertSee('Delivered:');
+    }
+
+    public function test_waybill_report_search_filters_results(): void
+    {
+        $this->createWaybill(['bill_no' => 'WB-REP-ALPHA', 'comp_name' => 'Alpha Logistics']);
+        $this->createWaybill(['bill_no' => 'WB-REP-BETA', 'comp_name' => 'Beta Transport', 'comp_add' => '22 Harbour Road']);
+
+        $this->actingAs($this->admin)
+            ->get('/waybillreport?waybillsearch=Alpha')
+            ->assertOk()
+            ->assertSee('WB-REP-ALPHA')
+            ->assertSee('Alpha Logistics')
+            ->assertDontSee('WB-REP-BETA')
+            ->assertSee('name="waybillsearch"', false);
+
+        $this->actingAs($this->admin)
+            ->get('/waybillreport?waybillsearch='.urlencode('Harbour Road'))
+            ->assertOk()
+            ->assertSee('WB-REP-BETA')
+            ->assertDontSee('WB-REP-ALPHA');
     }
 
     public function test_waybill_report_csv_export_respects_filters(): void

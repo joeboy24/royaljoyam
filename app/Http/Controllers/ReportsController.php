@@ -4,20 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\CompanyBranch;
-use App\Models\Item;
-use App\Models\OrderReturn;
 use App\Models\Sale;
-use App\Models\SalesHistory;
-use App\Models\SalesPayment;
 use App\Models\User;
+use App\Services\OrderReturnService;
 use App\Services\SalesReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
+use RuntimeException;
 
 class ReportsController extends Controller
 {
     public function __construct(
-        protected SalesReportService $salesReportService
+        protected SalesReportService $salesReportService,
+        protected OrderReturnService $orderReturnService
     ) {
         $this->middleware(['auth', 'load_auth']);
     }
@@ -91,6 +90,7 @@ class ReportsController extends Controller
                 'c' => 1,
                 'sales' => $report['sales'],
                 'branches' => CompanyBranch::all(),
+                'breakdown' => $this->salesReportService->buildBreakdownTable($report),
             ],
             $legacy
         ));
@@ -150,41 +150,15 @@ class ReportsController extends Controller
      */
     public function edit($id)
     {
-        $salesHistory = SalesHistory::where('sale_id', $id)->get();
-        foreach ($salesHistory as $sh) {
-            OrderReturn::firstOrCreate([
-                'user_id' => $sh->user_id,
-                'sale_id' => $sh->sale_id,
-                'item_id' => $sh->item_id,
-                'user_bv' => $sh->user_bv,
-                'item_no' => $sh->item_no,
-                'name' => $sh->name,
-                'qty' => $sh->qty,
-                'cost_price' => $sh->cost_price,
-                'unit_price' => $sh->unit_price,
-                'profits' => $sh->profits,
-                'tot' => $sh->tot,
-                'del_status' => $sh->del,
-                'order_date' => $sh->created_at,
-            ]);
-
-            $item = Item::find($sh->item_id);
-
-            if ($item) {
-                $item->restoreCartStockReservation($sh->user_bv, (int) $sh->qty);
-            }
-
-            $sh->delete();
+        if (auth()->user()->status != 'Administrator') {
+            return redirect('/dashboard');
         }
 
-        $salesP = SalesPayment::where('sale_id', $id)->get();
-        foreach ($salesP as $sp) {
-            $sp->del = 'Yes';
-            $sp->delete();
+        try {
+            $this->orderReturnService->returnSale((int) $id);
+        } catch (RuntimeException $exception) {
+            return redirect(url()->previous())->with('error', $exception->getMessage());
         }
-
-        $sales = Sale::find($id);
-        $sales->delete();
 
         return redirect(url()->previous())->with('success', 'Order return successfull');
     }

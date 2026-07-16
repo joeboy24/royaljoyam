@@ -2,95 +2,35 @@
 
 @section('content')
 
-  <!-- End Navbar -->
-  <div class="content">
-        <div class="container-fluid">
-          <div class="row">
-            <div class="col-md-11">
+<x-report-shell
+  active="stock"
+  title="Stock Balances"
+  subtitle="Review sold, remaining, and profit quantities by branch."
+  icon="fa fa-bar-chart"
+>
+  <x-slot:filters>
+    <x-report-inventory-filters
+      :action="url('/stockbal')"
+      clear-url="/stockbal"
+      :show-branch="false"
+    >
+      @if (session('stockfill') == 0)
+        <a href="/stockreportprinting" class="inventory-search-btn inventory-search-btn-muted inventory-search-btn-icon dash-tip" data-tip="Print report" aria-label="Print report">
+          <i class="fa fa-print"></i>
+        </a>
+      @else
+        <a href="/stockfillprint" class="inventory-search-btn inventory-search-btn-muted inventory-search-btn-icon dash-tip" data-tip="Print report" aria-label="Print report">
+          <i class="fa fa-print"></i>
+        </a>
+      @endif
+      <a href="/genstockbal" class="inventory-search-btn inventory-search-btn-muted" title="General stock balances">
+        <i class="fa fa-bar-chart"></i>
+        <span>General</span>
+      </a>
+    </x-report-inventory-filters>
+  </x-slot:filters>
 
-              @include('inc.messages')
-
-                <div class="row">
-                  <div class="col-md-12">
-                    <div class="menu_box_cont">
-                      <div class="inner">
-                        <a href="/reporting" class="myA">
-                          <div class="menu_box">
-                            <h4><i class="fa fa-shopping-basket"></i>&nbsp;&nbsp; Sales</h4>
-                            <p>General sales report</p>
-                          </div>
-                        </a>
-                        <a href="/stockbal" class="myA">
-                          <div class="menu_box active_menu">
-                            <h4><i class="fa fa-bar-chart"></i>&nbsp;&nbsp; Stock</h4>
-                            <p>General stock balances</p>
-                          </div>
-                        </a>
-                        <a href="/expensereport" class="myA">
-                          <div class="menu_box">
-                            <h4><i class="fa fa-suitcase"></i>&nbsp;&nbsp; Expenses</h4>
-                            <p>General expenses report</p>
-                          </div>
-                        </a>
-                        <a href="/debts" class="myA">
-                          <div class="menu_box">
-                            <h4><i class="fa fa-folder-open"></i>&nbsp;&nbsp; Debts</h4>
-                            <p>Debts (Post Payments)</p>
-                          </div>
-                        </a>
-                        <a href="/waybillreport" class="myA">
-                          <div class="menu_box">
-                            <h4><i class="fa fa-truck"></i>&nbsp;&nbsp; Waybill</h4>
-                            <p>Waybill Report</p>
-                          </div>
-                        </a>
-                        <a href="/returnsreport" class="myA">
-                          <div class="menu_box">
-                            <h4><i class="fa fa-warning"></i>&nbsp;&nbsp; Returns</h4>
-                            <p>Returns report</p>
-                          </div>
-                        </a>
-                        <a href="/distreport" class="myA">
-                          <div class="menu_box">
-                            <h4><i class="fa fa-share-alt"></i>&nbsp;&nbsp; Distribution</h4>
-                            <p>Distribution report</p>
-                          </div>
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-md-12 offset-md-0">
-
-                    <div class="form-group row mb-0 searchRef">
-                        <form class="salesForm" action="{{action('DashController@stockbal')}}" method="GET">
-                          @csrf
-                          <div class="dropdown">
-
-                            <input type="date" class="sref" name="date_from" placeholder="yyyy-mm-dd"/>
-                            <input type="text" class="sref" name="" placeholder=" From - To " style="width:70px; border:none; padding:0" readonly/>
-                            <input type="date" class="sref" name="date_to" placeholder="yyyy-mm-dd"/>
-                            
-                            <button type="submit" class="btn btn-info">&nbsp; Load Data</button>
-                            <a href="/stockbal"><button type="button" class="btn btn-success" name="store_action" value="empty_cart"><i class="fa fa-refresh"></i></button></a>
-                            @if (session('stockfill') == 0)
-                              <a href="/stockreportprinting"><button type="button" class="btn black" name="store_action" value="empty_cart"><i class="fa fa-print"></i></button></a>
-                            @else
-                              <a href="/stockfillprint"><button type="button" class="btn black" name="store_action" value="empty_cart"><i class="fa fa-print"></i></button></a>
-                            @endif
-                            {{-- <a href="/stock"><button type="button" class="btn black" name="store_action" value="empty_cart"><i class="fa fa-print"></i></button></a> --}}
-                            <a href="/genstockbal"><button type="button" class="btn black"><i class="fa fa-bar-chart"></i></button></a>
-                            
-                          </div>
-
-                        </form>
-                    </div>
-
-                </div>
-
-                <div class="card">
-                  <div id="printarea1" class="card-body">
+  <div id="printarea1">
               
                     @if (count(session('stock')) > 0)
                       <table class="table mt">
@@ -178,17 +118,14 @@
                         </tbody>
                       </table>
 
-                    @else
-                      <p>No Records Found</p>
-                    @endif
-                  </div>
-                </div>
-            </div>
-
-          </div>
-        </div>
+    @else
+      <x-report-empty-state
+        icon="fa fa-bar-chart"
+        message="No stock data for the selected filters. Load data from the toolbar first."
+      />
+    @endif
   </div>
-
+</x-report-shell>
 
 @endsection
 

@@ -29,20 +29,22 @@ class SalesReportService
 
         [$saleFilters, $expenseFilters, $sessionBranch] = $this->resolveFilters($branch, $delvr);
         $dateMode = $this->resolveDateMode($dateFrom, $dateTo);
+        $useSessionSalesDate = $dateMode === 'today_default';
 
-        $salesQuery = Sale::query()->where($saleFilters)->orderByDesc('id');
-        $this->applyDateFilter($salesQuery, $dateMode, $dateFrom, $dateTo, $sessionSalesDate, false);
+        $salesQuery = Sale::query()->where($saleFilters)->with('user')->orderByDesc('id');
+        $this->applyDateFilter($salesQuery, $dateMode, $dateFrom, $dateTo, $sessionSalesDate, $useSessionSalesDate);
 
         $sales = (clone $salesQuery)->paginate(10);
         $salesSend = (clone $salesQuery)->get();
 
-        $cash = $this->sumPayMode($saleFilters, Sale::PAY_MODE_CASH, $dateMode, $dateFrom, $dateTo, $sessionSalesDate, false);
-        $cheque = $this->sumPayMode($saleFilters, Sale::PAY_MODE_CHEQUE, $dateMode, $dateFrom, $dateTo, $sessionSalesDate, false);
-        $momo = $this->sumPayMode($saleFilters, Sale::PAY_MODE_MOBILE_MONEY, $dateMode, $dateFrom, $dateTo, $sessionSalesDate, false);
-        $sumDebt = $this->sumPayMode($saleFilters, Sale::PAY_MODE_DEBT, $dateMode, $dateFrom, $dateTo, $sessionSalesDate, false);
+        $cash = $this->sumPayMode($saleFilters, Sale::PAY_MODE_CASH, $dateMode, $dateFrom, $dateTo, $sessionSalesDate, $useSessionSalesDate);
+        $cheque = $this->sumPayMode($saleFilters, Sale::PAY_MODE_CHEQUE, $dateMode, $dateFrom, $dateTo, $sessionSalesDate, $useSessionSalesDate);
+        $momo = $this->sumPayMode($saleFilters, Sale::PAY_MODE_MOBILE_MONEY, $dateMode, $dateFrom, $dateTo, $sessionSalesDate, $useSessionSalesDate);
+        $sumDebt = $this->sumPayMode($saleFilters, Sale::PAY_MODE_DEBT, $dateMode, $dateFrom, $dateTo, $sessionSalesDate, $useSessionSalesDate);
 
         $branchMetrics = $this->buildBranchMetrics(
             $branch,
+            $delvr,
             $dateMode,
             $dateFrom,
             $dateTo,
@@ -50,22 +52,22 @@ class SalesReportService
         );
 
         $expenses = Expense::query()->where($expenseFilters);
-        $this->applyDateFilter($expenses, $dateMode, $dateFrom, $dateTo, $sessionSalesDate, false);
+        $this->applyDateFilter($expenses, $dateMode, $dateFrom, $dateTo, $sessionSalesDate, $useSessionSalesDate);
         $expenses = $expenses->get();
 
-        $profitsQuery = SalesHistory::query()->where(['del' => 'no']);
-        $this->applyDateFilter(
-            $profitsQuery,
+        $genProfits = round(array_sum(array_column($branchMetrics, 'profits')), 2);
+
+        $paidDebts = $this->collectedDebtByBranch(
+            $branch,
             $dateMode,
             $dateFrom,
             $dateTo,
-            $sessionSalesDate,
-            $dateMode === 'today_default'
+            $sessionSalesDate
         );
-        $genProfits = (float) $profitsQuery->sum('profits');
+        $collectedDebt = array_sum($paidDebts);
 
         $gross = $cash + $cheque + $momo + $sumDebt;
-        $net = $gross - (float) $expenses->sum('expense_cost');
+        $net = $cash + $cheque + $momo + $collectedDebt - (float) $expenses->sum('expense_cost');
 
         return [
             'sales' => $sales,
@@ -79,7 +81,8 @@ class SalesReportService
             'net' => $net,
             'gen_profits' => $genProfits,
             'branch_metrics' => $branchMetrics,
-            'paid_debts' => $this->paidDebtsByBranch($salesSend),
+            'paid_debts' => $paidDebts,
+            'collected_debt' => $collectedDebt,
             'session_branch' => $sessionBranch,
             'date_from' => $dateFrom,
             'date_to' => $dateTo,
@@ -125,22 +128,57 @@ class SalesReportService
     protected function resolveFilters(string $branch, string $delvr): array
     {
         if ($branch === 'All Branches') {
-            $saleFilters = $delvr === 'Del. / Not Delivered'
-                ? ['del' => 'no']
-                : ['del' => 'no', 'del_status' => $delvr];
+            $saleFilters = $this->applyDeliveryFilter(['del' => 'no'], $delvr);
 
             return [$saleFilters, ['del' => 'no'], 'All'];
         }
 
-        $saleFilters = $delvr === 'Del. / Not Delivered'
-            ? ['del' => 'no', 'user_bv' => $branch]
-            : ['del' => 'no', 'del_status' => $delvr, 'user_bv' => $branch];
+        $saleFilters = $this->applyDeliveryFilter(
+            ['del' => 'no', 'user_bv' => $branch],
+            $delvr
+        );
 
         return [
             $saleFilters,
             ['del' => 'no', 'companybranch_id' => $branch],
             $branch,
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    protected function applyDeliveryFilter(array $filters, string $delvr): array
+    {
+        if ($delvr !== 'Del. / Not Delivered') {
+            $filters['del_status'] = $delvr;
+        }
+
+        return $filters;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function branchSaleMatch(string $tag, string $delvr): array
+    {
+        return $this->applyDeliveryFilter(['del' => 'no', 'user_bv' => $tag], $delvr);
+    }
+
+    /**
+     * @param  Builder<\Illuminate\Database\Eloquent\Model>  $query
+     */
+    protected function applySaleDeliveryFilter(Builder $query, string $delvr): void
+    {
+        if ($delvr === 'Del. / Not Delivered') {
+            return;
+        }
+
+        $query->whereIn('sale_id', Sale::query()
+            ->where('del', 'no')
+            ->where('del_status', $delvr)
+            ->select('id'));
     }
 
     protected function resolveDateMode(?string $dateFrom, ?string $dateTo): string
@@ -206,6 +244,7 @@ class SalesReportService
      */
     protected function buildBranchMetrics(
         string $selectedBranch,
+        string $delvr,
         string $dateMode,
         ?string $dateFrom,
         ?string $dateTo,
@@ -222,17 +261,20 @@ class SalesReportService
                 continue;
             }
 
-            $saleMatch = ['del' => 'no', 'user_bv' => $tag];
+            $saleMatch = $this->branchSaleMatch($tag, $delvr);
             $expenseMatch = ['del' => 'no', 'companybranch_id' => $tag];
 
             $salesQuery = Sale::query()->where($saleMatch);
             $this->applyDateFilter($salesQuery, $dateMode, $dateFrom, $dateTo, $sessionSalesDate, $dateMode === 'today_default');
 
-            $profitsQuery = SalesHistory::query()->where($saleMatch);
+            $profitsQuery = SalesHistory::query()
+                ->where('del', 'no')
+                ->where('user_bv', $tag);
+            $this->applySaleDeliveryFilter($profitsQuery, $delvr);
             $this->applyDateFilter($profitsQuery, $dateMode, $dateFrom, $dateTo, $sessionSalesDate, $dateMode === 'today_default');
 
             $expenseQuery = Expense::query()->where($expenseMatch);
-            $this->applyDateFilter($expenseQuery, $dateMode, $dateFrom, $dateTo, $sessionSalesDate, false);
+            $this->applyDateFilter($expenseQuery, $dateMode, $dateFrom, $dateTo, $sessionSalesDate, $dateMode === 'today_default');
 
             $metrics[] = [
                 'tag' => $tag,
@@ -308,8 +350,90 @@ class SalesReportService
     }
 
     /**
+     * Debt cash collected per branch for the report period (matches daily sales page).
+     * Uses payment date, not sale date, so collections on older orders still count.
+     *
+     * @return array<int|string, float>
+     */
+    public function collectedDebtByBranch(
+        string $selectedBranch,
+        string $dateMode,
+        ?string $dateFrom,
+        ?string $dateTo,
+        string $sessionSalesDate
+    ): array {
+        $totals = [];
+        $useSessionSalesDate = $dateMode === 'today_default';
+
+        $paymentsQuery = SalesPayment::query()
+            ->where('del', 'no')
+            ->whereHas('sale', function (Builder $query) use ($selectedBranch) {
+                $query->where('del', 'no');
+
+                if ($selectedBranch !== 'All Branches') {
+                    $query->where('user_bv', $selectedBranch);
+                }
+            });
+
+        $this->applyDateFilter(
+            $paymentsQuery,
+            $dateMode,
+            $dateFrom,
+            $dateTo,
+            $sessionSalesDate,
+            $useSessionSalesDate
+        );
+
+        foreach ($paymentsQuery->with('sale')->get() as $payment) {
+            $sale = $payment->sale;
+
+            if (! $sale) {
+                continue;
+            }
+
+            $tag = (string) $sale->user_bv;
+            $totals[$tag] = ($totals[$tag] ?? 0.0) + (float) $payment->amt_paid;
+        }
+
+        $checkoutDebtQuery = Sale::query()
+            ->where('del', 'no')
+            ->matchingPayMode(Sale::PAY_MODE_DEBT)
+            ->whereDoesntHave('salespayment', function (Builder $query) {
+                $query->where('del', 'no');
+            });
+
+        if ($selectedBranch !== 'All Branches') {
+            $checkoutDebtQuery->where('user_bv', $selectedBranch);
+        }
+
+        $this->applyDateFilter(
+            $checkoutDebtQuery,
+            $dateMode,
+            $dateFrom,
+            $dateTo,
+            $sessionSalesDate,
+            $useSessionSalesDate
+        );
+
+        foreach ($checkoutDebtQuery->get() as $sale) {
+            $payment = (float) $sale->payment;
+
+            if ($payment <= 0) {
+                continue;
+            }
+
+            $tag = (string) $sale->user_bv;
+            $totals[$tag] = ($totals[$tag] ?? 0.0) + $payment;
+        }
+
+        return $totals;
+    }
+
+    /**
      * @param  Collection<int, Sale>  $sales
-     * @return array<int, float>
+     * @return array<int|string, float>
+     *
+     * @deprecated Prefer collectedDebtByBranch(); kept for legacy callers.
      */
     public function paidDebtsByBranch(Collection $sales): array
     {
@@ -337,6 +461,143 @@ class SalesReportService
         }
 
         return $totals;
+    }
+
+    /**
+     * Structured rows for the sales report breakdown modal.
+     *
+     * @param  array<string, mixed>  $report
+     * @return array{columns: list<array{slot: int, metric: array<string, float|string>, paid_debt: float, net: float}>, rows: list<array<string, mixed>>, net_total: float}
+     */
+    public function buildBreakdownTable(array $report): array
+    {
+        $paidDebts = $this->normalizePaidDebts($report['paid_debts']);
+        $expenseTotal = (float) $report['expenses']->sum('expense_cost');
+
+        $columns = [];
+
+        for ($slot = 1; $slot <= self::LEGACY_BRANCH_SLOTS; $slot++) {
+            $metric = $this->metricForTag($report['branch_metrics'], (string) $slot);
+            $paidDebt = $paidDebts[$slot - 1];
+
+            $columns[] = [
+                'slot' => $slot,
+                'metric' => $metric,
+                'paid_debt' => $paidDebt,
+                'net' => $this->branchNetTotal($metric, $paidDebt),
+                'cash_at_hand' => $this->branchCashAtHand($metric, $paidDebt),
+            ];
+        }
+
+        $cashAtHandValues = array_column($columns, 'cash_at_hand');
+
+        $columnValues = fn (string $field): array => array_map(
+            fn (array $column) => (float) $column['metric'][$field],
+            $columns
+        );
+
+        $rows = [
+            [
+                'key' => 'cash',
+                'label' => 'Cash',
+                'kind' => 'payment',
+                'values' => $columnValues('cash'),
+                'total' => (float) $report['cash'],
+            ],
+            [
+                'key' => 'cheque',
+                'label' => 'Cheque',
+                'kind' => 'payment',
+                'values' => $columnValues('cheque'),
+                'total' => (float) $report['cheque'],
+            ],
+            [
+                'key' => 'momo',
+                'label' => 'Mobile money',
+                'kind' => 'payment',
+                'values' => $columnValues('momo'),
+                'total' => (float) $report['momo'],
+            ],
+            [
+                'key' => 'debt',
+                'label' => 'Post payment (debt)',
+                'kind' => 'payment',
+                'values' => $columnValues('debt'),
+                'total' => (float) $report['sum_dbt'],
+                'subrow' => [
+                    'label' => 'Paid debts collected',
+                    'values' => $paidDebts,
+                    'total' => array_sum($paidDebts),
+                ],
+            ],
+            [
+                'key' => 'expenses',
+                'label' => 'Expenditure',
+                'kind' => 'expense',
+                'values' => $columnValues('expenses'),
+                'total' => $expenseTotal,
+            ],
+            [
+                'key' => 'profits',
+                'label' => 'Profits (margin)',
+                'kind' => 'profit',
+                'values' => $columnValues('profits'),
+                'total' => round(array_sum($columnValues('profits')), 2),
+            ],
+            [
+                'key' => 'cash_at_hand',
+                'label' => 'Cash in drawer (est.)',
+                'kind' => 'cash-hand',
+                'values' => $cashAtHandValues,
+                'total' => round(array_sum($cashAtHandValues), 2),
+            ],
+        ];
+
+        return [
+            'columns' => $columns,
+            'rows' => $rows,
+            'net_total' => round(
+                (float) $report['cash']
+                + (float) $report['cheque']
+                + (float) $report['momo']
+                + (float) ($report['collected_debt'] ?? array_sum($paidDebts))
+                - $expenseTotal,
+                2
+            ),
+        ];
+    }
+
+    /**
+     * Money collected minus expenditure (matches daily sales net total).
+     *
+     * @param  array<string, float|string>  $metric
+     */
+    public function branchNetTotal(array $metric, float $paidDebt): float
+    {
+        return round(
+            (float) $metric['cash']
+            + (float) $metric['cheque']
+            + (float) $metric['momo']
+            + $paidDebt
+            - (float) $metric['expenses'],
+            2
+        );
+    }
+
+    /**
+     * Estimated drawer cash: cash sales + debt collections − expenditure.
+     * Assumes debt payments and expenses were paid in cash.
+     *
+     * @param  array<string, float|string>  $metric
+     */
+    public function branchCashAtHand(array $metric, float $paidDebt): float
+    {
+        return round(
+            (float) $metric['cash']
+            + $paidDebt
+            - (float) $metric['expenses'],
+            2
+        );
     }
 
     /**

@@ -12,5 +12,25 @@ class OrderReturn extends Model
     public function user(){
         return $this->belongsTo('App\Models\User');
     }
+
+    public function scopeReportSearch($query, ?string $term)
+    {
+        $term = trim((string) $term);
+
+        if ($term === '') {
+            return $query;
+        }
+
+        $like = '%'.$term.'%';
+
+        return $query->where(function ($builder) use ($like) {
+            $builder->where('item_no', 'like', $like)
+                ->orWhere('name', 'like', $like)
+                ->orWhere('order_date', 'like', $like)
+                ->orWhereHas('user', function ($userQuery) use ($like) {
+                    $userQuery->where('name', 'like', $like);
+                });
+        });
+    }
     
 }
