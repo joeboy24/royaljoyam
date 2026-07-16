@@ -90,7 +90,14 @@
           title="Sales"
           subtitle="Search items, manage your cart, and complete orders."
           icon="fa fa-shopping-cart"
-        />
+        >
+          <x-slot:actions>
+            <a href="/expenses" class="dash-page-header-btn inventory-action-btn dash-tip" data-tip="Go to expenditure">
+              <i class="fa fa-money"></i>
+              <span>Expenses</span>
+            </a>
+          </x-slot:actions>
+        </x-dash-page-header>
         <div class="card-body dash-form-body">
 
           <div class="dash-sales-section-toolbar">

@@ -1,0 +1,140 @@
+/* Expenditure page */
+.dash-expenses-content {
+  --exp-accent: var(--dash-header-from, #00acc1);
+  --exp-accent-dark: var(--dash-header-to, #0097a7);
+  --exp-accent-rgb: 0, 172, 193;
+
+  padding-top: 0;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 36px;
+}
+
+.dash-expenses-body {
+  padding-top: 8px;
+}
+
+.dash-expenses-card {
+  border: 1px solid color-mix(in srgb, var(--exp-accent) 14%, #e8ecef);
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(26, 37, 48, 0.05);
+  margin-bottom: 22px;
+  overflow: hidden;
+}
+
+.dash-expenses-card > .dash-page-header {
+  width: 100%;
+  margin: 0 0 12px;
+  border-radius: 0;
+  padding-top: 2.5rem !important;
+  padding-bottom: 1.35rem !important;
+}
+
+.dash-expenses-panel {
+  padding: 32px clamp(1.5rem, 3.5vw, 2.5rem) 40px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbfc 100%);
+}
+
+.dash-expenses-inner {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.dash-expenses-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 18px;
+}
+
+.dash-expenses-field-desc {
+  grid-column: 1 / -1;
+}
+
+.dash-expenses-form-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+  padding-top: 4px;
+}
+
+.dash-expenses-divider {
+  height: 1px;
+  margin: 28px 0 24px;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.dash-expenses-branch-readonly {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #42515a;
+  background: #f4f8fa;
+  border: 1px solid rgba(var(--exp-accent-rgb), 0.12);
+}
+
+.dash-expenses-table-wrap {
+  margin-top: 4px;
+}
+
+.dash-expenses-table td,
+.dash-expenses-table th {
+  vertical-align: middle;
+}
+
+.dash-expenses-table .dash-expenses-title {
+  font-weight: 600;
+  color: #24313a;
+}
+
+.dash-expenses-table .dash-expenses-desc {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #7a8790;
+}
+
+.dash-expenses-amount {
+  font-weight: 700;
+  color: #24313a;
+  white-space: nowrap;
+}
+
+.dash-expenses-total-row td {
+  padding-top: 14px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  font-weight: 700;
+}
+
+.dash-expenses-total-row .dash-expenses-amount {
+  color: var(--exp-accent-dark);
+  font-size: 1.02rem;
+}
+
+.dash-expenses-delete-form {
+  display: inline;
+  margin: 0;
+}
+
+.dash-expenses-empty {
+  padding: 36px 20px;
+}
+
+.dash-expenses-list-section {
+  margin-bottom: 28px;
+}
+
+@media (max-width: 767px) {
+  .dash-expenses-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-expenses-field-desc,
+  .dash-expenses-field-branch {
+    grid-column: auto;
+  }
+}

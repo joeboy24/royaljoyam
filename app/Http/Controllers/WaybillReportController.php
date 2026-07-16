@@ -14,6 +14,13 @@ class WaybillReportController extends Controller
     public function __construct()
     {
         $this->middleware(['auth', 'load_auth']);
+        $this->middleware(function ($request, $next) {
+            if (auth()->user()->status != 'Administrator') {
+                return redirect('/dashboard');
+            }
+
+            return $next($request);
+        });
     }
 
     public function waybillReport(Request $request)

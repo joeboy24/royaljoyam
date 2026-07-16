@@ -46,19 +46,6 @@ class DashController extends Controller
         return view('pages.dash.dashboard');
     }
 
-    public function userprofile(){
-
-        $items = Item::all();
-        $company = Company::all();
-        $branches = CompanyBranch::all();
-        $pass = [
-            'items' => $items,
-            'company' => $company,
-            'branches' => $branches
-        ];
-        return view('pages.dash.user_profile')->with($pass);
-    }
-
     public function configurations(){
 
         if(auth()->user()->status != 'Administrator'){

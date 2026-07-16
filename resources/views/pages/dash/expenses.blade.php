@@ -2,133 +2,179 @@
 
 @section('content')
 
-  <!-- End Navbar -->
-  <div class="content">
-    <div class="container-fluid">
-      <div class="row">
-        <div class="col-md-10">
+  <div class="content dash-expenses-content">
+    <div class="container-fluid dash-expenses-body">
 
-          @include('inc.messages')
+      @include('inc.messages')
 
+      <div class="card dash-expenses-card">
+        <x-dash-page-header
+          title="Expenditure"
+          subtitle="Record branch expenses for {{ $salesDateLabel }}."
+          icon="fa fa-money"
+        >
+          <x-slot:actions>
+            <a href="/sales" class="dash-page-header-btn inventory-action-btn dash-tip" data-tip="Back to sales">
+              <i class="fa fa-shopping-basket"></i>
+              <span>Sales</span>
+            </a>
+          </x-slot:actions>
+        </x-dash-page-header>
 
-          <div class="col-md-12 myTrim">
-            <a href="{{url()->previous()}}"><button type="submit" class="btn btn-white" ><i class="fa fa-arrow-left"></i></button></a>
-          </div>
+        <div class="card-body dash-form-body dash-expenses-panel">
+          <div class="dash-expenses-inner">
+          <section class="dash-expenses-form-section">
+            <h6 class="inventory-edit-section-title"><i class="fa fa-plus-circle"></i> Add expense</h6>
 
-        <div class="card">
-          <div class="card card-profile">
-            <div class="card-body">
-              <h4 class="card-title">Add Expenses Here</h4>
+            <form action="{{ route('expenses.store') }}" method="POST" class="dash-expenses-form">
+              @csrf
 
-              <div class="col-md-12">
-                <form action="{{action('ItemsController@store')}}" method="POST" enctype="multipart/form-data">
-                  @csrf
+              <div class="dash-expenses-form-grid">
+                <label class="inventory-edit-field">
+                  <span class="inventory-edit-label">Title</span>
+                  <input
+                    type="text"
+                    class="inventory-edit-input @error('title') is-invalid @enderror"
+                    name="title"
+                    value="{{ old('title') }}"
+                    placeholder="e.g. Internet payment"
+                    required
+                    autofocus
+                  />
+                  @error('title')<span class="inventory-edit-error">{{ $message }}</span>@enderror
+                </label>
 
+                <label class="inventory-edit-field">
+                  <span class="inventory-edit-label">Cost (Gh₵)</span>
+                  <input
+                    type="number"
+                    step="any"
+                    min="0"
+                    class="inventory-edit-input @error('expense_cost') is-invalid @enderror"
+                    name="expense_cost"
+                    value="{{ old('expense_cost') }}"
+                    placeholder="e.g. 1000"
+                    required
+                  />
+                  @error('expense_cost')<span class="inventory-edit-error">{{ $message }}</span>@enderror
+                </label>
 
-                  <label for="cat-title" class="col-form-label myLabel">Expense Title:</label>
-                  <div class="form-group">
-                    <input type="text" class="form-control" name="title" placeholder="eg. Internet Payment." required/>
-                  </div>
-
-                  <label for="cat-title" class="col-form-label myLabel">Description:</label>
-                  
-                  <div class="form-group">
-                    <textarea name="desc" class="form-control" rows="3" placeholder="Type description here"></textarea>
-                  </div>
-
-                  <label for="cat-title" class="col-form-label myLabel">Cost: (Gh₵)</label>
-                  <div class="form-group">
-                    <input type="number" step="any" min="0" class="form-control" name="expense_cost" maxlength="10" placeholder="eg. 1000"/>
-                  </div>
-                  {{-- @if (auth()->user()->status == 'Administrator') --}}
-                    <label for="cat-title" class="col-form-label myLabel">Choose Branch</label>
-                    <div class="form-group">
-                      <select name="branch" class="form-control" required>
-                        <option value="0">Select Branch Name</option>
-                        @if (count(session('compbranch')) > 0)
-                          @foreach (session('compbranch') as $branch)
-                            @if (auth()->user()->status == 'Administrator')
-                              <option value="{{ $branch->id }}">{{ $branch->name }}</option> 
-                            @elseif (auth()->user()->bv == $branch->id)
-                              <option value="{{ $branch->id }}">{{ $branch->name }}</option> 
-                            @endif
-                          @endforeach
-                        @endif
-                      </select>
+                <label class="inventory-edit-field dash-expenses-field-branch">
+                  <span class="inventory-edit-label">Branch</span>
+                  @if ($isAdmin)
+                    <select name="branch" class="inventory-edit-input inventory-edit-select @error('branch') is-invalid @enderror" required>
+                      <option value="" disabled {{ old('branch') ? '' : 'selected' }}>Select branch</option>
+                      @foreach ($activeBranches as $branch)
+                        <option value="{{ $branch->id }}" @selected(old('branch') == $branch->id)>
+                          {{ $branch->name }}
+                        </option>
+                      @endforeach
+                    </select>
+                    @error('branch')<span class="inventory-edit-error">{{ $message }}</span>@enderror
+                  @else
+                    <div class="dash-expenses-branch-readonly">
+                      <i class="fa fa-map-marker" aria-hidden="true"></i>
+                      <span>{{ $activeBranches->first()->name ?? auth()->user()->status }}</span>
                     </div>
-                  {{-- @endif --}}
-                  
-                  <div class="modal-footer">
-                    <button type="submit" class="btn btn-info" name="store_action" value="create_expense"><i class="fa fa-save"></i> &nbsp; Save</button>
-                  </div>
-                </form>
+                  @endif
+                </label>
+
+                <label class="inventory-edit-field dash-expenses-field-desc">
+                  <span class="inventory-edit-label">Description</span>
+                  <textarea
+                    name="desc"
+                    class="inventory-edit-input inventory-edit-textarea @error('desc') is-invalid @enderror"
+                    rows="2"
+                    placeholder="Optional details"
+                  >{{ old('desc') }}</textarea>
+                  @error('desc')<span class="inventory-edit-error">{{ $message }}</span>@enderror
+                </label>
               </div>
-                
+
+              <div class="dash-expenses-form-footer">
+                <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary">
+                  <i class="fa fa-save"></i>
+                  Save expense
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <div class="dash-expenses-divider"></div>
+
+          <section class="dash-expenses-list-section">
+            <div class="dist-section-toolbar">
+              <h6 class="inventory-edit-section-title"><i class="fa fa-list"></i> Expenses for {{ $salesDateLabel }}</h6>
+              <span class="dash-config-branch-count">{{ $expenses->count() }}</span>
             </div>
-          </div>
-        </div>
 
-              <div style="height: 30px">
-              </div>
-
-          <div class="card card-profile">
-            <div class="card-body">
-              <h4 class="card-title">All Expenses Made</h4>
-
-              @if (count($expenses) > 0)
-                <table class="table">
-                  <thead class="text-secondary">
-                    <th></th>
-                    <th>Branch</th>
-                    <th>Title</th>
-                    <th>Description</th>
-                    <th>Cost</th>
-                    <th class="pr">Date/Time</th>
-                    <th class="ryt">
-                      Action
-                    </th>
+            @if ($expenses->count() > 0)
+              <div class="table-responsive dist-branch-table-wrap dash-config-branch-table-wrap dash-expenses-table-wrap">
+                <table class="table mt dist-branch-table dash-config-branch-table dash-expenses-table">
+                  <thead class="text-secondary hideMe">
+                    <tr>
+                      <th>#</th>
+                      <th>Branch</th>
+                      <th>Title</th>
+                      <th>Cost</th>
+                      <th>Date</th>
+                      <th class="ryt actsize">Action</th>
+                    </tr>
                   </thead>
                   <tbody>
-
-                  
-                  @foreach ($expenses as $expense)
-                      <tr><td>{{$i++}}</td>
-                        <td>{{$expense->companybranch->name}}</td>
-                        <td>{{$expense->title}}</td>
-                        <td>{{$expense->desc}}</td>
-                        <td>{{number_format($expense->expense_cost)}}</td>
-                        <td>{{date('D, M-d', strtotime($expense->created_at))}}</td>
+                    @foreach ($expenses as $expense)
+                      <tr @class(['rowColour' => $loop->even])>
+                        <td>{{ $loop->iteration }}</td>
+                        <td>{{ $expense->companybranch->name ?? '—' }}</td>
+                        <td>
+                          <span class="dash-expenses-title">{{ $expense->title }}</span>
+                          @if ($expense->desc)
+                            <p class="dash-expenses-desc">{{ $expense->desc }}</p>
+                          @endif
+                        </td>
+                        <td class="dash-expenses-amount">Gh₵ {{ number_format((float) $expense->expense_cost, 2) }}</td>
+                        <td>{{ $expense->created_at?->format('D, M j') }}</td>
                         <td class="ryt">
-                          <form action="{{ action('ItemsController@destroy', $expense->id) }}" method="POST">
-
-                            <input type="hidden" name="_method" value="DELETE">
+                          <form action="{{ route('expenses.destroy', $expense) }}" method="POST" class="dash-expenses-delete-form">
                             @csrf
-                            <button type="submit" name="del_action" value="expense_del" rel="tooltip" title="Delete Record" class="close2" onclick="return confirm('NOTE: Deleting this record will credit main account with Gh₵ {{$expense->expense_cost}}');"><i class="fa fa-close"></i></button>
-                        
+                            @method('DELETE')
+                            <button
+                              type="submit"
+                              class="inventory-action-btn inventory-action-btn-icon dash-config-delete-btn dash-tip"
+                              data-tip="Delete expense"
+                              onclick="return confirm('Delete this expense record for Gh₵ {{ number_format((float) $expense->expense_cost, 2) }}?');"
+                            >
+                              <i class="fa fa-trash"></i>
+                            </button>
                           </form>
                         </td>
                       </tr>
-                  @endforeach
-                  <tr>
-                    <td></td><td></td><td><b>No. of Records : {{count($expenses)}}</b></td><td><b>Total</b></td><td><b>{{ number_format($expenses->sum('expense_cost'), 2) }}</b></td><td></td><td></td>
-                  </tr>
-                  
-
+                    @endforeach
+                    <tr class="dash-expenses-total-row">
+                      <td colspan="3"><strong>Total ({{ $expenses->count() }} {{ Str::plural('record', $expenses->count()) }})</strong></td>
+                      <td class="dash-expenses-amount">Gh₵ {{ number_format($expenseTotal, 2) }}</td>
+                      <td colspan="2"></td>
+                    </tr>
                   </tbody>
                 </table>
-              @else
-                <p>No expenses made yet</p>
-              @endif                        
-
-            </div>
-          </div>
-
-              <div style="height: 30px">
               </div>
-
+            @else
+              <div class="dash-empty-state dash-config-empty dash-expenses-empty">
+                <span class="dash-empty-state-icon" aria-hidden="true"><i class="fa fa-money"></i></span>
+                <p class="dash-empty-state-title">No expenses yet</p>
+                <p class="dash-empty-state-text">Add the first expense for <strong>{{ $salesDateLabel }}</strong> using the form above.</p>
+              </div>
+            @endif
+          </section>
+          </div>
+        </div>
       </div>
+
     </div>
   </div>
 
+@endsection
 
+@section('footer')
+  <link rel="stylesheet" href="/maindir/css/dash-expenses.css?v=6">
 @endsection

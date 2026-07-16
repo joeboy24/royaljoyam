@@ -647,10 +647,12 @@ class InventoryPageTest extends TestCase
         $response = $this->actingAs($this->admin)->get('/dashboard');
 
         $response->assertOk();
+        $response->assertSee('dash-home-hero', false);
         $response->assertSee('dash-home-grid', false);
         $response->assertSee('Welcome back, admin.test', false);
         $response->assertSee('href="/items"', false);
         $response->assertSee('dash-home-card--inventory', false);
+        $response->assertSee('dash-home-card--featured', false);
         $response->assertSee('/maindir/css/dash-dashboard.css', false);
     }
 

@@ -30,10 +30,13 @@ Route::get('/test_mode', function () {
 
 Route::get('/', 'PagesController@index');
 Route::get('/code80', 'Code80Controller@code80');
-Route::get('/expenses', 'PagesController@expenses');
+Route::get('/expenses', 'ExpensesController@index')->name('expenses.index');
+Route::post('/expenses', 'ExpensesController@store')->name('expenses.store');
+Route::delete('/expenses/{expense}', 'ExpensesController@destroy')->name('expenses.destroy');
 Route::redirect('/reports', '/reporting');
 
-Route::get('/user_profile', 'DashController@userprofile');
+Route::get('/user_profile', 'ProfileController@edit')->name('user_profile');
+Route::put('/user_profile', 'ProfileController@update')->name('user_profile.update');
 Route::get('/try', 'PagesController@try');
 
 
@@ -78,6 +81,7 @@ Auth::routes();
 
 Route::redirect('/home', '/dashboard')->name('home');
 Route::get('/orders', 'DashController@orders');
+Route::redirect('/waybil', '/waybill');
 Route::get('/waybill', 'WaybillController@create');
 Route::post('/waybill', 'WaybillController@store');
 Route::get('/waybillview', 'WaybillController@index');

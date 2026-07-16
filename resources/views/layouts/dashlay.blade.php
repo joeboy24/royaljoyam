@@ -18,8 +18,10 @@
   <link rel="stylesheet" href="/maindir/css/dash-page-header.css?v=1">
   <link rel="stylesheet" href="/maindir/css/dash-form.css?v=30">
   <link rel="stylesheet" href="/maindir/css/dash-sales.css?v=14">
+  <link rel="stylesheet" href="/maindir/css/dash-profile.css?v=2">
   <link rel="stylesheet" href="/maindir/css/dash-flash.css?v=1">
   <link rel="stylesheet" href="/maindir/css/dash-tip.css?v=2">
+  <link rel="stylesheet" href="/maindir/css/dash-topbar.css?v=2">
   {{-- <link rel="stylesheet" href="/dashdir/css/bootstrap.min.css"> --}}
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
 </head>
@@ -45,91 +47,119 @@
     <div class="main-panel">
 
       <!-- Navbar -->
-      <nav class="navbar navbar-expand-lg navbar-transparent navbar-absolute fixed-top hideMe">
-        <div class="container-fluid">
-          <div class="navbar-wrapper">
-            <a class="navbar-brand" href="#pablo"></a>
-          </div>
-          <button class="navbar-toggler" type="button" data-toggle="collapse" aria-controls="navigation-index" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="navbar-toggler-icon icon-bar"></span>
-            <span class="navbar-toggler-icon icon-bar"></span>
-            <span class="navbar-toggler-icon icon-bar"></span>
-          </button>
-          <div class="collapse navbar-collapse justify-content-end">
-            <form class="navbar-form">
-              <div class="input-group no-border">
+      @php
+        $topbarUser = auth()->user();
+        $topbarInitials = strtoupper(substr($topbarUser->name, 0, 1));
+        $topbarIsAdmin = $topbarUser->status === 'Administrator';
+        $topbarOnDashboard = request()->is('dashboard');
+      @endphp
 
-              @if(Session::get('date_today') == '')
-                {{ date('d-m-Y h:i') }}
-              @else
-              {{ Session::get('date_today') }}
-              @endif
-                @yield('search')
-                
-              </div> 
-            </form>
-            <ul class="navbar-nav">
+      <nav class="navbar navbar-expand-lg navbar-transparent navbar-absolute fixed-top hideMe dash-topbar">
+        <div class="container-fluid">
+          @hasSection('search')
+            <div class="dash-topbar-start">
+              @yield('search')
+            </div>
+          @endif
+
+          <div class="dash-topbar-actions">
+            <ul class="navbar-nav dash-topbar-nav">
               <li class="nav-item">
-                <a class="nav-link" href="/dashboard">
+                <a
+                  @class(['nav-link', 'dash-tip', 'dash-topbar-link-active' => $topbarOnDashboard])
+                  href="/dashboard"
+                  data-tip="Dashboard"
+                  @if ($topbarOnDashboard) aria-current="page" @endif
+                >
                   <i class="material-icons">dashboard</i>
-                  <p class="d-lg-none d-md-block">
-                    Stats
-                  </p>
                 </a>
               </li>
-              
-              
 
               <li class="nav-item dropdown">
-                <a class="nav-link" href="http://example.com" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <a
+                  class="nav-link dash-tip"
+                  href="#"
+                  id="navbarDropdownMenuLink"
+                  data-toggle="dropdown"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                  data-tip="Notifications"
+                >
                   <i class="material-icons">notifications</i>
                   <span class="notification">2</span>
-                  <p class="d-lg-none d-md-block">
-                    Some Actions
-                  </p>
                 </a>
-                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
-                  <a class="dropdown-item" href="#">Contact PivoApps for any upgrade</a>
-                  <a class="dropdown-item" href="#">Do not share passwords, create new user instead</a>
-                  <!--a class="dropdown-item" href="#">You're now friend with Andrew</a>
-                  <a class="dropdown-item" href="#">Another Notification</a>
-                  <a class="dropdown-item" href="#">Another One</a-->
-
-                  <div class="dropdown-divider"></div>
-                  {{-- <a class="dropdown-item" href="/logout">Logout</a> --}}
+                <div class="dropdown-menu dropdown-menu-right dash-topbar-menu" aria-labelledby="navbarDropdownMenuLink">
+                  <div class="dash-topbar-menu-header">
+                    <div>
+                      <span class="dash-topbar-menu-name">Notifications</span>
+                      <span class="dash-topbar-menu-meta">System reminders</span>
+                    </div>
+                  </div>
+                  <div class="dash-topbar-menu-divider"></div>
+                  <div class="dash-topbar-notice">
+                    <span class="dash-topbar-notice-icon" aria-hidden="true"><i class="fa fa-life-ring"></i></span>
+                    <span class="dash-topbar-notice-text">
+                      <span class="dash-topbar-notice-title">Need an upgrade?</span>
+                      Contact PivoApps for feature updates and support.
+                    </span>
+                  </div>
+                  <div class="dash-topbar-notice">
+                    <span class="dash-topbar-notice-icon" aria-hidden="true"><i class="fa fa-shield"></i></span>
+                    <span class="dash-topbar-notice-text">
+                      <span class="dash-topbar-notice-title">Account security</span>
+                      Do not share passwords. Register a new user instead.
+                    </span>
+                  </div>
                 </div>
               </li>
 
               <li class="nav-item dropdown">
-                <a class="nav-link" href="#pablo" id="navbarDropdownProfile" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  <i class="material-icons">person</i>
-                  <p class="d-lg-none d-md-block">
-                    Account
-                  </p>
+                <a
+                  class="nav-link dash-topbar-user-trigger dash-tip"
+                  href="#"
+                  id="navbarDropdownProfile"
+                  data-toggle="dropdown"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                  data-tip="Account menu"
+                >
+                  <span class="dash-topbar-user-avatar" aria-hidden="true">{{ $topbarInitials }}</span>
+                  <i class="fa fa-chevron-down dash-topbar-user-chevron" aria-hidden="true"></i>
                 </a>
-                {{-- <a class="dropdown-item" href="{{route('logout')}}" class="simple-text logo-normal">AAAAA</a> --}}
-                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownProfile">
-                  <a class="dropdown-item" href="/user_profile">Profile</a>
-                  <a class="dropdown-item" href="#">Settings</a>
-                  <div class="dropdown-divider"></div>
-
-                  <!--a class="dropdown-item" href="#">Log out</a-->
-                  <a class="dropdown-item" href="{{ route('logout') }}"
-                    onclick="event.preventDefault();
-                                    document.getElementById('logout-form').submit();">
-                        {{ __('Logout') }}
+                <div class="dropdown-menu dropdown-menu-right dash-topbar-menu" aria-labelledby="navbarDropdownProfile">
+                  <div class="dash-topbar-menu-header">
+                    <span class="dash-topbar-menu-avatar" aria-hidden="true">{{ $topbarInitials }}</span>
+                    <div class="dash-topbar-menu-user">
+                      <span class="dash-topbar-menu-name">{{ $topbarUser->name }}</span>
+                      <span class="dash-topbar-menu-meta">{{ $topbarUser->email }}</span>
+                      <span class="dash-topbar-menu-role">{{ $topbarUser->status }}</span>
+                    </div>
+                  </div>
+                  <div class="dash-topbar-menu-divider"></div>
+                  <a class="dropdown-item" href="/user_profile">
+                    <i class="fa fa-user-circle"></i>
+                    Profile
                   </a>
-
-                  <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                  @if ($topbarIsAdmin)
+                    <a class="dropdown-item" href="/config">
+                      <i class="fa fa-cogs"></i>
+                      Configuration
+                    </a>
+                  @endif
+                  <div class="dash-topbar-menu-divider"></div>
+                  <a
+                    class="dropdown-item dropdown-item-danger"
+                    href="{{ route('logout') }}"
+                    onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
+                  >
+                    <i class="fa fa-sign-out"></i>
+                    Logout
+                  </a>
+                  <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                     @csrf
                   </form>
                 </div>
-
-                
               </li>
-              
-
             </ul>
           </div>
         </div>

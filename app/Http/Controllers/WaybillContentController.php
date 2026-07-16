@@ -16,6 +16,13 @@ class WaybillContentController extends Controller
         protected WaybillDistributionService $distributionService
     ) {
         $this->middleware(['auth', 'load_auth']);
+        $this->middleware(function ($request, $next) {
+            if (auth()->user()->status != 'Administrator') {
+                return redirect('/dashboard');
+            }
+
+            return $next($request);
+        });
     }
 
     public function store(Request $request, Waybill $waybill)

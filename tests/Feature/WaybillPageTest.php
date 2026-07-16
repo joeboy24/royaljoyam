@@ -766,7 +766,7 @@ class WaybillPageTest extends TestCase
             ->assertSee('MT-SENT-001');
     }
 
-    public function test_non_admin_cannot_access_waybill_history(): void
+    public function test_non_admin_is_redirected_from_waybill_pages(): void
     {
         $branchUserId = DB::table('users')->insertGetId([
             'company_branch_id' => '1',
@@ -780,9 +780,15 @@ class WaybillPageTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $this->actingAs(User::findOrFail($branchUserId))
+        $branchUser = User::findOrFail($branchUserId);
+
+        $this->actingAs($branchUser)
             ->get('/waybillview')
-            ->assertForbidden();
+            ->assertRedirect('/dashboard');
+
+        $this->actingAs($branchUser)
+            ->get('/waybill')
+            ->assertRedirect('/dashboard');
     }
 
     protected function createItem(array $overrides = []): int

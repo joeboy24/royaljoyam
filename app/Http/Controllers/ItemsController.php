@@ -672,38 +672,6 @@ class ItemsController extends Controller
     
                 break;
 
-                case 'create_expense':
-                    // $exps = Expense::where('companybranch_id', '')->get();
-                    // $ex = Expense::all();
-                    // return $ex[1]->companybranch;
-                    // foreach ($exps as $exp) {
-                    //     $exp->companybranch_id = 2;
-                    //     $exp->save();
-                    // }
-                    // return 'Done..!';
-
-                    // if (auth()->user()->status != 'Administrator'){
-                    //     $branch = auth()->user()->status;
-                    // }else{
-                    //     $branch = $request->input('branch');
-                    // }
-                    $branch = $request->input('branch');
-                    if ($branch == 0){
-                        return redirect(url()->previous())->with('error', 'Oops..! Choose branch to apply expenses to.');
-                    }
-
-                    $expense = new Expense;
-                    $expense->user_id = auth()->user()->id;
-                    $expense->companybranch_id = $branch;
-                    $expense->title = $request->input('title');
-                    $expense->desc = $request->input('desc');
-                    $expense->expense_cost = $request->input('expense_cost');
-                    $expense->save();
-    
-                    return redirect('/expenses')->with('success', 'Expense Record Added Successfully');
-                    
-                break;
-
                 case 'set_closure':
 
                     $month = session('cldate');
@@ -907,25 +875,6 @@ class ItemsController extends Controller
         //
         switch ($request->input('store_action')) {
 
-            case 'update_user':
-
-                $ps1 = $request->input('password');
-                $ps2 = $request->input('password_confirmation');
-
-                if($ps1 == $ps2){
-                    $user = User::find($id);
-                    $user->name = $request->input('name');
-                    $user->email = $request->input('email');
-                    $user->password = Hash::make($ps1);
-                    $user->save();
-
-                    return redirect(url()->previous())->with('success', 'Update Successful');
-                }else{
-                    return redirect(url()->previous())->with('error', 'Passwords do not match');
-                }
-
-            break;
-
             case 'update_item':
 
                 $item = Item::find($id);
@@ -1052,13 +1001,6 @@ class ItemsController extends Controller
 
                 $cat->delete();
 
-                return redirect(url()->previous())->with('success', 'Category Deleted.');
-            break;
-
-            case 'expense_del':
-                $exp = Expense::find($id);
-                $exp->del = 'yes';
-                $exp->save();
                 return redirect(url()->previous())->with('success', 'Category Deleted.');
             break;
 
