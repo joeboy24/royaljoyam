@@ -18,6 +18,7 @@
         'name' => $item->name,
         'brand' => $item->brand,
         'desc' => $item->desc,
+        'barcode' => $item->barcode,
         'costPrice' => $item->price,
         'thumb' => $item->thumb_img ?: 'no_image.png',
         'branchPrice' => $item->{'b'.$branchBv},
@@ -119,7 +120,7 @@
                   type="text"
                   class="dash-sales-search-input"
                   name="item_name"
-                  placeholder="Search item..."
+                  placeholder="Search item or scan barcode..."
                   id="mySearch"
                   autocomplete="off"
                   required
@@ -139,6 +140,7 @@
                         id="selItem{{ $item->id }}"
                         class="dash-sales-dropdown-item"
                         data-item-id="{{ $item->id }}"
+                        data-barcode="{{ $item->barcode }}"
                       >
                         <span class="dash-sales-dropdown-item-inner">
                           <img class="dash-sales-dropdown-thumb" src="/storage/rjv_items/{{ $item->thumb_img ?: 'no_image.png' }}" alt="" />
@@ -413,7 +415,7 @@
 
           @if (count($sales) > 0)
             <div class="dash-sales-table-wrap table-responsive">
-              <table class="table mt">
+              <table class="table mt dash-sales-log-table">
                 <thead>
                   <tr>
                     <th>#</th>
@@ -433,10 +435,15 @@
                   @foreach ($sales as $sale)
                     @if ($sale->del == 'no')
                       @php
-                        $isDebt = $sale->paid != 'Paid' || ($sale->pay_mode == 'Post Payment(Debt)' && $sale->paid != 'Paid');
-                        $rowClass = $isDebt ? 'debt_alert' : ($sale->del_status == 'Not Delivered' ? 'not_delivered' : ($loop->even ? 'rowColour' : ''));
+                        $paymentBadge = $sale->paymentStatusBadge();
+                        $notesPreview = filled($sale->notes) ? \Illuminate\Support\Str::limit($sale->notes, 40) : null;
+                        $notesTruncated = filled($sale->notes) && strlen($sale->notes) > 40;
                       @endphp
-                      <tr class="{{ $rowClass }}">
+                      <tr @class([
+                        'rowColour' => $loop->even,
+                        'dash-sales-log-row--debt' => $sale->hasOutstandingDebt(),
+                        'dash-sales-log-row--undelivered' => $sale->del_status === 'Not Delivered' && ! $sale->hasOutstandingDebt(),
+                      ])>
                         <td>{{ $loop->iteration + ($sales->currentPage() - 1) * $sales->perPage() }}</td>
                         <td>
                           <strong>{{ $sale->order_no }}</strong>
@@ -444,10 +451,7 @@
                         </td>
                         <td>{{ $sale->qty }}</td>
                         <td>
-                          {{ $sale->pay_mode }}
-                          @if ($sale->pay_mode == 'Post Payment(Debt)' && $sale->paid == 'Paid')
-                            <br><strong>{{ $sale->paid }}</strong> <i class="fa fa-check" style="color: rgb(0, 163, 0)"></i>
-                          @endif
+                          <span class="dash-sales-badge {{ $sale->payModeBadgeClass() }}">{{ $sale->payModeShortLabel() }}</span>
                         </td>
                         <td>
                           {{ $sale->buy_name }}
@@ -455,7 +459,18 @@
                         </td>
                         <td class="dash-sales-notes-cell">
                           @if (filled($sale->notes))
-                            <span title="{{ $sale->notes }}">{{ \Illuminate\Support\Str::limit($sale->notes, 40) }}</span>
+                            @if ($notesTruncated)
+                              <button
+                                type="button"
+                                class="dash-sales-notes-link"
+                                data-toggle="modal"
+                                data-target="#view_notes{{ $sale->id }}"
+                              >
+                                {{ $notesPreview }}
+                              </button>
+                            @else
+                              <span title="{{ $sale->notes }}">{{ $notesPreview }}</span>
+                            @endif
                           @else
                             <span class="gray_p">—</span>
                           @endif
@@ -465,12 +480,13 @@
                           <p class="dash-sales-log-meta">{{ $sale->changeOrBalanceLabel() }}: {{ number_format($sale->changeOrBalanceAmount(), 2) }}</p>
                         </td>
                         <td>
-                          <form action="{{ url('/deliverer') }}" method="GET" class="dash-sales-delivery-form">
-                            <input type="hidden" name="deliverer" value="{{ $sale->id }}">
+                          <div class="dash-sales-status-stack">
                             @if ($sale->del_status == 'Delivered')
-                              <input type="hidden" name="deliverer_text" value="Not Delivered">
                               <button
                                 type="submit"
+                                form="delivery-form-{{ $sale->id }}"
+                                name="deliverer_text"
+                                value="Not Delivered"
                                 class="dash-sales-status-pill dash-sales-status-pill--delivered dash-tip"
                                 data-tip="Click to mark as undelivered"
                                 onclick="return confirm('Mark this order as undelivered?');"
@@ -478,9 +494,11 @@
                                 Delivered
                               </button>
                             @else
-                              <input type="hidden" name="deliverer_text" value="Delivered">
                               <button
                                 type="submit"
+                                form="delivery-form-{{ $sale->id }}"
+                                name="deliverer_text"
+                                value="Delivered"
                                 class="dash-sales-status-pill dash-sales-status-pill--undelivered dash-tip"
                                 data-tip="Click to mark as delivered"
                                 onclick="return confirm('Mark this order as delivered?');"
@@ -488,11 +506,15 @@
                                 Undelivered
                               </button>
                             @endif
-                          </form>
+
+                            @if ($paymentBadge)
+                              <span class="dash-sales-payment-badge {{ $paymentBadge['class'] }}">{{ $paymentBadge['label'] }}</span>
+                            @endif
+                          </div>
                         </td>
                         <td>
                           <strong>Gh₵ {{ number_format($sale->tot, 2) }}</strong>
-                          @if ($sale->pay_mode == 'Post Payment(Debt)' && $sale->paid != 'Paid')
+                          @if ($sale->hasOutstandingDebt())
                             <p class="dash-sales-log-meta">Bal.: Gh₵ {{ number_format($sale->debtBalance(), 2) }}</p>
                           @endif
                           @if ($sale->discount != 0)
@@ -508,7 +530,7 @@
                             <a href="/reporting/{{ $sale->id }}" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Print" title="Print order">
                               <i class="fa fa-print"></i>
                             </a>
-                            @if ($sale->paid != 'Paid' && $sale->pay_mode == 'Post Payment(Debt)')
+                            @if ($sale->hasOutstandingDebt())
                               <button type="button" data-toggle="modal" data-target="#pay_debt{{ $sale->id }}" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Pay debt" title="Pay debt">
                                 <i class="fa fa-money"></i>
                               </button>
@@ -522,126 +544,59 @@
                               </a>
                             @endif
                           </div>
-
-                          @if ($sale->paid != 'Paid' && $sale->pay_mode == 'Post Payment(Debt)')
-                            @php($debtRemaining = $sale->debtBalance())
-                            <div class="modal fade" id="pay_debt{{ $sale->id }}" tabindex="-1" role="dialog" aria-hidden="true">
-                              <div class="modal-dialog inventory-edit-dialog modal-dialog-centered" role="document">
-                                <div class="modal-content inventory-edit-modal">
-                                  <div class="inventory-edit-header">
-                                    <div class="inventory-edit-header-inner">
-                                      <div class="inventory-edit-header-text">
-                                        <span class="inventory-edit-kicker">Debt payment</span>
-                                        <h4 class="inventory-edit-title">{{ $sale->buy_name }}</h4>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div class="inventory-edit-body">
-                                    <form action="{{ url('/sales/pay-debt') }}" method="POST">
-                                      @csrf
-                                      <input type="hidden" name="send_id" value="{{ $sale->id }}">
-                                      <input type="hidden" name="send_tot" value="{{ $sale->tot }}">
-                                      <label class="inventory-edit-field">
-                                        <span class="inventory-edit-label">Amount (Gh₵)</span>
-                                        <input class="inventory-edit-input" type="number" min="0.01" step="any" name="amt_paid" value="{{ number_format($debtRemaining, 2, '.', '') }}" max="{{ number_format($debtRemaining, 2, '.', '') }}">
-                                      </label>
-                                      <div class="inventory-edit-footer" style="padding: 0; border: 0; margin-top: 8px;">
-                                        <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary" onclick="return confirm('Proceed with payment?');">
-                                          <i class="fa fa-money"></i> Pay
-                                        </button>
-                                      </div>
-                                    </form>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          @endif
-
-                          <div class="modal fade" id="edit_order{{ $sale->id }}" tabindex="-1" role="dialog" aria-hidden="true">
-                            <div class="modal-dialog inventory-edit-dialog modal-dialog-centered" role="document">
-                              <div class="modal-content inventory-edit-modal">
-                                <div class="inventory-edit-header">
-                                  <div class="inventory-edit-header-inner">
-                                    <div class="inventory-edit-header-text">
-                                      <span class="inventory-edit-kicker">Edit order</span>
-                                      <h4 class="inventory-edit-title">{{ $sale->buy_name }}</h4>
-                                    </div>
-                                  </div>
-                                  <button type="button" class="inventory-edit-close" data-dismiss="modal" aria-label="Close">
-                                    <i class="fa fa-times"></i>
-                                  </button>
-                                </div>
-                                <div class="inventory-edit-body">
-                                  <form action="{{ url('/sales/' . $sale->id) }}" method="POST">
-                                    @csrf
-                                    @method('PUT')
-                                    <label class="inventory-edit-field">
-                                      <span class="inventory-edit-label">Buyer&rsquo;s name</span>
-                                      <input class="inventory-edit-input" type="text" name="buy_name" value="{{ $sale->buy_name }}" required/>
-                                    </label>
-                                    <label class="inventory-edit-field">
-                                      <span class="inventory-edit-label">Contact</span>
-                                      <input class="inventory-edit-input" type="number" name="buy_contact" min="0" value="{{ $sale->buy_contact }}" required/>
-                                    </label>
-                                    <label class="inventory-edit-field">
-                                      <span class="inventory-edit-label">Pay mode</span>
-                                      <select class="inventory-edit-input inventory-edit-select" name="pay_mode" required>
-                                        <option value="{{ $sale->pay_mode }}" selected>{{ $sale->pay_mode }}</option>
-                                        <option value="Cash">Cash</option>
-                                        <option value="Cheque">Cheque</option>
-                                        <option value="Mobile Money">Mobile Money</option>
-                                        <option value="Post Payment(Debt)">Post Payment (Debt)</option>
-                                      </select>
-                                    </label>
-                                    <label class="inventory-edit-field">
-                                      <span class="inventory-edit-label">Notes</span>
-                                      <input class="inventory-edit-input" type="text" name="notes" maxlength="255" value="{{ $sale->notes }}" placeholder="Optional"/>
-                                    </label>
-                                    <div class="inventory-edit-footer" style="padding: 0; border: 0; margin-top: 8px;">
-                                      <button type="button" class="inventory-edit-btn inventory-edit-btn-muted" data-dismiss="modal">Cancel</button>
-                                      <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary">
-                                        <i class="fa fa-save"></i> Update
-                                      </button>
-                                    </div>
-                                  </form>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
                         </td>
                       </tr>
 
-                      @if ($sale->del_status == 'Not Delivered' && $sale->pay_mode == 'Post Payment(Debt)')
-                        <tr class="dash-sales-delivery-header">
-                          <td colspan="11"><strong>Line-item delivery</strong></td>
+                      @if ($sale->del_status == 'Not Delivered' && $sale->pay_mode == 'Post Payment(Debt)' && $sale->saleshistory->isNotEmpty())
+                        <tr class="dash-sales-line-items-row">
+                          <td colspan="11">
+                            <div class="dash-sales-line-items">
+                              <p class="dash-sales-line-items-title"><i class="fa fa-truck"></i> Line-item delivery</p>
+                              <div class="dash-sales-line-items-table-wrap">
+                                <table class="dash-sales-line-items-table">
+                                  <thead>
+                                    <tr>
+                                      <th>Item</th>
+                                      <th>Name</th>
+                                      <th>Qty</th>
+                                      <th>Status</th>
+                                      <th>Date</th>
+                                      <th class="ryt">Action</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    @foreach ($sale->saleshistory as $sh)
+                                      <tr>
+                                        <td>{{ $sh->item_no }}</td>
+                                        <td>{{ $sh->name }}</td>
+                                        <td>{{ $sh->qty }}</td>
+                                        <td>
+                                          @if ($sh->del_status == 'Delivered')
+                                            <span class="dash-sales-payment-badge dash-sales-payment-badge--paid">Delivered</span>
+                                          @else
+                                            <span class="dash-sales-payment-badge dash-sales-payment-badge--warn">Pending</span>
+                                          @endif
+                                        </td>
+                                        <td>{{ $sh->created_at }}</td>
+                                        <td class="ryt">
+                                          @if ($sh->del_status == 'Delivered')
+                                            <button type="submit" form="line-undeliver-{{ $sh->id }}" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Mark undelivered">
+                                              <i class="fa fa-undo"></i>
+                                            </button>
+                                          @else
+                                            <button type="submit" form="line-deliver-{{ $sh->id }}" class="inventory-action-btn inventory-action-btn-primary inventory-action-btn-icon dash-tip" data-tip="Mark delivered">
+                                              <i class="fa fa-check"></i>
+                                            </button>
+                                          @endif
+                                        </td>
+                                      </tr>
+                                    @endforeach
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          </td>
                         </tr>
-                        @foreach ($sale->saleshistory as $sh)
-                          <tr>
-                            <td></td>
-                            <td colspan="2">{{ $sh->item_no }}</td>
-                            <td colspan="2">{{ $sh->name }}</td>
-                            <td>{{ $sh->qty }}</td>
-                            <td>{{ $sh->del_status }}</td>
-                            <td colspan="2">{{ $sh->created_at }}</td>
-                            <td colspan="2">
-                              @if ($sh->del_status == 'Delivered')
-                                <form action="{{ url('/sales/history/' . $sh->id . '/undeliver') }}" method="POST" style="display:inline;">
-                                  @csrf
-                                  @method('PUT')
-                                  <input type="hidden" name="send_sale_id" value="{{ $sale->id }}">
-                                  <button class="inventory-action-btn" type="submit"><i class="fa fa-suitcase"></i> Undeliver</button>
-                                </form>
-                              @else
-                                <form action="{{ url('/sales/history/' . $sh->id . '/deliver') }}" method="POST" style="display:inline;">
-                                  @csrf
-                                  @method('PUT')
-                                  <input type="hidden" name="send_sale_id" value="{{ $sale->id }}">
-                                  <button class="inventory-action-btn inventory-action-btn-primary" type="submit"><i class="fa fa-suitcase"></i> Deliver</button>
-                                </form>
-                              @endif
-                            </td>
-                          </tr>
-                        @endforeach
                       @endif
                     @endif
                   @endforeach
@@ -649,6 +604,148 @@
               </table>
             </div>
             {{ $sales->links() }}
+
+            <div class="dash-sales-log-forms" hidden aria-hidden="true">
+              @foreach ($sales as $sale)
+                @if ($sale->del == 'no')
+                  <form id="delivery-form-{{ $sale->id }}" action="{{ url('/deliverer') }}" method="GET">
+                    <input type="hidden" name="deliverer" value="{{ $sale->id }}">
+                  </form>
+
+                  @if ($sale->del_status == 'Not Delivered' && $sale->pay_mode == 'Post Payment(Debt)')
+                    @foreach ($sale->saleshistory as $sh)
+                      <form id="line-deliver-{{ $sh->id }}" action="{{ url('/sales/history/' . $sh->id . '/deliver') }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" name="send_sale_id" value="{{ $sale->id }}">
+                      </form>
+                      <form id="line-undeliver-{{ $sh->id }}" action="{{ url('/sales/history/' . $sh->id . '/undeliver') }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" name="send_sale_id" value="{{ $sale->id }}">
+                      </form>
+                    @endforeach
+                  @endif
+                @endif
+              @endforeach
+            </div>
+
+            @foreach ($sales as $sale)
+              @if ($sale->del == 'no')
+                @if (filled($sale->notes) && strlen($sale->notes) > 40)
+                  <div class="modal fade" id="view_notes{{ $sale->id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="modal-dialog inventory-edit-dialog modal-dialog-centered" role="document">
+                      <div class="modal-content inventory-edit-modal">
+                        <div class="inventory-edit-header">
+                          <div class="inventory-edit-header-inner">
+                            <div class="inventory-edit-header-text">
+                              <span class="inventory-edit-kicker">Order {{ $sale->order_no }}</span>
+                              <h4 class="inventory-edit-title">Purchase notes</h4>
+                            </div>
+                          </div>
+                          <button type="button" class="inventory-edit-close" data-dismiss="modal" aria-label="Close">
+                            <i class="fa fa-times"></i>
+                          </button>
+                        </div>
+                        <div class="inventory-edit-body">
+                          <p class="dash-sales-notes-full">{{ $sale->notes }}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                @endif
+
+                @if ($sale->hasOutstandingDebt())
+                  @php($debtRemaining = $sale->debtBalance())
+                  <div class="modal fade" id="pay_debt{{ $sale->id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="modal-dialog inventory-edit-dialog modal-dialog-centered" role="document">
+                      <div class="modal-content inventory-edit-modal">
+                        <div class="inventory-edit-header">
+                          <div class="inventory-edit-header-inner">
+                            <div class="inventory-edit-header-text">
+                              <span class="inventory-edit-kicker">Debt payment</span>
+                              <h4 class="inventory-edit-title">{{ $sale->buy_name }}</h4>
+                              <p class="inventory-edit-meta">Balance: Gh₵ {{ number_format($debtRemaining, 2) }}</p>
+                            </div>
+                          </div>
+                          <button type="button" class="inventory-edit-close" data-dismiss="modal" aria-label="Close">
+                            <i class="fa fa-times"></i>
+                          </button>
+                        </div>
+                        <div class="inventory-edit-body">
+                          <form action="{{ url('/sales/pay-debt') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="send_id" value="{{ $sale->id }}">
+                            <input type="hidden" name="send_tot" value="{{ $sale->tot }}">
+                            <label class="inventory-edit-field">
+                              <span class="inventory-edit-label">Amount (Gh₵)</span>
+                              <input class="inventory-edit-input" type="number" min="0.01" step="any" name="amt_paid" value="{{ number_format($debtRemaining, 2, '.', '') }}" max="{{ number_format($debtRemaining, 2, '.', '') }}">
+                            </label>
+                            <div class="inventory-edit-footer" style="padding: 0; border: 0; margin-top: 8px;">
+                              <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary" onclick="return confirm('Proceed with payment?');">
+                                <i class="fa fa-money"></i> Pay
+                              </button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                @endif
+
+                <div class="modal fade" id="edit_order{{ $sale->id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                  <div class="modal-dialog inventory-edit-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content inventory-edit-modal">
+                      <div class="inventory-edit-header">
+                        <div class="inventory-edit-header-inner">
+                          <div class="inventory-edit-header-text">
+                            <span class="inventory-edit-kicker">Edit order</span>
+                            <h4 class="inventory-edit-title">{{ $sale->buy_name }}</h4>
+                          </div>
+                        </div>
+                        <button type="button" class="inventory-edit-close" data-dismiss="modal" aria-label="Close">
+                          <i class="fa fa-times"></i>
+                        </button>
+                      </div>
+                      <div class="inventory-edit-body">
+                        <form action="{{ url('/sales/' . $sale->id) }}" method="POST">
+                          @csrf
+                          @method('PUT')
+                          <label class="inventory-edit-field">
+                            <span class="inventory-edit-label">Buyer&rsquo;s name</span>
+                            <input class="inventory-edit-input" type="text" name="buy_name" value="{{ $sale->buy_name }}" required/>
+                          </label>
+                          <label class="inventory-edit-field">
+                            <span class="inventory-edit-label">Contact</span>
+                            <input class="inventory-edit-input" type="number" name="buy_contact" min="0" value="{{ $sale->buy_contact }}" required/>
+                          </label>
+                          <label class="inventory-edit-field">
+                            <span class="inventory-edit-label">Pay mode</span>
+                            <select class="inventory-edit-input inventory-edit-select" name="pay_mode" required>
+                              <option value="{{ $sale->pay_mode }}" selected>{{ $sale->pay_mode }}</option>
+                              <option value="Cash">Cash</option>
+                              <option value="Cheque">Cheque</option>
+                              <option value="Mobile Money">Mobile Money</option>
+                              <option value="Post Payment(Debt)">Post Payment (Debt)</option>
+                            </select>
+                          </label>
+                          <label class="inventory-edit-field">
+                            <span class="inventory-edit-label">Notes</span>
+                            <input class="inventory-edit-input" type="text" name="notes" maxlength="255" value="{{ $sale->notes }}" placeholder="Optional"/>
+                          </label>
+                          <div class="inventory-edit-footer" style="padding: 0; border: 0; margin-top: 8px;">
+                            <button type="button" class="inventory-edit-btn inventory-edit-btn-muted" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary">
+                              <i class="fa fa-save"></i> Update
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              @endif
+            @endforeach
           @else
             <p class="dash-sales-empty">
               @if ($salesHasFilters)
@@ -795,6 +892,6 @@
       },
     };
   </script>
-  <script src="/maindir/js/dash-sales.js?v=2"></script>
+  <script src="/maindir/js/dash-sales.js?v=3"></script>
   <script src="/maindir/js/inventory-collapsible-filters.js?v=2"></script>
 @endsection

@@ -37,14 +37,40 @@
       }
     }
 
+    function itemSearchText(element) {
+      var itemId = element.getAttribute('data-item-id');
+      var item = catalogById[String(itemId)] || {};
+
+      return [
+        element.textContent || '',
+        item.itemNo || '',
+        item.barcode || '',
+        element.getAttribute('data-barcode') || '',
+      ].join(' ').toUpperCase();
+    }
+
     function filterItems() {
       var filter = searchInput.value.trim().toUpperCase();
       var items = dropdown.querySelectorAll('.dash-sales-dropdown-item');
 
       items.forEach(function (element) {
-        var text = (element.textContent || '').toUpperCase();
-        element.hidden = filter !== '' && text.indexOf(filter) === -1;
+        var haystack = itemSearchText(element);
+        element.hidden = filter !== '' && haystack.indexOf(filter) === -1;
       });
+    }
+
+    function findExactBarcodeMatch(value) {
+      var normalized = value.trim();
+
+      if (!normalized) {
+        return null;
+      }
+
+      var upper = normalized.toUpperCase();
+
+      return (config.catalog || []).find(function (item) {
+        return item.barcode && String(item.barcode).trim().toUpperCase() === upper;
+      }) || null;
     }
 
     function selectItem(itemId) {
@@ -107,6 +133,19 @@
     searchInput.addEventListener('focus', function () {
       openDropdown();
       filterItems();
+    });
+
+    searchInput.addEventListener('keydown', function (event) {
+      if (event.key !== 'Enter') {
+        return;
+      }
+
+      var exactMatch = findExactBarcodeMatch(searchInput.value);
+
+      if (exactMatch) {
+        event.preventDefault();
+        selectItem(exactMatch.id);
+      }
     });
 
     dropdown.addEventListener('click', function (event) {

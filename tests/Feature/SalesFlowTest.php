@@ -289,6 +289,48 @@ class SalesFlowTest extends TestCase
         });
     }
 
+    public function test_sales_log_renders_status_badges_and_notes_column(): void
+    {
+        $today = now()->format('Y-m-d');
+
+        $this->createSale([
+            'order_no' => 'MNOTE' . now()->format('is'),
+            'pay_mode' => 'Post Payment(Debt)',
+            'del_status' => 'Not Delivered',
+            'paid' => 'No',
+            'payment' => '0',
+            'change' => '0',
+            'buy_name' => 'Notes Customer',
+            'notes' => str_repeat('Delivery note ', 8),
+        ]);
+
+        $response = $this->withSession(['date_today' => $today])
+            ->actingAs($this->branchUser)
+            ->get('/sales');
+
+        $response->assertOk()
+            ->assertSee('dash-sales-badge--debt', false)
+            ->assertSee('dash-sales-payment-badge--debt', false)
+            ->assertSee('Outstanding')
+            ->assertSee('view_notes', false)
+            ->assertSee('delivery-form-', false)
+            ->assertSee('Notes Customer');
+    }
+
+    public function test_sales_page_includes_barcode_in_pos_catalog(): void
+    {
+        $this->createItem(['barcode' => 'SCAN-12345', 'name' => 'Barcode Tile']);
+
+        $response = $this->withSession(['date_today' => now()->format('Y-m-d')])
+            ->actingAs($this->branchUser)
+            ->get('/sales');
+
+        $response->assertOk()
+            ->assertSee('SCAN-12345', false)
+            ->assertSee('data-barcode="SCAN-12345"', false)
+            ->assertSee('scan barcode', false);
+    }
+
     public function test_sales_page_totals_count_collected_money_for_selected_day(): void
     {
         $today = '2026-07-06';

@@ -654,6 +654,188 @@ body.dash-sales-drawer-open {
   margin: 0;
 }
 
+.dash-sales-log-table tbody > tr > td {
+  border-top: 1px solid #f0f2f4;
+}
+
+.dash-sales-log-row--debt {
+  box-shadow: inset 3px 0 0 #ef5350;
+}
+
+.dash-sales-log-row--undelivered {
+  box-shadow: inset 3px 0 0 #ffb300;
+}
+
+.dash-sales-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.dash-sales-badge--cash {
+  color: #2e7d32;
+  background: #e8f5e9;
+  border-color: #a5d6a7;
+}
+
+.dash-sales-badge--cheque {
+  color: #1565c0;
+  background: #e3f2fd;
+  border-color: #90caf9;
+}
+
+.dash-sales-badge--momo {
+  color: #6a1b9a;
+  background: #f3e5f5;
+  border-color: #ce93d8;
+}
+
+.dash-sales-badge--debt {
+  color: #c62828;
+  background: #ffebee;
+  border-color: #ef9a9a;
+}
+
+.dash-sales-badge--neutral {
+  color: #546e7a;
+  background: #eceff1;
+  border-color: #cfd8dc;
+}
+
+.dash-sales-status-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.dash-sales-payment-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  border: 1px solid transparent;
+}
+
+.dash-sales-payment-badge--paid {
+  color: #2e7d32;
+  background: #e8f5e9;
+  border-color: #a5d6a7;
+}
+
+.dash-sales-payment-badge--debt {
+  color: #c62828;
+  background: #ffebee;
+  border-color: #ef9a9a;
+}
+
+.dash-sales-payment-badge--warn {
+  color: #ef6c00;
+  background: #fff3e0;
+  border-color: #ffcc80;
+}
+
+.dash-sales-notes-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--sales-accent-dark);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--sales-accent) 40%, transparent);
+}
+
+.dash-sales-notes-link:hover {
+  color: var(--sales-accent);
+}
+
+.dash-sales-notes-full {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #334047;
+  white-space: pre-wrap;
+}
+
+.dash-sales-line-items-row > td {
+  padding: 0 0 12px !important;
+  background: #fafbfc;
+  border-top: 0 !important;
+}
+
+.dash-sales-line-items {
+  margin: 0 12px 4px;
+  padding: 14px 16px;
+  border: 1px solid #e8ecef;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.dash-sales-line-items-title {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #7a8a92;
+}
+
+.dash-sales-line-items-title .fa {
+  margin-right: 6px;
+  color: var(--sales-accent);
+}
+
+.dash-sales-line-items-table-wrap {
+  overflow-x: auto;
+}
+
+.dash-sales-line-items-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dash-sales-line-items-table th,
+.dash-sales-line-items-table td {
+  padding: 8px 10px;
+  font-size: 12px;
+  border-bottom: 1px solid #f0f2f4;
+  vertical-align: middle;
+}
+
+.dash-sales-line-items-table th {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8a9aa3;
+  background: #fafbfc;
+}
+
+.dash-sales-line-items-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.dash-sales-log-forms {
+  display: none !important;
+}
+
 .dash-sales-status-pill {
   display: inline-flex;
   align-items: center;

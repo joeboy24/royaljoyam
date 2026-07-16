@@ -52,4 +52,20 @@ class SaleModelTest extends TestCase
         $this->assertSame('Change', $sale->changeOrBalanceLabel());
         $this->assertSame(30.0, $sale->changeOrBalanceAmount());
     }
+
+    public function test_payment_status_badge_for_outstanding_debt(): void
+    {
+        $sale = new Sale([
+            'pay_mode' => 'Post Payment(Debt)',
+            'paid' => 'No',
+        ]);
+
+        $this->assertTrue($sale->hasOutstandingDebt());
+        $this->assertSame([
+            'class' => 'dash-sales-payment-badge--debt',
+            'label' => 'Outstanding',
+        ], $sale->paymentStatusBadge());
+        $this->assertSame('Debt', $sale->payModeShortLabel());
+        $this->assertSame('dash-sales-badge--debt', $sale->payModeBadgeClass());
+    }
 }

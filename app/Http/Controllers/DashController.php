@@ -83,29 +83,35 @@ class DashController extends Controller
     }
 
     public function debts_paid(){
+        $user = auth()->user();
+        $isAdmin = $user->status === 'Administrator';
+        $salesDate = session('date_today') ?: now()->format('Y-m-d');
 
-        if (auth()->user()->status == 'Administrator') {
-            $sales_pay = SalesPayment::whereBetween('created_at', [date('Y-m-01', strtotime(session('date_today'))), new \DateTime(date('Y-m-t', strtotime(session('date_today'))).'+1 day')])->orderBy('id', 'desc')->paginate(20);
-        }else{
-            $del = [
-                'del' => 'no',
-                'user_id' => auth()->user()->id
-            ];
-            $sales_pay = SalesPayment::where($del)->where('created_at', 'LIKE', '%'.session('date_today').'%')->orderBy('id', 'desc')->paginate(20);
+        if ($isAdmin) {
+            $dateFrom = date('Y-m-01', strtotime($salesDate));
+            $dateTo = date('Y-m-t', strtotime($salesDate));
+            $periodLabel = \Carbon\Carbon::parse($salesDate)->format('F Y');
+            $paymentsQuery = SalesPayment::with(['sale.user', 'user'])
+                ->whereBetween('created_at', [$dateFrom, new \DateTime($dateTo.'+1 day')]);
+        } else {
+            $periodLabel = \Carbon\Carbon::parse($salesDate)->format('D, d M Y');
+            $paymentsQuery = SalesPayment::with(['sale.user', 'user'])
+                ->where('del', 'no')
+                ->where('user_id', $user->id)
+                ->where('created_at', 'LIKE', '%'.$salesDate.'%');
         }
-        // return $sales_pay[0]->sale;
-        // $sales_pay = SalesPayment::limit(3)->paginate(10);
-        // foreach ($sales_pay as $sal){
-        //     if ($sal->sale != ''){
-        //         // return $sal->sale->order_no;
-        //     }else{
-        //         return 'Error ID: '.$sal->id;
-        //     }
-        // }
+
+        $totalPaid = (float) (clone $paymentsQuery)->sum('amt_paid');
+        $sales_pay = (clone $paymentsQuery)->orderByDesc('id')->paginate(20);
+
         $pass = [
             'c' => 1,
             'sales_pay' => $sales_pay,
+            'periodLabel' => $periodLabel,
+            'totalPaid' => $totalPaid,
+            'isAdmin' => $isAdmin,
         ];
+
         return view('pages.dash.depts_paid')->with($pass);
     }
 
@@ -148,7 +154,7 @@ class DashController extends Controller
             $salesQuery->where('del_status', $filterStatus);
         }
 
-        $sales = $salesQuery->orderBy('id', 'desc')->paginate(10)->withQueryString();
+        $sales = $salesQuery->with(['user', 'saleshistory'])->orderBy('id', 'desc')->paginate(10)->withQueryString();
         $sales2 = Sale::where($uidMatch)->where('created_at', 'LIKE', '%'.$salesDate.'%')->get();
         $cashMatch = [
             'pay_mode' => 'Cash',

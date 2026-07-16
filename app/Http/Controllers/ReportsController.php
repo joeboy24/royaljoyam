@@ -33,37 +33,6 @@ class ReportsController extends Controller
     public function index(Request $request)
     {
 
-        $soh = $request->query('soh');
-
-        if ($soh == '1') {
-            # Sales History Report...
-            return 123424;
-
-            $date_from = $request->query('date_from');
-            $date_to = $request->query('date_to');
-            $branch = $request->query('branch');
-            $delvr = $request->query('delvr');
-
-            if ($branch == 'All Branches') {
-                if ($delvr == 'Del. / Not Delivered') {
-                    $del = ['del' => 'no'];
-                    // return $delvr;
-                } else {
-                    $del = ['del' => 'no', 'del_status' => $delvr ];
-                }
-                $exp_del = ['del' => 'no'];
-                Session::put('branch', 'All');
-            } else {
-                Session::put('branch', $branch);
-                if ($delvr == 'Del. / Not Delivered') {
-                    $del = ['del' => 'no', 'user_bv' => $branch ];
-                } else {
-                    $del = ['del' => 'no', 'del_status' => $delvr, 'user_bv' => $branch ];
-                }
-            }
-        }
-        
-
         # Sales Report...
         if(auth()->user()->status != 'Administrator'){
             return redirect('/dashboard'); 
@@ -75,11 +44,11 @@ class ReportsController extends Controller
         $c = 1;
         $date_from = $request->query('date_from');
         $date_to = $request->query('date_to');
-        $branch = $request->query('branch');
-        $delvr = $request->query('delvr');
+        $branch = $request->query('branch', 'All Branches');
+        $delvr = $request->query('delvr', 'Del. / Not Delivered');
         Session::put('branch', 'All Branches');
 
-        if ($branch == 'All Branches') {
+        if ($branch === 'All Branches') {
             if ($delvr == 'Del. / Not Delivered') {
                 $del = ['del' => 'no'];
                 // return $delvr;
@@ -150,52 +119,52 @@ class ReportsController extends Controller
             $sales = Sale::where($del)->where('created_at', 'LIKE', '%'.$date_from.'%')->orderBy('id', 'desc')->paginate(10);
             $sales_send = Sale::where($del)->where('created_at', 'LIKE', '%'.$date_from.'%')->orderBy('id', 'desc')->get();
             // Get Money Sums
-            $cash = Sale::where($del)->where('pay_mode', 'cash')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-            $cheque = Sale::where($del)->where('pay_mode', 'cheque')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-            $momo = Sale::where($del)->where('pay_mode', 'Mobile Money')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-            $sum_dbt = Sale::where($del)->where('pay_mode', 'Post Payment(Debt)')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+            $cash = Sale::where($del)->matchingPayMode(Sale::PAY_MODE_CASH)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+            $cheque = Sale::where($del)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+            $momo = Sale::where($del)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+            $sum_dbt = Sale::where($del)->matchingPayMode(Sale::PAY_MODE_DEBT)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
 
             if ($branch == 1 || $branch == 'All Branches') {
-                $cash_b1 = Sale::where($b1_match)->where('pay_mode', 'cash')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-                $cheque_b1 = Sale::where($b1_match)->where('pay_mode', 'cheque')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-                $momo_b1 = Sale::where($b1_match)->where('pay_mode', 'Mobile Money')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-                $debt_b1 = Sale::where($b1_match)->where('pay_mode', 'Post Payment(Debt)')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+                $cash_b1 = Sale::where($b1_match)->matchingPayMode(Sale::PAY_MODE_CASH)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+                $cheque_b1 = Sale::where($b1_match)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+                $momo_b1 = Sale::where($b1_match)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+                $debt_b1 = Sale::where($b1_match)->matchingPayMode(Sale::PAY_MODE_DEBT)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
             }
             if ($branch == 2 || $branch == 'All Branches') {
-                $cash_b2 = Sale::where($b2_match)->where('pay_mode', 'cash')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-                $cheque_b2 = Sale::where($b2_match)->where('pay_mode', 'cheque')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-                $momo_b2 = Sale::where($b2_match)->where('pay_mode', 'Mobile Money')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-                $debt_b2 = Sale::where($b2_match)->where('pay_mode', 'Post Payment(Debt)')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+                $cash_b2 = Sale::where($b2_match)->matchingPayMode(Sale::PAY_MODE_CASH)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+                $cheque_b2 = Sale::where($b2_match)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+                $momo_b2 = Sale::where($b2_match)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+                $debt_b2 = Sale::where($b2_match)->matchingPayMode(Sale::PAY_MODE_DEBT)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
             }
             if ($branch == 3 || $branch == 'All Branches') {
-                $cash_b3 = Sale::where($b3_match)->where('pay_mode', 'cash')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-                $cheque_b3 = Sale::where($b3_match)->where('pay_mode', 'cheque')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-                $momo_b3 = Sale::where($b3_match)->where('pay_mode', 'Mobile Money')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-                $debt_b3 = Sale::where($b3_match)->where('pay_mode', 'Post Payment(Debt)')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+                $cash_b3 = Sale::where($b3_match)->matchingPayMode(Sale::PAY_MODE_CASH)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+                $cheque_b3 = Sale::where($b3_match)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+                $momo_b3 = Sale::where($b3_match)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+                $debt_b3 = Sale::where($b3_match)->matchingPayMode(Sale::PAY_MODE_DEBT)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
             }
             if ($branch == 4 || $branch == 'All Branches') {
-                $cash_b4 = Sale::where($b4_match)->where('pay_mode', 'cash')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-                $cheque_b4 = Sale::where($b4_match)->where('pay_mode', 'cheque')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-                $momo_b4 = Sale::where($b4_match)->where('pay_mode', 'Mobile Money')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-                $debt_b4 = Sale::where($b4_match)->where('pay_mode', 'Post Payment(Debt)')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+                $cash_b4 = Sale::where($b4_match)->matchingPayMode(Sale::PAY_MODE_CASH)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+                $cheque_b4 = Sale::where($b4_match)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+                $momo_b4 = Sale::where($b4_match)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+                $debt_b4 = Sale::where($b4_match)->matchingPayMode(Sale::PAY_MODE_DEBT)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
             }
             if ($branch == 5 || $branch == 'All Branches') {
-                $cash_b5 = Sale::where($b5_match)->where('pay_mode', 'cash')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-                $cheque_b5 = Sale::where($b5_match)->where('pay_mode', 'cheque')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-                $momo_b5 = Sale::where($b5_match)->where('pay_mode', 'Mobile Money')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-                $debt_b5 = Sale::where($b5_match)->where('pay_mode', 'Post Payment(Debt)')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+                $cash_b5 = Sale::where($b5_match)->matchingPayMode(Sale::PAY_MODE_CASH)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+                $cheque_b5 = Sale::where($b5_match)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+                $momo_b5 = Sale::where($b5_match)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+                $debt_b5 = Sale::where($b5_match)->matchingPayMode(Sale::PAY_MODE_DEBT)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
             }
             // if ($branch == 6 || $branch == 'All Branches') {
-            //     $cash_b6 = Sale::where($b6_match)->where('pay_mode', 'cash')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-            //     $cheque_b6 = Sale::where($b6_match)->where('pay_mode', 'cheque')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-            //     $momo_b6 = Sale::where($b6_match)->where('pay_mode', 'Mobile Money')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-            //     $debt_b6 = Sale::where($b6_match)->where('pay_mode', 'Post Payment(Debt)')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+            //     $cash_b6 = Sale::where($b6_match)->matchingPayMode(Sale::PAY_MODE_CASH)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+            //     $cheque_b6 = Sale::where($b6_match)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+            //     $momo_b6 = Sale::where($b6_match)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+            //     $debt_b6 = Sale::where($b6_match)->matchingPayMode(Sale::PAY_MODE_DEBT)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
             // }
             // if ($branch == 7 || $branch == 'All Branches') {
-            //     $cash_b7 = Sale::where($b7_match)->where('pay_mode', 'cash')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-            //     $cheque_b7 = Sale::where($b7_match)->where('pay_mode', 'cheque')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-            //     $momo_b7 = Sale::where($b7_match)->where('pay_mode', 'Mobile Money')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-            //     $debt_b7 = Sale::where($b7_match)->where('pay_mode', 'Post Payment(Debt)')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+            //     $cash_b7 = Sale::where($b7_match)->matchingPayMode(Sale::PAY_MODE_CASH)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+            //     $cheque_b7 = Sale::where($b7_match)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+            //     $momo_b7 = Sale::where($b7_match)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+            //     $debt_b7 = Sale::where($b7_match)->matchingPayMode(Sale::PAY_MODE_DEBT)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
             // }
 
             // $br_det = [];
@@ -203,10 +172,10 @@ class ReportsController extends Controller
             //     # code...
             //     // if ($branch == 5 || $branch == 'All Branches') {
             //     $match = ['del' => 'no', 'user_bv' => $i ]; 
-            //     $c1 = Sale::where($match)->where('pay_mode', 'cash')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-            //     $c2 = Sale::where($match)->where('pay_mode', 'cheque')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-            //     $c3 = Sale::where($match)->where('pay_mode', 'Mobile Money')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
-            //     $c4 = Sale::where($match)->where('pay_mode', 'Post Payment(Debt)')->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+            //     $c1 = Sale::where($match)->matchingPayMode(Sale::PAY_MODE_CASH)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+            //     $c2 = Sale::where($match)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+            //     $c3 = Sale::where($match)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
+            //     $c4 = Sale::where($match)->matchingPayMode(Sale::PAY_MODE_DEBT)->where('created_at', 'LIKE', '%'.$date_from.'%')->sum('tot');
             
             //     array_push($br_det, [
             //         'cash' => $c1,
@@ -257,52 +226,52 @@ class ReportsController extends Controller
             $sales = Sale::where($del)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->orderBy('id', 'desc')->paginate(10);
             $sales_send = Sale::where($del)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->orderBy('id', 'desc')->get();
             // Get Money Sums
-            $cash = Sale::where($del)->where('pay_mode', 'cash')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-            $cheque = Sale::where($del)->where('pay_mode', 'cheque')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-            $momo = Sale::where($del)->where('pay_mode', 'Mobile Money')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-            $sum_dbt = Sale::where($del)->where('pay_mode', 'Post Payment(Debt)')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+            $cash = Sale::where($del)->matchingPayMode(Sale::PAY_MODE_CASH)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+            $cheque = Sale::where($del)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+            $momo = Sale::where($del)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+            $sum_dbt = Sale::where($del)->matchingPayMode(Sale::PAY_MODE_DEBT)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
 
             if ($branch == 1 || $branch == 'All Branches') {
-                $cash_b1 = Sale::where($b1_match)->where('pay_mode', 'cash')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-                $cheque_b1 = Sale::where($b1_match)->where('pay_mode', 'cheque')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-                $momo_b1 = Sale::where($b1_match)->where('pay_mode', 'Mobile Money')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-                $debt_b1 = Sale::where($b1_match)->where('pay_mode', 'Post Payment(Debt)')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+                $cash_b1 = Sale::where($b1_match)->matchingPayMode(Sale::PAY_MODE_CASH)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+                $cheque_b1 = Sale::where($b1_match)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+                $momo_b1 = Sale::where($b1_match)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+                $debt_b1 = Sale::where($b1_match)->matchingPayMode(Sale::PAY_MODE_DEBT)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
             }
             if ($branch == 2 || $branch == 'All Branches') {
-                $cash_b2 = Sale::where($b2_match)->where('pay_mode', 'cash')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-                $cheque_b2 = Sale::where($b2_match)->where('pay_mode', 'cheque')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-                $momo_b2 = Sale::where($b2_match)->where('pay_mode', 'Mobile Money')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-                $debt_b2 = Sale::where($b2_match)->where('pay_mode', 'Post Payment(Debt)')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+                $cash_b2 = Sale::where($b2_match)->matchingPayMode(Sale::PAY_MODE_CASH)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+                $cheque_b2 = Sale::where($b2_match)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+                $momo_b2 = Sale::where($b2_match)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+                $debt_b2 = Sale::where($b2_match)->matchingPayMode(Sale::PAY_MODE_DEBT)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
             }
             if ($branch == 3 || $branch == 'All Branches') {
-                $cash_b3 = Sale::where($b3_match)->where('pay_mode', 'cash')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-                $cheque_b3 = Sale::where($b3_match)->where('pay_mode', 'cheque')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-                $momo_b3 = Sale::where($b3_match)->where('pay_mode', 'Mobile Money')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-                $debt_b3 = Sale::where($b3_match)->where('pay_mode', 'Post Payment(Debt)')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+                $cash_b3 = Sale::where($b3_match)->matchingPayMode(Sale::PAY_MODE_CASH)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+                $cheque_b3 = Sale::where($b3_match)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+                $momo_b3 = Sale::where($b3_match)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+                $debt_b3 = Sale::where($b3_match)->matchingPayMode(Sale::PAY_MODE_DEBT)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
             }
             if ($branch == 4 || $branch == 'All Branches') {
-                $cash_b4 = Sale::where($b4_match)->where('pay_mode', 'cash')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-                $cheque_b4 = Sale::where($b4_match)->where('pay_mode', 'cheque')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-                $momo_b4 = Sale::where($b4_match)->where('pay_mode', 'Mobile Money')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-                $debt_b4 = Sale::where($b4_match)->where('pay_mode', 'Post Payment(Debt)')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+                $cash_b4 = Sale::where($b4_match)->matchingPayMode(Sale::PAY_MODE_CASH)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+                $cheque_b4 = Sale::where($b4_match)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+                $momo_b4 = Sale::where($b4_match)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+                $debt_b4 = Sale::where($b4_match)->matchingPayMode(Sale::PAY_MODE_DEBT)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
             }
             if ($branch == 5 || $branch == 'All Branches') {
-                $cash_b5 = Sale::where($b5_match)->where('pay_mode', 'cash')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-                $cheque_b5 = Sale::where($b5_match)->where('pay_mode', 'cheque')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-                $momo_b5 = Sale::where($b5_match)->where('pay_mode', 'Mobile Money')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-                $debt_b5 = Sale::where($b5_match)->where('pay_mode', 'Post Payment(Debt)')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+                $cash_b5 = Sale::where($b5_match)->matchingPayMode(Sale::PAY_MODE_CASH)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+                $cheque_b5 = Sale::where($b5_match)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+                $momo_b5 = Sale::where($b5_match)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+                $debt_b5 = Sale::where($b5_match)->matchingPayMode(Sale::PAY_MODE_DEBT)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
             }
             // if ($branch == 6 || $branch == 'All Branches') {
-            //     $cash_b6 = Sale::where($b6_match)->where('pay_mode', 'cash')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-            //     $cheque_b6 = Sale::where($b6_match)->where('pay_mode', 'cheque')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-            //     $momo_b6 = Sale::where($b6_match)->where('pay_mode', 'Mobile Money')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-            //     $debt_b6 = Sale::where($b6_match)->where('pay_mode', 'Post Payment(Debt)')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+            //     $cash_b6 = Sale::where($b6_match)->matchingPayMode(Sale::PAY_MODE_CASH)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+            //     $cheque_b6 = Sale::where($b6_match)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+            //     $momo_b6 = Sale::where($b6_match)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+            //     $debt_b6 = Sale::where($b6_match)->matchingPayMode(Sale::PAY_MODE_DEBT)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
             // }
             // if ($branch == 7 || $branch == 'All Branches') {
-            //     $cash_b7 = Sale::where($b7_match)->where('pay_mode', 'cash')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-            //     $cheque_b7 = Sale::where($b7_match)->where('pay_mode', 'cheque')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-            //     $momo_b7 = Sale::where($b7_match)->where('pay_mode', 'Mobile Money')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
-            //     $debt_b7 = Sale::where($b7_match)->where('pay_mode', 'Post Payment(Debt)')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+            //     $cash_b7 = Sale::where($b7_match)->matchingPayMode(Sale::PAY_MODE_CASH)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+            //     $cheque_b7 = Sale::where($b7_match)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+            //     $momo_b7 = Sale::where($b7_match)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
+            //     $debt_b7 = Sale::where($b7_match)->matchingPayMode(Sale::PAY_MODE_DEBT)->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->sum('tot');
             // }
 
             // Get sum Branch 1
@@ -343,10 +312,10 @@ class ReportsController extends Controller
             $sales = Sale::where('del', 'no')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->orderBy('id', 'desc')->paginate(10);
             $sales_send = Sale::where('del', 'no')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->orderBy('id', 'desc')->get();
             // Get Money Sums
-            $cash = Sale::where('del', 'no')->where('pay_mode', 'cash')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            $cheque = Sale::where('del', 'no')->where('pay_mode', 'cheque')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            $momo = Sale::where('del', 'no')->where('pay_mode', 'Mobile Money')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            $sum_dbt = Sale::where('del', 'no')->where('pay_mode', 'Post Payment(Debt)')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $cash = Sale::where('del', 'no')->matchingPayMode(Sale::PAY_MODE_CASH)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $cheque = Sale::where('del', 'no')->matchingPayMode(Sale::PAY_MODE_CHEQUE)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $momo = Sale::where('del', 'no')->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $sum_dbt = Sale::where('del', 'no')->matchingPayMode(Sale::PAY_MODE_DEBT)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
 
             if ($branch == 1 || $branch == 'All Branches') {
             }
@@ -354,37 +323,37 @@ class ReportsController extends Controller
             }
             if ($branch == 3 || $branch == 'All Branches') {
             }
-            $cash_b1 = Sale::where($b1_match)->where('pay_mode', 'cash')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            $cash_b2 = Sale::where($b2_match)->where('pay_mode', 'cash')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            $cash_b3 = Sale::where($b3_match)->where('pay_mode', 'cash')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            $cash_b4 = Sale::where($b4_match)->where('pay_mode', 'cash')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            $cash_b5 = Sale::where($b5_match)->where('pay_mode', 'cash')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            // $cash_b6 = Sale::where($b6_match)->where('pay_mode', 'cash')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            // $cash_b7 = Sale::where($b7_match)->where('pay_mode', 'cash')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $cash_b1 = Sale::where($b1_match)->matchingPayMode(Sale::PAY_MODE_CASH)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $cash_b2 = Sale::where($b2_match)->matchingPayMode(Sale::PAY_MODE_CASH)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $cash_b3 = Sale::where($b3_match)->matchingPayMode(Sale::PAY_MODE_CASH)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $cash_b4 = Sale::where($b4_match)->matchingPayMode(Sale::PAY_MODE_CASH)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $cash_b5 = Sale::where($b5_match)->matchingPayMode(Sale::PAY_MODE_CASH)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            // $cash_b6 = Sale::where($b6_match)->matchingPayMode(Sale::PAY_MODE_CASH)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            // $cash_b7 = Sale::where($b7_match)->matchingPayMode(Sale::PAY_MODE_CASH)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
 
-            $cheque_b1 = Sale::where($b1_match)->where('pay_mode', 'cheque')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            $cheque_b2 = Sale::where($b2_match)->where('pay_mode', 'cheque')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            $cheque_b3 = Sale::where($b3_match)->where('pay_mode', 'cheque')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            $cheque_b4 = Sale::where($b4_match)->where('pay_mode', 'cheque')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            $cheque_b5 = Sale::where($b5_match)->where('pay_mode', 'cheque')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            // $cheque_b6 = Sale::where($b6_match)->where('pay_mode', 'cheque')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            // $cheque_b7 = Sale::where($b7_match)->where('pay_mode', 'cheque')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $cheque_b1 = Sale::where($b1_match)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $cheque_b2 = Sale::where($b2_match)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $cheque_b3 = Sale::where($b3_match)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $cheque_b4 = Sale::where($b4_match)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $cheque_b5 = Sale::where($b5_match)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            // $cheque_b6 = Sale::where($b6_match)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            // $cheque_b7 = Sale::where($b7_match)->matchingPayMode(Sale::PAY_MODE_CHEQUE)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
 
-            $momo_b1 = Sale::where($b1_match)->where('pay_mode', 'Mobile Money')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            $momo_b2 = Sale::where($b2_match)->where('pay_mode', 'Mobile Money')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            $momo_b3 = Sale::where($b3_match)->where('pay_mode', 'Mobile Money')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            $momo_b4 = Sale::where($b4_match)->where('pay_mode', 'Mobile Money')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            $momo_b5 = Sale::where($b5_match)->where('pay_mode', 'Mobile Money')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            // $momo_b6 = Sale::where($b6_match)->where('pay_mode', 'Mobile Money')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            // $momo_b7 = Sale::where($b7_match)->where('pay_mode', 'Mobile Money')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $momo_b1 = Sale::where($b1_match)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $momo_b2 = Sale::where($b2_match)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $momo_b3 = Sale::where($b3_match)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $momo_b4 = Sale::where($b4_match)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $momo_b5 = Sale::where($b5_match)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            // $momo_b6 = Sale::where($b6_match)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            // $momo_b7 = Sale::where($b7_match)->matchingPayMode(Sale::PAY_MODE_MOBILE_MONEY)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
 
-            $debt_b1 = Sale::where($b1_match)->where('pay_mode', 'Post Payment(Debt)')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            $debt_b2 = Sale::where($b2_match)->where('pay_mode', 'Post Payment(Debt)')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            $debt_b3 = Sale::where($b3_match)->where('pay_mode', 'Post Payment(Debt)')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            $debt_b4 = Sale::where($b4_match)->where('pay_mode', 'Post Payment(Debt)')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            $debt_b5 = Sale::where($b5_match)->where('pay_mode', 'Post Payment(Debt)')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            // $debt_b6 = Sale::where($b6_match)->where('pay_mode', 'Post Payment(Debt)')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
-            // $debt_b7 = Sale::where($b7_match)->where('pay_mode', 'Post Payment(Debt)')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $debt_b1 = Sale::where($b1_match)->matchingPayMode(Sale::PAY_MODE_DEBT)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $debt_b2 = Sale::where($b2_match)->matchingPayMode(Sale::PAY_MODE_DEBT)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $debt_b3 = Sale::where($b3_match)->matchingPayMode(Sale::PAY_MODE_DEBT)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $debt_b4 = Sale::where($b4_match)->matchingPayMode(Sale::PAY_MODE_DEBT)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            $debt_b5 = Sale::where($b5_match)->matchingPayMode(Sale::PAY_MODE_DEBT)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            // $debt_b6 = Sale::where($b6_match)->matchingPayMode(Sale::PAY_MODE_DEBT)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
+            // $debt_b7 = Sale::where($b7_match)->matchingPayMode(Sale::PAY_MODE_DEBT)->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->sum('tot');
 
             // Get sum Branch 1
             $b1 = Sale::where($b1_match)->where('created_at', 'LIKE', '%'.Session::get('date_today').'%')->sum('tot');
@@ -469,25 +438,7 @@ class ReportsController extends Controller
 
         $company_branch = CompanyBranch::all();
 
-        // Get paid debts
-        $pd1 = 0; $pd2 = 0; $pd3 = 0; $pd4 = 0; $pd5 = 0; 
-        foreach ($sales as $item) {
-            # code...
-            $getSp = SalesPayment::where('sale_id', $item->id)->get();
-            if ($item->user_bv == 1) {
-                $pd1 = $pd1 + $getSp->sum('amt_paid');
-            } elseif ($item->user_bv == 2) {
-                $pd2 = $pd2 + $getSp->sum('amt_paid');
-            } elseif ($item->user_bv == 3) {
-                $pd3 = $pd3 + $getSp->sum('amt_paid');
-            } elseif ($item->user_bv == 4) {
-                $pd4 = $pd4 + $getSp->sum('amt_paid');
-            } elseif ($item->user_bv == 5) {
-                $pd5 = $pd5 + $getSp->sum('amt_paid');
-            }
-            
-        }
-        $pds = [$pd1, $pd2, $pd3, $pd4, $pd5];
+        $pds = $this->paidDebtsByBranch($sales_send);
 
         $pass = [
             'c' => $c, 
@@ -688,5 +639,42 @@ class ReportsController extends Controller
     public function destroy($id)
     {
         //
+    }
+
+    /**
+     * Sum debt payments for all sales in the current report filter (not just the paginated page).
+     *
+     * @param  \Illuminate\Support\Collection<int, \App\Models\Sale>  $sales
+     * @return array<int, float>
+     */
+    protected function paidDebtsByBranch($sales): array
+    {
+        $totals = [0.0, 0.0, 0.0, 0.0, 0.0];
+
+        if ($sales->isEmpty()) {
+            return $totals;
+        }
+
+        $salesById = $sales->keyBy('id');
+
+        $payments = SalesPayment::where('del', 'no')
+            ->whereIn('sale_id', $salesById->keys())
+            ->get();
+
+        foreach ($payments as $payment) {
+            $sale = $salesById->get($payment->sale_id);
+
+            if (! $sale) {
+                continue;
+            }
+
+            $branchIndex = (int) $sale->user_bv - 1;
+
+            if ($branchIndex >= 0 && $branchIndex < 5) {
+                $totals[$branchIndex] += (float) $payment->amt_paid;
+            }
+        }
+
+        return $totals;
     }
 }

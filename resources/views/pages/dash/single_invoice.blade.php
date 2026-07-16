@@ -80,6 +80,12 @@
                             <td class="col-sm-2">Printed On :</td>
                             <td class="col-sm-4">{{date('d-m-Y')}}</td>
                         </tr>
+                        @if (filled($order->notes))
+                        <tr>
+                            <td class="col-sm-3">Notes :</td>
+                            <td class="col-sm-9" colspan="3">{{ $order->notes }}</td>
+                        </tr>
+                        @endif
                     </tbody>
                 </table>
             </div>

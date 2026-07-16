@@ -1,0 +1,138 @@
+.dash-paid-debts-content {
+  --pd-accent: var(--dash-header-from, #00acc1);
+  --pd-accent-dark: var(--dash-header-to, #0097a7);
+  --pd-accent-rgb: 0, 172, 193;
+
+  padding-top: 0;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 36px;
+}
+
+.dash-paid-debts-body {
+  padding-top: 8px;
+}
+
+.dash-paid-debts-card {
+  border: 1px solid color-mix(in srgb, var(--pd-accent) 14%, #e8ecef);
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(26, 37, 48, 0.05);
+  margin-bottom: 22px;
+  overflow: hidden;
+}
+
+.dash-paid-debts-card > .dash-page-header {
+  width: 100%;
+  margin: 0 0 12px;
+  border-radius: 0;
+  padding-top: 2.5rem !important;
+  padding-bottom: 1.35rem !important;
+}
+
+.dash-paid-debts-panel {
+  padding: 28px clamp(1.5rem, 3.5vw, 2.5rem) 36px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbfc 100%);
+}
+
+.dash-paid-debts-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.dash-paid-debts-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #42515a;
+  background: #f4f8fa;
+  border: 1px solid rgba(var(--pd-accent-rgb), 0.12);
+}
+
+.dash-paid-debts-stat strong {
+  color: var(--pd-accent-dark);
+}
+
+.dash-paid-debts-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #eee;
+  border-radius: 12px;
+}
+
+.dash-paid-debts-table {
+  margin-bottom: 0;
+}
+
+.dash-paid-debts-table > thead > tr > th {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #7a8a92;
+  background: #fafbfc;
+  border-bottom: 1px solid #eee;
+  white-space: nowrap;
+}
+
+.dash-paid-debts-table > tbody > tr > td {
+  vertical-align: middle;
+  font-size: 13px;
+}
+
+.dash-paid-debts-meta {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: #8a9aa3;
+}
+
+.dash-paid-debts-amount {
+  font-weight: 700;
+  color: #24313a;
+  white-space: nowrap;
+}
+
+.dash-paid-debts-balance {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #2e7d32;
+  background: #e8f5e9;
+  border: 1px solid #a5d6a7;
+}
+
+.dash-paid-debts-balance--due {
+  color: #c62828;
+  background: #ffebee;
+  border-color: #ef9a9a;
+}
+
+.dash-paid-debts-error-row {
+  background: #fff8e1;
+}
+
+.dash-paid-debts-delete-form {
+  display: inline;
+  margin: 0;
+}
+
+.dash-paid-debts-empty {
+  margin: 0;
+  padding: 36px 20px;
+  text-align: center;
+  font-size: 14px;
+  color: #7a8a92;
+  background: #fafbfc;
+  border: 1px dashed #e0e0e0;
+  border-radius: 12px;
+}
