@@ -29,7 +29,10 @@
   padding-top: 2.5rem !important;
   padding-bottom: 1.35rem !important;
 }
-
+.dash-expenses-card > .dash-page-header > .dash-page-header-content {
+  padding-top: 0;
+  padding-bottom: 0;
+}
 .dash-expenses-panel {
   padding: 32px clamp(1.5rem, 3.5vw, 2.5rem) 40px;
   background: linear-gradient(180deg, #ffffff 0%, #f8fbfc 100%);

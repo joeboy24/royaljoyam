@@ -22,7 +22,7 @@
   <link rel="stylesheet" href="/maindir/css/dash-profile.css?v=2">
   <link rel="stylesheet" href="/maindir/css/dash-flash.css?v=1">
   <link rel="stylesheet" href="/maindir/css/dash-tip.css?v=2">
-  <link rel="stylesheet" href="/maindir/css/dash-topbar.css?v=3">
+  <link rel="stylesheet" href="/maindir/css/dash-topbar.css?v=4">
   {{-- <link rel="stylesheet" href="/dashdir/css/bootstrap.min.css"> --}}
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
 </head>
