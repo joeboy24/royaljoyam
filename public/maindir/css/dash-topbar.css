@@ -37,21 +37,21 @@
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 5px;
-  width: 42px;
-  height: 42px;
+  gap: 4px;
+  width: 36px;
+  height: 36px;
   margin: 0;
   padding: 0;
-  border: 1px solid rgba(var(--topbar-accent-rgb), 0.16);
-  border-radius: 12px;
-  background: rgba(var(--topbar-accent-rgb), 0.08);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   box-shadow: none;
 }
 
 .dash-topbar-menu-toggle .navbar-toggler-icon,
 .dash-topbar-menu-toggle .icon-bar {
   display: block;
-  width: 18px;
+  width: 14px;
   height: 2px;
   margin: 0;
   border-radius: 999px;
@@ -61,7 +61,7 @@
 
 .dash-topbar-menu-toggle.toggled .navbar-toggler-icon:nth-child(1),
 .dash-topbar-menu-toggle.toggled .icon-bar:nth-child(1) {
-  transform: translateY(7px) rotate(45deg);
+  transform: translateY(6px) rotate(45deg);
 }
 
 .dash-topbar-menu-toggle.toggled .navbar-toggler-icon:nth-child(2),
@@ -71,7 +71,7 @@
 
 .dash-topbar-menu-toggle.toggled .navbar-toggler-icon:nth-child(3),
 .dash-topbar-menu-toggle.toggled .icon-bar:nth-child(3) {
-  transform: translateY(-7px) rotate(-45deg);
+  transform: translateY(-6px) rotate(-45deg);
 }
 
 .dash-topbar-brand {
