@@ -2,101 +2,53 @@
 
 @section('content')
 
-  <!-- End Navbar -->
-  <div class="content">
-        <div class="container-fluid">
-          <div class="row">
-            <div class="col-md-12">
+  <div class="content dash-closure-content">
+    <div class="container-fluid dash-closure-body">
 
-              @include('inc.messages')
+      @include('inc.messages')
 
-                {{-- <div class="row">
-                  <div class="col-md-12">
-                    <div class="menu_box_cont">
-                      <div class="inner">
-                        <a href="/reporting" class="myA">
-                          <div class="menu_box">
-                            <h4><i class="fa fa-shopping-basket"></i>&nbsp;&nbsp; Sales</h4>
-                            <p>General sales report</p>
-                          </div>
-                        </a>
-                        <a href="/stockbal" class="myA">
-                          <div class="menu_box">
-                            <h4><i class="fa fa-bar-chart"></i>&nbsp;&nbsp; Stock</h4>
-                            <p>General stock balances</p>
-                          </div>
-                        </a>
-                        <a href="/expensereport" class="myA">
-                          <div class="menu_box">
-                            <h4><i class="fa fa-suitcase"></i>&nbsp;&nbsp; Expenses</h4>
-                            <p>General expenses report</p>
-                          </div>
-                        </a>
-                        <a href="/debts" class="myA">
-                          <div class="menu_box">
-                            <h4><i class="fa fa-folder-open"></i>&nbsp;&nbsp; Debts</h4>
-                            <p>Debts (Post Payments)</p>
-                          </div>
-                        </a>
-                        <a href="/waybillreport" class="myA">
-                          <div class="menu_box">
-                            <h4><i class="fa fa-truck"></i>&nbsp;&nbsp; Waybill</h4>
-                            <p>Waybill Report</p>
-                          </div>
-                        </a>
-                        <a href="/returnsreport" class="myA">
-                          <div class="menu_box active_menu">
-                            <h4><i class="fa fa-warning"></i>&nbsp;&nbsp; Returns</h4>
-                            <p>General sales report</p>
-                          </div>
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div> --}}
+      <div class="card dash-closure-card">
+        <x-dash-page-header
+          title="Month-end closure"
+          subtitle="Open and close monthly periods. Status shown for {{ $priorYear }}–{{ $currentYear }}."
+          icon="fa fa-calendar-check-o"
+        />
 
-                <div class="row">
-                  <div class="col-md-12">
-                    @for ($i = 9; $i <= 12; $i++)
-                      @if ($i < 10) <input type="hidden" value="{{$i = '0'.$i}}"> @endif
-                      <input type="hidden" value="{{$dt='01-'.$i.'-'.date('Y')-1}}">
-                      <a href="/closure/{{$dt}}" class="myA">
-                        <div class="closure_box2">
-                          <h4><i class="fa fa-calendar"></i>&nbsp;&nbsp; {{date('F, Y', strtotime($dt))}}</h4>
-                          <p>{{$i}} Details Here...</p>
-                        </div>
-                      </a>
-                    @endfor
-                  </div>
+        <div class="card-body dash-form-body dash-closure-panel">
 
-                  <div class="col-md-12">
-                    @for ($i = 1; $i <= 12; $i++)
-                      @if ($i < 10) <input type="hidden" value="{{$i = '0'.$i}}"> @endif
-                      <input type="hidden" value="{{$dt='01-'.$i.'-'.date('Y')}}">
-                      <a href="/closure/{{$dt}}" class="myA">
-                        <div class="closure_box">
-                          <h4><i class="fa fa-calendar"></i>&nbsp;&nbsp; {{date('F, Y', strtotime($dt))}}</h4>
-                          <p>{{$i}} Details Here...</p>
-                        </div>
-                      </a>
-                    @endfor
-                  </div>
-                </div>
+          @if (count($priorYearCards) > 0)
+            <section class="dash-closure-year-section">
+              <h6 class="inventory-edit-section-title">
+                <i class="fa fa-calendar"></i> {{ $priorYear }}
+                <span class="dash-closure-year-note">Sep–Dec</span>
+              </h6>
+              <div class="dash-closure-grid">
+                @foreach ($priorYearCards as $card)
+                  @include('pages.dash.partials.closure-month-card', ['card' => $card])
+                @endforeach
+              </div>
+            </section>
+          @endif
 
+          <section class="dash-closure-year-section">
+            <h6 class="inventory-edit-section-title">
+              <i class="fa fa-calendar"></i> {{ $currentYear }}
+            </h6>
+            <div class="dash-closure-grid">
+              @foreach ($currentYearCards as $card)
+                @include('pages.dash.partials.closure-month-card', ['card' => $card])
+              @endforeach
             </div>
+          </section>
 
-          </div>
         </div>
-  </div>
+      </div>
 
+    </div>
+  </div>
 
 @endsection
 
 @section('footer')
-
-
-<script type="text/javascript">
-  $.ajaxSetup({ headers: { 'csrftoken' : '{{ csrf_token() }}' } });
-</script>
-
+  <link rel="stylesheet" href="/maindir/css/dash-closure.css?v=2">
 @endsection

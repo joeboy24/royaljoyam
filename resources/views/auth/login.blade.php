@@ -21,7 +21,7 @@
         <ul class="login-brand-points">
           <li><i class="fa fa-check-circle" aria-hidden="true"></i> Real-time stock and sales tracking</li>
           <li><i class="fa fa-check-circle" aria-hidden="true"></i> Branch-aware pricing and fulfillment</li>
-          <li><i class="fa fa-check-circle" aria-hidden="true"></i> Reports, waybills, and daily closure</li>
+          <li><i class="fa fa-check-circle" aria-hidden="true"></i> Reports, waybills, and month-end closure</li>
         </ul>
       </div>
     </section>

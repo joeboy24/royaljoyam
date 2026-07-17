@@ -57,6 +57,7 @@ Route::get('/config', 'DashController@configurations');
 Route::get('/dashuser', 'DashController@dashuser');
 Route::get('/items/export', 'ItemsController@exportInventory');
 Route::get('/items/print', 'ItemsController@printInventory');
+Route::post('/items/{id}/transfer', 'ItemsController@transferStock');
 Route::resource('/items', 'ItemsController');
 Route::resource('/reporting', 'ReportsController');
 Route::resource('/distribution', 'DistributionController');
@@ -103,6 +104,7 @@ Route::put('/sales/history/{salesHistory}/undeliver', 'SalesController@undeliver
 Route::delete('/sales/payments/{salesPayment}', 'SalesController@deletePaidDebtPayment');
 Route::get('/mpt_cart', 'DashController@empty_cart');
 Route::get('/stockbal', 'DashController@stockbal');
+Route::get('/branchtransfers', 'DashController@branchTransfersReport');
 Route::get('/genstockbal', 'DashController@genstockbal');
 Route::get('/expensereport', 'DashController@expensereport');
 Route::get('/debts', 'DashController@debts');

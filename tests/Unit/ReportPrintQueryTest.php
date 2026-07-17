@@ -38,6 +38,23 @@ class ReportPrintQueryTest extends TestCase
         $this->assertStringContainsString('debt_status=cleared', $url);
     }
 
+    public function test_url_includes_transfer_report_filters(): void
+    {
+        $request = Request::create('/branchtransfers', 'GET', [
+            'transfersearch' => 'Rod',
+            'from_branch' => '2',
+            'to_branch' => '1',
+        ]);
+
+        $this->app->instance('request', $request);
+
+        $url = ReportPrintQuery::url('/stockbal', $request);
+
+        $this->assertStringContainsString('transfersearch=Rod', $url);
+        $this->assertStringContainsString('from_branch=2', $url);
+        $this->assertStringContainsString('to_branch=1', $url);
+    }
+
     public function test_url_merges_existing_query_string(): void
     {
         $request = Request::create('/waybillreport', 'GET', [

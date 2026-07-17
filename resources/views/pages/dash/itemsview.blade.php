@@ -145,6 +145,12 @@
                 >
                   @if (count(session('compbranch')) > 0 && ! $showRecycle)
                     <x-slot:actions>
+                      @if (count(session('compbranch')) > 1)
+                        <a href="{{ url('/branchtransfers') }}" class="inventory-branch-control-btn dash-tip" data-tip="View branch transfer history">
+                          <i class="fa fa-exchange"></i>
+                          <span>Branch transfers</span>
+                        </a>
+                      @endif
                       <button type="button" class="inventory-branch-control-btn" id="toggleAllBranches" aria-expanded="false">
                         <i class="fa fa-angle-double-down"></i>
                         <span>Expand all</span>
@@ -211,6 +217,9 @@
                                           <button type="submit" name="store_action" value="restore_item" class="inventory-row-action-btn inventory-row-action-btn-restore dash-tip" data-tip="Restore item" onclick="return confirm('Restore this item to inventory?');"><i class="fa fa-reply"></i></button>
                                         </form>
                                       @else
+                                        @if (count(session('compbranch')) > 1)
+                                          <button type="button" class="inventory-row-action-btn inventory-row-action-btn-transfer dash-tip" data-tip="Transfer between branches" data-item-id="{{ $item->id }}" onclick="event.stopPropagation(); openBranchTransferModal({{ $item->id }});"><i class="fa fa-exchange"></i></button>
+                                        @endif
                                         <button type="button" class="inventory-row-action-btn inventory-row-action-btn-edit item-edit-btn dash-tip" data-tip="Edit record" data-item-id="{{ $item->id }}" onclick="event.stopPropagation(); openItemEditModal({{ $item->id }});"><i class="fa fa-pencil"></i></button>
                                         <form action="{{ action('ItemsController@update', $item->id) }}" method="POST" class="item-delete-form" onclick="event.stopPropagation()">
                                           @csrf
@@ -517,6 +526,74 @@
       </div>
     </div>
   </div>
+
+  @if (count(session('compbranch')) > 1 && ! $showRecycle)
+  <div class="modal fade item-transfer-modal" id="branchTransferModal" tabindex="-1" role="dialog" aria-labelledby="branchTransferModalLabel" aria-hidden="true">
+    <div class="modal-dialog inventory-edit-dialog modal-dialog-centered" role="document">
+      <div class="modal-content inventory-edit-modal">
+        <form id="branchTransferForm" action="{{ url('/items/0/transfer') }}" method="POST">
+          @csrf
+
+          <div class="inventory-edit-header">
+            <div class="inventory-edit-header-inner">
+              <div class="inventory-edit-header-text">
+                <span class="inventory-edit-kicker">Inventory</span>
+                <h4 class="inventory-edit-title" id="branchTransferModalLabel">Transfer stock</h4>
+                <p class="inventory-edit-meta" id="branchTransferMeta">Move quantity from one branch to another.</p>
+              </div>
+            </div>
+            <button type="button" class="inventory-edit-close" data-dismiss="modal" aria-label="Close">
+              <i class="material-icons">close</i>
+            </button>
+          </div>
+
+          <div class="inventory-edit-body" id="branchTransferBody">
+            <div class="inventory-edit-loading" id="branchTransferLoading">
+              <i class="fa fa-spinner fa-spin"></i> Loading item...
+            </div>
+
+            <div id="branchTransferFields" hidden>
+              <p class="inventory-edit-hint inventory-transfer-lead">
+                Use this when a branch needs stock for a sale but another branch has extra on hand. Total company quantity stays the same.
+              </p>
+
+              <div class="inventory-edit-field-row">
+                <label class="inventory-edit-field">
+                  <span class="inventory-edit-label">From branch</span>
+                  <select name="from_branch" id="transferFromBranch" class="inventory-edit-input inventory-edit-select" required></select>
+                </label>
+
+                <label class="inventory-edit-field">
+                  <span class="inventory-edit-label">To branch</span>
+                  <select name="to_branch" id="transferToBranch" class="inventory-edit-input inventory-edit-select" required></select>
+                </label>
+              </div>
+
+              <label class="inventory-edit-field">
+                <span class="inventory-edit-label">Quantity to transfer</span>
+                <input type="number" class="inventory-edit-input" name="qty" id="transferQty" min="1" step="1" required />
+                <span class="inventory-edit-field-hint" id="transferQtyHint">Available at source branch: 0</span>
+              </label>
+
+              <label class="inventory-edit-field">
+                <span class="inventory-edit-label">Notes (optional)</span>
+                <textarea class="inventory-edit-input inventory-edit-textarea" name="notes" id="transferNotes" rows="2" placeholder="e.g. Customer will pick up from source branch"></textarea>
+              </label>
+            </div>
+          </div>
+
+          <div class="inventory-edit-footer">
+            <button type="button" class="inventory-edit-btn inventory-edit-btn-muted" data-dismiss="modal">Cancel</button>
+            <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary inventory-transfer-submit" id="branchTransferSubmit">
+              <i class="fa fa-exchange inventory-edit-submit-icon"></i>
+              <span class="inventory-edit-submit-label">Transfer stock</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  @endif
 
 
 @endsection
@@ -929,6 +1006,18 @@
     border-color: rgba(46, 125, 50, 0.35);
     color: #1b5e20;
   }
+  .inventory-row-action-btn-transfer {
+    color: #1565c0;
+    border-color: rgba(21, 101, 192, 0.22);
+  }
+  .inventory-row-action-btn-transfer:hover {
+    background: rgba(21, 101, 192, 0.08);
+    border-color: rgba(21, 101, 192, 0.35);
+    color: #0d47a1;
+  }
+  .inventory-transfer-lead {
+    margin-top: 0;
+  }
   .item-row-actions {
     overflow: visible;
     position: relative;
@@ -1088,6 +1177,12 @@
     display: none !important;
   }
   #editItemFields[hidden] {
+    display: none !important;
+  }
+  #branchTransferFields[hidden] {
+    display: none !important;
+  }
+  .inventory-edit-body.is-loading #branchTransferFields {
     display: none !important;
   }
   .inventory-edit-file-field {
@@ -1503,6 +1598,234 @@
 
   $('#toggleAllBranches').on('click', toggleAllBranchDetails);
   restoreBranchDetailState();
+
+  var branchTransferCache = null;
+
+  function setBranchTransferLoading(isLoading) {
+    var body = document.getElementById('branchTransferBody');
+    var fields = document.getElementById('branchTransferFields');
+    var loading = document.getElementById('branchTransferLoading');
+    var submitBtn = document.getElementById('branchTransferSubmit');
+
+    if (body) {
+      body.classList.toggle('is-loading', isLoading);
+    }
+
+    if (fields) {
+      fields.hidden = isLoading;
+    }
+
+    if (loading) {
+      loading.style.display = isLoading ? 'flex' : 'none';
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = isLoading;
+    }
+  }
+
+  function setTransferFormSaving(form, isSaving) {
+    var submitBtn = form.querySelector('.inventory-transfer-submit');
+
+    if (!submitBtn) {
+      return;
+    }
+
+    var icon = submitBtn.querySelector('.inventory-edit-submit-icon');
+    var label = submitBtn.querySelector('.inventory-edit-submit-label');
+
+    submitBtn.disabled = isSaving;
+    submitBtn.classList.toggle('is-saving', isSaving);
+
+    if (icon) {
+      icon.className = isSaving ? 'fa fa-spinner fa-spin inventory-edit-submit-icon' : 'fa fa-exchange inventory-edit-submit-icon';
+    }
+
+    if (label) {
+      label.textContent = isSaving ? 'Transferring...' : 'Transfer stock';
+    }
+  }
+
+  function buildBranchSelectOptions(select, branches, includeZero) {
+    if (!select) {
+      return;
+    }
+
+    select.innerHTML = '';
+
+    (branches || []).forEach(function(branch) {
+      if (!includeZero && Number(branch.qty || 0) <= 0) {
+        return;
+      }
+
+      var option = document.createElement('option');
+      option.value = branch.tag;
+      option.textContent = branch.name + ' (' + Number(branch.qty || 0).toLocaleString() + ' available)';
+      option.dataset.qty = String(branch.qty || 0);
+      select.appendChild(option);
+    });
+  }
+
+  function updateTransferQtyHint() {
+    var fromSelect = document.getElementById('transferFromBranch');
+    var qtyInput = document.getElementById('transferQty');
+    var hint = document.getElementById('transferQtyHint');
+
+    if (!fromSelect || !hint) {
+      return;
+    }
+
+    var selected = fromSelect.options[fromSelect.selectedIndex];
+    var available = selected ? Number(selected.dataset.qty || 0) : 0;
+
+    hint.textContent = 'Available at source branch: ' + available.toLocaleString();
+
+    if (qtyInput) {
+      qtyInput.max = available > 0 ? String(available) : '';
+    }
+  }
+
+  function populateBranchTransferForm(data) {
+    var form = document.getElementById('branchTransferForm');
+    var fromSelect = document.getElementById('transferFromBranch');
+    var toSelect = document.getElementById('transferToBranch');
+    var qtyInput = document.getElementById('transferQty');
+    var notesInput = document.getElementById('transferNotes');
+
+    if (!form) {
+      return;
+    }
+
+    branchTransferCache = data;
+    form.action = data.transfer_url;
+
+    document.getElementById('branchTransferModalLabel').textContent = data.name;
+    document.getElementById('branchTransferMeta').textContent = 'Item No. ' + data.item_no + ' · move stock between branches';
+
+    buildBranchSelectOptions(fromSelect, data.branches, false);
+    buildBranchSelectOptions(toSelect, data.branches, true);
+
+    if (fromSelect && fromSelect.options.length === 0 && data.branches && data.branches.length > 0) {
+      buildBranchSelectOptions(fromSelect, data.branches, true);
+    }
+
+    if (toSelect && toSelect.options.length > 0 && fromSelect && fromSelect.options.length > 0) {
+      if (toSelect.value === fromSelect.value) {
+        toSelect.selectedIndex = toSelect.options.length > 1 ? 1 : 0;
+      }
+    }
+
+    if (qtyInput) {
+      qtyInput.value = '';
+    }
+
+    if (notesInput) {
+      notesInput.value = '';
+    }
+
+    updateTransferQtyHint();
+    setTransferFormSaving(form, false);
+  }
+
+  function openBranchTransferModal(itemId) {
+    var $modal = $('#branchTransferModal');
+    var form = document.getElementById('branchTransferForm');
+
+    if (!$modal.length) {
+      return;
+    }
+
+    setBranchTransferLoading(true);
+    $modal.modal('show');
+
+    fetch('/items/' + itemId + '/edit', {
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      credentials: 'same-origin'
+    })
+      .then(function(response) {
+        if (!response.ok) {
+          throw new Error('Could not load item details.');
+        }
+
+        return response.json();
+      })
+      .then(function(data) {
+        populateBranchTransferForm(data);
+        setBranchTransferLoading(false);
+      })
+      .catch(function() {
+        $modal.modal('hide');
+        alert('Could not load item details. Please try again.');
+        setBranchTransferLoading(false);
+
+        if (form) {
+          setTransferFormSaving(form, false);
+        }
+      });
+  }
+
+  $(document).on('change', '#transferFromBranch, #transferToBranch', function() {
+    var fromSelect = document.getElementById('transferFromBranch');
+    var toSelect = document.getElementById('transferToBranch');
+
+    if (fromSelect && toSelect && fromSelect.value && fromSelect.value === toSelect.value) {
+      alert('Choose two different branches.');
+      if (this.id === 'transferFromBranch' && toSelect.options.length > 1) {
+        toSelect.selectedIndex = fromSelect.selectedIndex === 0 ? 1 : 0;
+      } else if (fromSelect.options.length > 1) {
+        fromSelect.selectedIndex = toSelect.selectedIndex === 0 ? 1 : 0;
+      }
+    }
+
+    updateTransferQtyHint();
+  });
+
+  $(document).on('submit', '#branchTransferForm', function(e) {
+    var fromSelect = document.getElementById('transferFromBranch');
+    var toSelect = document.getElementById('transferToBranch');
+    var qtyInput = document.getElementById('transferQty');
+    var available = 0;
+
+    if (fromSelect && fromSelect.selectedIndex >= 0) {
+      available = Number(fromSelect.options[fromSelect.selectedIndex].dataset.qty || 0);
+    }
+
+    var qty = Number(qtyInput ? qtyInput.value : 0);
+
+    if (!fromSelect || !toSelect || !fromSelect.value || !toSelect.value) {
+      e.preventDefault();
+      alert('Select both branches.');
+      return;
+    }
+
+    if (fromSelect.value === toSelect.value) {
+      e.preventDefault();
+      alert('Choose two different branches.');
+      return;
+    }
+
+    if (!Number.isFinite(qty) || qty <= 0) {
+      e.preventDefault();
+      alert('Enter a quantity greater than zero.');
+      return;
+    }
+
+    if (qty > available) {
+      e.preventDefault();
+      alert('Not enough stock at the source branch (available: ' + available + ').');
+      return;
+    }
+
+    if (!confirm('Transfer ' + qty.toLocaleString() + ' units from ' + fromSelect.options[fromSelect.selectedIndex].text + ' to ' + toSelect.options[toSelect.selectedIndex].text + '?')) {
+      e.preventDefault();
+      return;
+    }
+
+    setTransferFormSaving(this, true);
+  });
 
   $.ajaxSetup({ headers: { 'csrftoken' : '{{ csrf_token() }}' } });
 </script>

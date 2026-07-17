@@ -8,6 +8,13 @@
   subtitle="Review sold, remaining, and profit quantities by branch."
   icon="fa fa-bar-chart"
 >
+  <x-slot:actions>
+    <a href="{{ \App\Support\ReportPrintQuery::url('/branchtransfers') }}" class="dash-page-header-btn inventory-action-btn dash-tip" data-tip="View branch transfer history">
+      <i class="fa fa-exchange"></i>
+      <span>Branch transfers</span>
+    </a>
+  </x-slot:actions>
+
   <x-slot:filters>
     <x-report-inventory-filters
       :action="url('/stockbal')"

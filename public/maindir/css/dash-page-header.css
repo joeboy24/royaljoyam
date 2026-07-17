@@ -123,6 +123,16 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
+a.inventory-branch-control-btn {
+  text-decoration: none;
+}
+
+a.inventory-branch-control-btn:hover,
+a.inventory-branch-control-btn:focus {
+  text-decoration: none;
+  color: #fff;
+}
+
 @media (max-width: 767px) {
   .dash-page-header {
     padding: 1.125rem 1rem 0.75rem !important;

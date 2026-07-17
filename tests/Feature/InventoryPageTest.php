@@ -164,6 +164,8 @@ class InventoryPageTest extends TestCase
         $response->assertSee('openItemEditModal(' . $item->id . ')', false);
         $response->assertSee('toggleBranchDetail', false);
         $response->assertSee('Expand all');
+        $response->assertSee('Branch transfers');
+        $response->assertSee('/branchtransfers', false);
         $response->assertSee('toggleAllBranches', false);
         $response->assertSee('toggleAllBranchDetails', false);
         $response->assertSee('restoreBranchDetailState', false);
@@ -704,5 +706,134 @@ class InventoryPageTest extends TestCase
             ->assertSessionHas('success');
 
         $this->assertDatabaseMissing('categories', ['id' => $categoryId]);
+    }
+
+    public function test_inventory_page_shows_branch_transfer_action_when_multiple_branches_exist(): void
+    {
+        $this->createItem(['name' => 'Transfer Widget']);
+
+        $this->actingAs($this->admin)
+            ->get('/items')
+            ->assertOk()
+            ->assertSee('branchTransferModal', false)
+            ->assertSee('openBranchTransferModal', false)
+            ->assertSee('data-tip="Transfer between branches"', false);
+    }
+
+    public function test_admin_can_transfer_stock_between_branches(): void
+    {
+        $item = $this->createItem([
+            'name' => 'Rod Bundle',
+            'qty' => '100',
+            'q1' => '70',
+            'q2' => '30',
+            'q3' => '0',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post('/items/'.$item->id.'/transfer', [
+                '_token' => csrf_token(),
+                'from_branch' => '2',
+                'to_branch' => '1',
+                'qty' => 30,
+                'notes' => 'Customer pickup from Branch B',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $item->refresh();
+
+        $this->assertSame('100', $item->qty);
+        $this->assertSame('100', $item->q1);
+        $this->assertSame('0', $item->q2);
+        $this->assertSame('0', $item->q3);
+
+        $this->assertDatabaseHas('branch_transfers', [
+            'item_id' => (string) $item->id,
+            'from_branch' => '2',
+            'to_branch' => '1',
+            'qty' => '30',
+            'notes' => 'Customer pickup from Branch B',
+            'del' => 'no',
+        ]);
+    }
+
+    public function test_branch_transfer_rejects_insufficient_source_stock(): void
+    {
+        $item = $this->createItem([
+            'q1' => '70',
+            'q2' => '30',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->from('/items')
+            ->post('/items/'.$item->id.'/transfer', [
+                '_token' => csrf_token(),
+                'from_branch' => '2',
+                'to_branch' => '1',
+                'qty' => 31,
+            ])
+            ->assertRedirect('/items')
+            ->assertSessionHas('error');
+
+        $item->refresh();
+
+        $this->assertSame('70', $item->q1);
+        $this->assertSame('30', $item->q2);
+        $this->assertDatabaseCount('branch_transfers', 0);
+    }
+
+    public function test_branch_transfer_rejects_same_branch(): void
+    {
+        $item = $this->createItem([
+            'q1' => '70',
+            'q2' => '30',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->from('/items')
+            ->post('/items/'.$item->id.'/transfer', [
+                '_token' => csrf_token(),
+                'from_branch' => '1',
+                'to_branch' => '1',
+                'qty' => 10,
+            ])
+            ->assertSessionHasErrors('to_branch');
+    }
+
+    public function test_non_admin_cannot_transfer_branch_stock(): void
+    {
+        $item = $this->createItem([
+            'q1' => '70',
+            'q2' => '30',
+        ]);
+
+        $branchUser = $this->createBranchUser('branch.user', 'branch@test.example', 'Sales', '1');
+
+        $this->actingAs($branchUser)
+            ->post('/items/'.$item->id.'/transfer', [
+                '_token' => csrf_token(),
+                'from_branch' => '2',
+                'to_branch' => '1',
+                'qty' => 10,
+            ])
+            ->assertRedirect('/dashboard');
+
+        $item->refresh();
+
+        $this->assertSame('70', $item->q1);
+        $this->assertSame('30', $item->q2);
+    }
+
+    public function test_inventory_edit_json_includes_transfer_url_and_branch_tags(): void
+    {
+        $item = $this->createItem(['name' => 'Tagged Item']);
+
+        $this->actingAs($this->admin)
+            ->getJson('/items/'.$item->id.'/edit')
+            ->assertOk()
+            ->assertJsonPath('branches.0.tag', '1')
+            ->assertJsonPath('branches.1.tag', '2')
+            ->assertJsonStructure(['transfer_url']);
     }
 }

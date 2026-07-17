@@ -16,6 +16,7 @@ use App\Models\SalesPayment;
 use App\Models\SalesHistory;
 use App\Models\CompanyBranch;
 use App\Models\OrderReturn;
+use App\Models\Closure as MonthClosure;
 use App\Services\SalesReportService;
 use App\Services\SiblingReportService;
 use Exception;
@@ -758,12 +759,115 @@ class DashController extends Controller
         return view('pages.dash.returns')->with($pass);
     }
 
+    public function branchTransfersReport(Request $request)
+    {
+        if (auth()->user()->status != 'Administrator') {
+            return redirect('/dashboard');
+        }
+
+        if (empty($request->query('date_from')) && ! empty($request->query('date_to'))) {
+            return redirect(url()->previous())->with('error', 'Oops..! Provide *Date From* in order to proceed');
+        }
+
+        $transfersQuery = app(SiblingReportService::class)->branchTransfersQuery($request);
+        $transfers = (clone $transfersQuery)->paginate(15)->withQueryString();
+        $transfersAll = (clone $transfersQuery)->get();
+
+        Session::put('transferrep', $transfersAll);
+        Session::put('date_from', $request->query('date_from'));
+        Session::put('date_to', $request->query('date_to'));
+
+        return view('pages.dash.branchtransfers')->with([
+            'transfers' => $transfers,
+            'branches' => CompanyBranch::all(),
+            'company' => Company::find(1),
+        ]);
+    }
+
     public function closure(Request $request){
 
         if(auth()->user()->status != 'Administrator'){
             return redirect('/dashboard'); 
         }
-        return view('pages.dash.closure');
+
+        $currentYear = (int) date('Y');
+        $currentMonthKey = date('Y-m-01');
+        $monthCards = [];
+
+        for ($month = 9; $month <= 12; $month++) {
+            $monthCards[] = $this->buildClosureMonthCard($currentYear - 1, $month);
+        }
+
+        for ($month = 1; $month <= 12; $month++) {
+            $monthCards[] = $this->buildClosureMonthCard($currentYear, $month);
+        }
+
+        $closures = MonthClosure::whereIn('month', array_column($monthCards, 'month_key'))
+            ->orderByDesc('id')
+            ->get()
+            ->unique('month')
+            ->keyBy('month');
+
+        foreach ($monthCards as &$card) {
+            $record = $closures->get($card['month_key']);
+            $status = $this->resolveClosureStatus($record);
+
+            $card['status'] = $status;
+            $card['status_label'] = match ($status) {
+                'open' => 'Open',
+                'closed' => 'Closed',
+                default => 'Not opened',
+            };
+            $card['is_current'] = $card['month_key'] === $currentMonthKey;
+            $card['amt_sold'] = $record?->amt_sold;
+            $card['profits'] = $record?->profits;
+        }
+        unset($card);
+
+        return view('pages.dash.closure', [
+            'priorYearCards' => array_values(array_filter(
+                $monthCards,
+                fn (array $card) => $card['year'] === $currentYear - 1
+            )),
+            'currentYearCards' => array_values(array_filter(
+                $monthCards,
+                fn (array $card) => $card['year'] === $currentYear
+            )),
+            'currentYear' => $currentYear,
+            'priorYear' => $currentYear - 1,
+        ]);
+    }
+
+    private function buildClosureMonthCard(int $year, int $month): array
+    {
+        $monthKey = sprintf('%04d-%02d-01', $year, $month);
+        $slug = sprintf('01-%02d-%04d', $month, $year);
+
+        return [
+            'year' => $year,
+            'month_key' => $monthKey,
+            'slug' => $slug,
+            'label' => date('F, Y', strtotime($monthKey)),
+            'url' => '/closure/'.$slug,
+            'status' => 'not_opened',
+            'status_label' => 'Not opened',
+            'amt_sold' => null,
+            'profits' => null,
+            'is_current' => false,
+        ];
+    }
+
+    private function resolveClosureStatus(?MonthClosure $record): string
+    {
+        if (!$record) {
+            return 'not_opened';
+        }
+
+        return match ($record->status) {
+            'open' => 'open',
+            'closed' => 'closed',
+            default => 'not_opened',
+        };
     }
 
     public function runs(){

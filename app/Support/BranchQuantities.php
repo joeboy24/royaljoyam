@@ -35,6 +35,17 @@ class BranchQuantities
         return array_map(fn (int $i) => 'q'.$i, range(1, $count));
     }
 
+    public static function columnForBranchTag(int|string $tag): ?string
+    {
+        foreach (self::activeBranches()->values() as $index => $branch) {
+            if ((string) $branch->tag === (string) $tag) {
+                return 'q'.($index + 1);
+            }
+        }
+
+        return null;
+    }
+
     /** @return array<string, int> */
     public static function emptyRow(): array
     {

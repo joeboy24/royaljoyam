@@ -65,7 +65,7 @@
                 'url' => '/closure_page',
                 'icon' => 'fa-calendar-check-o',
                 'title' => 'Closure',
-                'desc' => 'Daily closure and month-end tasks',
+                'desc' => 'Month-end open and close tasks',
                 'modifier' => '',
               ],
             ],

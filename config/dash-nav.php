@@ -111,6 +111,8 @@ return [
                 'stockbal/*',
                 'genstockbal',
                 'genstockbal/*',
+                'branchtransfers',
+                'branchtransfers/*',
                 'stock',
                 'stock/*',
             ],

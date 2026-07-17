@@ -16,6 +16,7 @@ use App\Models\CompanyBranch;
 use App\Models\ItemImage;
 use App\Models\Category;
 use App\Models\Closure;
+use App\Services\BranchTransferService;
 use Exception;
 
 class ItemsController extends Controller
@@ -840,6 +841,7 @@ class ItemsController extends Controller
 
             $branchPayload[] = [
                 'index' => $i + 1,
+                'tag' => (string) $branches[$i]->tag,
                 'name' => $branches[$i]->name,
                 'qty' => (int) ($item->$qField ?? 0),
                 'price' => number_format((float) ($item->$bField ?? 0), 2, '.', ''),
@@ -860,7 +862,50 @@ class ItemsController extends Controller
             'creator_name' => $item->user->name ?? 'Unknown',
             'branches' => $branchPayload,
             'update_url' => action('ItemsController@update', $item->id),
+            'transfer_url' => action('ItemsController@transferStock', $item->id),
         ]);
+    }
+
+    public function transferStock(Request $request, $id)
+    {
+        if (auth()->user()->status != 'Administrator') {
+            return redirect('/dashboard');
+        }
+
+        $validated = $request->validate([
+            'from_branch' => 'required|string',
+            'to_branch' => 'required|string|different:from_branch',
+            'qty' => 'required|integer|min:1',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        $item = Item::find($id);
+
+        if (! $item || $item->del === 'yes') {
+            return redirect('/items')->with('error', 'Item not found.');
+        }
+
+        try {
+            $service = app(BranchTransferService::class);
+            $transfer = $service->transfer(
+                $item,
+                $validated['from_branch'],
+                $validated['to_branch'],
+                (int) $validated['qty'],
+                auth()->user(),
+                $validated['notes'] ?? null
+            );
+        } catch (\InvalidArgumentException $exception) {
+            return redirect()->back()->with('error', $exception->getMessage());
+        }
+
+        $fromName = $service->branchName($transfer->from_branch);
+        $toName = $service->branchName($transfer->to_branch);
+
+        return redirect()->back()->with(
+            'success',
+            'Transferred '.number_format((int) $transfer->qty).' units of '.$item->name.' from '.$fromName.' to '.$toName.'.'
+        );
     }
 
     /**

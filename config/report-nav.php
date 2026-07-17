@@ -27,7 +27,7 @@ return [
             'description' => 'General stock balances',
             'url' => '/stockbal',
             'icon' => 'fa fa-bar-chart',
-            'match' => ['stockbal', 'stockbal/*', 'genstockbal', 'genstockbal/*'],
+            'match' => ['stockbal', 'stockbal/*', 'genstockbal', 'genstockbal/*', 'branchtransfers', 'branchtransfers/*'],
         ],
         [
             'key' => 'expenses',

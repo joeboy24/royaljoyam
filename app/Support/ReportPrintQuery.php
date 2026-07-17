@@ -19,6 +19,9 @@ class ReportPrintQuery
             'debt_status' => $request->query('debt_status'),
             'returnsearch' => $request->query('returnsearch'),
             'waybillsearch' => $request->query('waybillsearch'),
+            'transfersearch' => $request->query('transfersearch'),
+            'from_branch' => $request->query('from_branch'),
+            'to_branch' => $request->query('to_branch'),
         ], fn ($value) => $value !== null && $value !== '');
     }
 

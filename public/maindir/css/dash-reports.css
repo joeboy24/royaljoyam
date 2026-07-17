@@ -1023,6 +1023,22 @@ a.dash-reports-kpi:focus {
   text-align: right;
 }
 
+.dash-reports-transfer-branch {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(21, 101, 192, 0.08);
+  color: #1565c0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dash-reports-transfer-branch.is-destination {
+  background: rgba(46, 125, 50, 0.1);
+  color: #2e7d32;
+}
+
 @media (max-width: 1199px) {
   .dash-reports-kpi-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

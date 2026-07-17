@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\BranchTransfer;
 use App\Models\CompanyBranch;
 use App\Models\Expense;
 use App\Models\OrderReturn;
@@ -175,5 +176,47 @@ class SiblingReportService
         return \Carbon\Carbon::parse($dateFrom)->format('M d, Y')
             .' – '
             .\Carbon\Carbon::parse($dateTo)->format('M d, Y');
+    }
+
+    public function branchTransfersQuery(Request $request): Builder
+    {
+        $dateFrom = trim((string) $request->query('date_from', ''));
+        $dateTo = trim((string) $request->query('date_to', ''));
+        $fromBranch = $request->query('from_branch', 'All Branches');
+        $toBranch = $request->query('to_branch', 'All Branches');
+        $search = trim((string) $request->query('transfersearch', ''));
+
+        if ($dateFrom === '' && $dateTo === '') {
+            $salesDate = session('date_today') ?: now()->format('Y-m-d');
+            $dateFrom = date('Y-m-01', strtotime($salesDate));
+            $dateTo = date('Y-m-t', strtotime($salesDate));
+        }
+
+        $query = BranchTransfer::with(['item', 'user'])
+            ->where('del', 'no')
+            ->reportSearch($search);
+
+        if ($fromBranch !== null && $fromBranch !== '' && $fromBranch !== 'All Branches') {
+            $query->where('from_branch', (string) $fromBranch);
+        }
+
+        if ($toBranch !== null && $toBranch !== '' && $toBranch !== 'All Branches') {
+            $query->where('to_branch', (string) $toBranch);
+        }
+
+        if ($dateFrom !== '' && $dateTo === '') {
+            $query->where('created_at', 'LIKE', '%'.$dateFrom.'%');
+        } elseif ($dateFrom !== '' && $dateTo !== '') {
+            $query->whereBetween('created_at', [$dateFrom, new \DateTime($dateTo.'+1 day')]);
+        }
+
+        return $query->orderByDesc('id');
+    }
+
+    public function branchLabel(string $branchTag): string
+    {
+        $branch = CompanyBranch::query()->where('tag', (string) $branchTag)->first();
+
+        return $branch?->name ?? 'Branch '.$branchTag;
     }
 }

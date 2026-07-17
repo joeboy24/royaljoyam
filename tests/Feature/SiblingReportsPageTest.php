@@ -359,6 +359,84 @@ class SiblingReportsPageTest extends TestCase
             ->get('/stockbal')
             ->assertOk()
             ->assertSee('Stock Balances')
+            ->assertSee('Branch transfers', false)
+            ->assertSee('/branchtransfers', false)
             ->assertSee('No stock data for the selected filters.');
+    }
+
+    public function test_branch_transfers_report_shows_empty_state_when_no_records(): void
+    {
+        $today = now()->format('Y-m-d');
+
+        $this->actingAs($this->admin)
+            ->withSession(['date_today' => $today])
+            ->get('/branchtransfers')
+            ->assertOk()
+            ->assertSee('Branch Transfers')
+            ->assertSee('Transfer filters', false)
+            ->assertSee('Stock balances', false)
+            ->assertSee('No branch transfers found for the selected filters.');
+    }
+
+    public function test_branch_transfers_report_lists_matching_transfer(): void
+    {
+        $item = \App\Models\Item::create([
+            'item_no' => 'TR-001',
+            'user_id' => (string) $this->admin->id,
+            'name' => 'Transfer Rod',
+            'desc' => 'Steel rod',
+            'cat' => 'General',
+            'brand' => 'Brand',
+            'barcode' => 'TR001',
+            'qty' => '100',
+            'price' => '10.00',
+            'cost_price' => '8.00',
+            'q1' => '100',
+            'q2' => '0',
+            'q3' => '0',
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        \App\Models\BranchTransfer::create([
+            'user_id' => (string) $this->admin->id,
+            'item_id' => (string) $item->id,
+            'from_branch' => '2',
+            'to_branch' => '1',
+            'qty' => '30',
+            'notes' => 'Customer pickup from Branch B',
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $today = now()->format('Y-m-d');
+
+        $this->actingAs($this->admin)
+            ->withSession(['date_today' => $today])
+            ->get('/branchtransfers?transfersearch=Transfer+Rod')
+            ->assertOk()
+            ->assertSee('Transfer Rod')
+            ->assertSee('Customer pickup from Branch B')
+            ->assertSee('Total qty moved:', false)
+            ->assertSee('30', false);
+
+        $this->actingAs($this->admin)
+            ->withSession(['date_today' => $today])
+            ->get('/branchtransfers?from_branch=2&to_branch=1')
+            ->assertOk()
+            ->assertSee('Transfer Rod')
+            ->assertSee('Branch A', false)
+            ->assertSee('Branch B', false);
+    }
+
+    public function test_branch_transfers_report_date_to_without_from_redirects_with_error(): void
+    {
+        $this->actingAs($this->admin)
+            ->from('/branchtransfers')
+            ->get('/branchtransfers?date_to=2026-07-16')
+            ->assertRedirect('/branchtransfers')
+            ->assertSessionHas('error');
     }
 }
