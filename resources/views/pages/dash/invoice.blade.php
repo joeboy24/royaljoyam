@@ -29,6 +29,8 @@
 
             <div style="height: 50px">
             </div>
+
+            <p style="color: #aaa; font-size: 0.9em; letter-spacing: 0.5px">Sales Report</p>
             
             <div class="invCenter">
                 <table class="invCenterTbl">
@@ -40,16 +42,22 @@
                         </tr>
                         <tr>
                             <td class="col-sm-3">Date From :</td>
-                            <td class="col-sm-3">{{date("d-m-Y", strtotime(session('date_from')))}}</td>
+                            <td class="col-sm-3">
+                                @if (! empty($printMeta['date_from'] ?? session('date_from')))
+                                    {{ date('d-m-Y', strtotime($printMeta['date_from'] ?? session('date_from'))) }}
+                                @else
+                                    Today
+                                @endif
+                            </td>
                             <td class="col-sm-2"><b>Tot. Quantity :</b></td>
                             <td class="col-sm-4">{{$sales->sum('qty')}}</td>
                         </tr>
                         <tr>
                             <td class="col-sm-3">Date To :</td>
-                            @if(session('date_to') == '')
+                            @if(session('date_to') == '' && empty($printMeta['date_to'] ?? null))
                                 <td class="col-sm-3"> - </td>
                             @else
-                                <td class="col-sm-3">{{date("d-m-Y", strtotime(session('date_to')))}}</td>
+                                <td class="col-sm-3">{{date("d-m-Y", strtotime($printMeta['date_to'] ?? session('date_to')))}}</td>
                             @endif
                         </tr>
                         <tr>
@@ -83,7 +91,11 @@
                               <tr>
                                 <td class="col-sm-1">{{$count++}}</td>
                                 <td class="col-sm-6"><h4>{{$sale->order_no}}</h4><p>Paid by {{$sale->buy_name}} &nbsp;&nbsp;&nbsp; Tel: {{$sale->buy_contact}}<br>
-                                    Pay Mode: {{$sale->pay_mode}} &nbsp;&nbsp; Qty.: {{$sale->qty}}</p></td>
+                                    Pay Mode: {{$sale->pay_mode}} &nbsp;&nbsp; Qty.: {{$sale->qty}}
+                                    @if (filled($sale->notes))
+                                      <br>Notes: {{ $sale->notes }}
+                                    @endif
+                                </p></td>
                                 <td class="col-sm-1 pr">{{number_format($sale->tot, 2)}}
                                     @if ($sale->discount != 0)
                                       <p class="gray_p"><del>{{number_format($sale->discount, 2)}}</del> off</p>

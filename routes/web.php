@@ -30,10 +30,13 @@ Route::get('/test_mode', function () {
 
 Route::get('/', 'PagesController@index');
 Route::get('/code80', 'Code80Controller@code80');
-Route::get('/expenses', 'PagesController@expenses');
+Route::get('/expenses', 'ExpensesController@index')->name('expenses.index');
+Route::post('/expenses', 'ExpensesController@store')->name('expenses.store');
+Route::delete('/expenses/{expense}', 'ExpensesController@destroy')->name('expenses.destroy');
 Route::redirect('/reports', '/reporting');
 
-Route::get('/user_profile', 'DashController@userprofile');
+Route::get('/user_profile', 'ProfileController@edit')->name('user_profile');
+Route::put('/user_profile', 'ProfileController@update')->name('user_profile.update');
 Route::get('/try', 'PagesController@try');
 
 
@@ -54,22 +57,28 @@ Route::get('/config', 'DashController@configurations');
 Route::get('/dashuser', 'DashController@dashuser');
 Route::get('/items/export', 'ItemsController@exportInventory');
 Route::get('/items/print', 'ItemsController@printInventory');
+Route::post('/items/{id}/transfer', 'ItemsController@transferStock');
 Route::resource('/items', 'ItemsController');
 Route::resource('/reporting', 'ReportsController');
 Route::resource('/distribution', 'DistributionController');
 Route::resource('/stock', 'StockController');
+Route::post('/closure/{month}/open', 'ClosureController@open')->name('closure.open');
+Route::post('/closure/{month}/close', 'ClosureController@close')->name('closure.close');
+Route::get('/closure/{month}/print', 'ClosureController@print')->name('closure.print');
+Route::get('/closure/{month}/export', 'ClosureController@export')->name('closure.export');
 Route::resource('/closure', 'ClosureController');
+Route::post('/sales/daily-close', 'DailyCloseController@store')->name('dailyclose.store');
+Route::get('/sales/daily-close/{date}/print', 'DailyCloseController@print')->name('dailyclose.print');
 Route::get('/reportprinting', 'DashController@reportprinting');
 Route::get('/stockfillprint', 'DashController@stockfillprint');
 Route::get('/stockreportprinting', 'DashController@stockreportprinting');
 Route::get('/expensereportprinting', 'DashController@expensereportprinting');
 Route::get('/returnprint', 'DashController@returnprint');
-Route::get('/waybillprint', 'DashController@waybillprint');
-Route::get('/distreportprint', 'DashController@distreportprint');
+Route::get('/waybillprint/{id}', 'WaybillReportController@waybillPrintSingle');
+Route::get('/waybillprint', 'WaybillReportController@waybillPrint');
+Route::get('/distreportprint', 'WaybillReportController@distReportPrint');
 
-Route::get('/debtsreportprinting', function () {
-    return view('pages.invoice.debtsinvoice');
-});
+Route::get('/debtsreportprinting', 'DashController@debtsreportprinting');
 
 
 
@@ -77,18 +86,40 @@ Auth::routes();
 
 Route::redirect('/home', '/dashboard')->name('home');
 Route::get('/orders', 'DashController@orders');
-Route::get('/waybill', 'DashController@waybill');
-Route::get('/waybillview', 'DashController@waybillview');
+Route::redirect('/waybil', '/waybill');
+Route::get('/waybill', 'WaybillController@create');
+Route::post('/waybill', 'WaybillController@store');
+Route::get('/waybillview', 'WaybillController@index');
+Route::put('/waybill/{waybill}', 'WaybillController@update');
+Route::delete('/waybill/{waybill}', 'WaybillController@destroy');
+Route::put('/waybill/{waybill}/restore', 'WaybillController@restore');
+Route::post('/waybill/{waybill}/contents', 'WaybillContentController@store');
+Route::put('/waybill/contents/{wbcontent}', 'WaybillContentController@update');
+Route::delete('/waybill/contents/{wbcontent}', 'WaybillContentController@destroy');
+Route::put('/waybill/contents/{wbcontent}/distribute', 'WaybillContentController@distribute');
+Route::post('/waybill/{waybill}/distribute-all', 'WaybillContentController@distributeAll');
 Route::get('/sales', 'DashController@sales');
+Route::post('/sales/cart', 'SalesController@addToCart');
+Route::post('/sales/checkout', 'SalesController@checkout');
+Route::post('/sales/pay-debt', 'SalesController@payDebt');
+Route::put('/sales/cart/{cart}', 'SalesController@updateCartQuantity');
+Route::delete('/sales/cart/{cart}', 'SalesController@removeCartItem');
+Route::put('/sales/{sale}', 'SalesController@updateSale');
+Route::put('/sales/history/{salesHistory}/deliver', 'SalesController@deliverLineItem');
+Route::put('/sales/history/{salesHistory}/undeliver', 'SalesController@undeliverLineItem');
+Route::delete('/sales/payments/{salesPayment}', 'SalesController@deletePaidDebtPayment');
 Route::get('/mpt_cart', 'DashController@empty_cart');
 Route::get('/stockbal', 'DashController@stockbal');
+Route::get('/branchtransfers', 'DashController@branchTransfersReport');
 Route::get('/genstockbal', 'DashController@genstockbal');
 Route::get('/expensereport', 'DashController@expensereport');
 Route::get('/debts', 'DashController@debts');
 Route::get('/paid_debts', 'DashController@debts_paid');
-Route::get('/waybillreport', 'DashController@waybillreport');
+Route::get('/waybillreport/export', 'WaybillReportController@exportWaybillReport');
+Route::get('/waybillreport', 'WaybillReportController@waybillReport');
 Route::get('/returnsreport', 'DashController@returnsreport');
-Route::get('/distreport', 'DashController@distreport');
+Route::get('/distreport/export', 'WaybillReportController@exportDistReport');
+Route::get('/distreport', 'WaybillReportController@distReport');
 Route::get('/closure_page', 'DashController@closure');
 Route::get('/saleshistory', 'DashController@saleshistory');
 

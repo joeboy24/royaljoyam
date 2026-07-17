@@ -8,20 +8,13 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\Company;
 use App\Models\User;
 use App\Models\Item;
-use App\Models\Cart;
-use App\Models\Sale;
 use App\Models\Order;
 use App\Models\Expense;
-use App\Models\Waybill;
 use App\Models\ItemAudit;
-use App\Models\SalesHistory;
-use App\Models\SalesPayment;
 use App\Models\CompanyBranch;
 use App\Models\ItemImage;
 use App\Models\Category;
-use App\Models\Wbcontent;
-use App\Models\Wbdistribution;
-use App\Models\Closure;
+use App\Services\BranchTransferService;
 use Exception;
 
 class ItemsController extends Controller
@@ -367,63 +360,8 @@ class ItemsController extends Controller
                     $cat->name = $request->input('name');
                     $cat->desc = $request->input('desc');
                     $cat->save();
-                    return redirect('/dashuser')->with('success', 'User Created Successfully');
-                   
-                    //Hash::make($data['password']);
-    
-                break;
+                    return redirect('/dashuser')->with('success', 'Category Created Successfully');
 
-                case 'add_to_cart':
-
-                    try {
-                        //code...
-                        $it_id = $request->input('item_id');
-                        $name = $request->input('name');
-                        $qty = $request->input('qty');
-                        $sp = $request->input('price');
-
-                        // Get available qty
-                        $uId = auth()->user()->bv;
-                        $q = 'q'.$uId;
-                        $item = Item::find($it_id);
-                        $cp = $item->cost_price;
-                        $mainQty = $item->qty;
-                        $avQty = $item->$q;
-
-                        if ($qty > $avQty) {
-                            # code...
-                            return redirect('/sales')->with('error', 'Sorry..! Available Stock Quantity: '.$avQty);
-                        }elseif ($sp == 0) {
-                            # code...
-                            return redirect('/sales')->with('error', 'Oops..! Define price for this item before purchase');
-                        }
-                        $matchThese = ['user_id' => auth()->user()->id, 'name' => $name];
-                        $results = Cart::where($matchThese)->get();
-                        
-                        if (count($results) == 1){
-                            return redirect('/sales')->with('error', 'Oops..! Item already added.. Edit from table ');
-                        }else{
-
-                            $cart = Cart::firstOrCreate([
-                                'user_id' => auth()->user()->id,
-                                'item_id' => $request->input('item_id'),
-                                'item_no' => $request->input('item_no'),
-                                'name' => $name,
-                                'qty' => $qty,
-                                'profits' => ($sp - $cp)*$qty,
-                                'cost_price' => $cp,
-                                'unit_price' => $sp,
-                                'tot' => $qty*$sp,
-                            ]);
-
-                            return redirect('/sales'); 
-                            // return redirect('/sales')->with('success', $name.' added Successfully');
-                        }
-                    } catch (\Throwable $th) {
-                        //throw $th;
-                            return redirect('/sales')->with('error', 'Oops..! Something Happened ');
-                    }
-    
                 break;
 
                 case 'add_order':
@@ -675,58 +613,6 @@ class ItemsController extends Controller
                     
                 break;
 
-                case 'add_waybill':
-
-                    $xter = substr(str_shuffle(str_repeat("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 4)), 0, 4);
-                    $time = date('is');
-                    $stockNo = 'ST'.$xter.$time;
-
-                    try {
-                        //code...
-                        $waybill = Waybill::firstOrCreate([
-                            'user_id' => auth()->user()->id,
-                            'stock_no' => $stockNo,
-                            'comp_name' => $request->input('comp_name'),
-                            'comp_add' => $request->input('comp_add'),
-                            'comp_contact' => $request->input('comp_contact'),
-                            'drv_name' => $request->input('drv_name'),
-                            'drv_contact' => $request->input('drv_contact'),
-                            'vno' => $request->input('vno'),
-                            'bill_no' => $request->input('bill_no'),
-                            'weight' => $request->input('weight'),
-                            'nop' => $request->input('nop'),
-                            'tot_qty' => $request->input('tot_qty'),
-                            'del_date' => $request->input('del_date'),
-                            'status' => $request->input('status')
-                            ]);
-                        
-                        // $waybill = new Waybill;
-                        // $waybill->user_id = auth()->user()->id;
-                        // $waybill->comp_name = $request->input('comp_name');
-                        // $waybill->comp_add = $request->input('comp_add');
-                        // $waybill->comp_contact = $request->input('comp_contact');
-                        // $waybill->drv_name = $request->input('drv_name');
-                        // $waybill->drv_contact = $request->input('drv_contact');
-                        // $waybill->vno = $request->input('vno');
-                        // $waybill->bill_no = $request->input('bill_no');
-                        // $waybill->weight = $request->input('weight');
-                        // $waybill->nop = $request->input('nop');
-                        // $waybill->tot_qty = $request->input('tot_qty');
-                        // $waybill->del_date = $request->input('del_date');
-                        // $waybill->status = $request->input('status');
-                        // $waybill->save();
-
-                        return redirect('/waybill')->with('success', 'Bill Successfully Saved');
-
-                    } catch (\Throwable $th) {
-                        //throw $th;
-                        return redirect('/waybill')->with('error', 'Oops..! Unhandled Error. ');
-                    }
-                   
-                    //Hash::make($data['password']);
-    
-                break;
-
                 case 'create_branch':
 
                     try {
@@ -785,351 +671,12 @@ class ItemsController extends Controller
     
                 break;
 
-                case 'add_to_sales':
-
-                    $xter = substr(str_shuffle(str_repeat("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 4)), 0, 4);
-                    $time = date('is');
-                    $order_no = 'M'.$xter.$time;
-
-                    try {
-                        //code...
-
-                        $pd = 'Paid';
-                        $pmt = $request->input('payment');                        
-                        $pay_mode = $request->input('pay_mode');
-                        $del_status = $request->input('del_status');
-
-                        if ($pay_mode == '-- Mode of Payment --' or $del_status == '-- Delivery Status --'){
-                            return redirect('/sales')->with('error', "Select -- Mode of Payment -- / -- Delivery Status -- to proceed..");
-                        }
-                        if ($pay_mode == 'Post Payment(Debt)'){
-                            $pd = 'No';
-                        }
-
-                        // Transport Cart to Sales History
-
-                        $carts = Cart::where('user_id', auth()->user()->id)->get();
-                        // return count($carts);
-                        $qty = $carts->sum('qty');
-                        $tot = $carts->sum('tot');
-
-                        if ($request->input('discount') > $tot) {
-                            return redirect(url()->previous())->with('error', "Oops..! Discount cannot be greater than total amount");
-                        }
-
-                        if($request->input('discount') == ''){
-                            $discount = 0;
-                        }else{
-                            // $percentage = $request->input('discount');
-                            // $discount = ($percentage / 100) * $tot;
-                            $discount = $request->input('discount');
-                            $tot = $tot - $discount;
-                        }
-
-                        if ($pmt < $tot && $pay_mode != 'Post Payment(Debt)') {
-                            return redirect(url()->previous())->with('error', "Oops..! Amount paid cannot be less than total cost. Otherwise select the `Post Payment(Debt)` option");
-                        }
-
-                        $chg = $pmt - $tot;
-                        if ($pmt == 0) {
-                            $chg = 0;
-                        }
-
-                        if(count($carts) > 0){
-
-                            // Insert Sales Record
-                            $sales = Sale::firstOrCreate([
-                                'user_id' => auth()->user()->id,
-                                'user_bv' => auth()->user()->bv,
-                                'order_no' => $order_no,
-                                'qty' => $qty,
-                                'tot' => $tot,
-                                'pay_mode' => $pay_mode,
-                                'buy_name' => $request->input('buy_name'),
-                                'buy_contact' => $request->input('buy_contact'),
-                                'del_status' => $del_status,
-                                'discount' => $discount,
-                                'payment' => $pmt,
-                                'change' => $chg,
-                                'paid' => $pd
-                            ]);
-
-                            if ($pay_mode == 'Post Payment(Debt)' && $pmt > 0) {
-                                
-                                if ($pmt > $tot) {
-                                    $pmt = $tot;
-                                }
-                                $sales_pay = new SalesPayment;
-                                $sales_pay->user_id = auth()->user()->id;
-                                $sales_pay->sale_id = $sales->id;
-                                $sales_pay->amt_paid = $pmt;
-                                $sales_pay->bal = $tot - $pmt;
-                                $sales_pay->save();
-                                if ($pmt == $tot){
-                                    $pd = 'Paid';
-                                }
-                                $sales->paid = $pd;
-                                $sales->paid_debt = $pmt;
-                                $sales->save();
-
-                            }
-
-                            $sale_id = Sale::latest()->limit(1)->get();
-                            foreach ($sale_id as $sid) {
-                                # code...
-                                $new_sid = $sid->id;
-                            }
-
-                            foreach ($carts as $cart) {
-                                # code...
-                                
-                                $sales_history = SalesHistory::firstOrCreate([
-                                    'user_id' => $cart->user_id,
-                                    'sale_id' => $new_sid,
-                                    'item_id' => $cart->item_id,
-                                    'user_bv' => auth()->user()->bv,
-                                    'item_no' => $cart->item_no,
-                                    'name' => $cart->name,
-                                    'qty' => $cart->qty,
-                                    'cost_price' => $cart->cost_price,
-                                    'unit_price' => $cart->unit_price,
-                                    'profits' => $cart->profits,
-                                    'tot' => $cart->tot,
-                                    'del_status' => $del_status,
-                                ]);
-                                // Reduce stock
-                                // $itm = Item::where('id', $cart->item_id)->first();
-                                // $bvv = 'q'.auth()->user()->bv;
-                                // $itm->$bvv = $itm->$bvv - $cart->qty;
-                                // $itm->save();
-
-                                // Empty specific user cart after transport
-                                // $cart_del = Cart::find($cart->id);
-                                $cart->delete();
-                            }
-
-
-                            return redirect('/sales')->with('success', 'Purchase Complete..!');
-                        }
-
-                    } catch (\Throwable $th) {
-                        //throw $th;
-                        return redirect('/sales')->with('error', 'Oops..! Unhandled Error... '.$th);
-                    }
-    
-                break;
-
-                case 'create_expense':
-                    // $exps = Expense::where('companybranch_id', '')->get();
-                    // $ex = Expense::all();
-                    // return $ex[1]->companybranch;
-                    // foreach ($exps as $exp) {
-                    //     $exp->companybranch_id = 2;
-                    //     $exp->save();
-                    // }
-                    // return 'Done..!';
-
-                    // if (auth()->user()->status != 'Administrator'){
-                    //     $branch = auth()->user()->status;
-                    // }else{
-                    //     $branch = $request->input('branch');
-                    // }
-                    $branch = $request->input('branch');
-                    if ($branch == 0){
-                        return redirect(url()->previous())->with('error', 'Oops..! Choose branch to apply expenses to.');
-                    }
-
-                    $expense = new Expense;
-                    $expense->user_id = auth()->user()->id;
-                    $expense->companybranch_id = $branch;
-                    $expense->title = $request->input('title');
-                    $expense->desc = $request->input('desc');
-                    $expense->expense_cost = $request->input('expense_cost');
-                    $expense->save();
-    
-                    return redirect('/expenses')->with('success', 'Expense Record Added Successfully');
-                    
-                break;
-
-                case 'pay_debt':
-
-                    $uid= auth()->user()->id;
-                    $sale_id = $request->input('send_id');
-                    $send_tot = $request->input('send_tot');
-                    $amt_paid = $request->input('amt_paid');
-
-                    if($amt_paid > $send_tot){
-                        return redirect('/sales')->with('error', 'Oops..! Amount paying cannot be greater than amount owing.');
-                    }
-
-                    $sum_debts = SalesPayment::where('del', 'no')->where('sale_id', $sale_id)->sum('amt_paid');
-                    if($sum_debts == 0){
-                        $sum_debts = $amt_paid;
-                    }else{
-                        $sum_debts = $sum_debts + $amt_paid;
-                    }
-
-                    $bal = $send_tot - $sum_debts;
-                    if($bal < 0){
-                        $bal = 0;
-                    }
-                    
-                    $sales_pay = new SalesPayment; 
-                    $sales_pay->user_id = $uid;
-                    $sales_pay->sale_id = $sale_id;
-                    $sales_pay->amt_paid = $amt_paid;
-                    $sales_pay->bal = $bal;
-                    $sales_pay->save();
-
-                    // $sum_debts = SalesPayment::where('sale_id', $sale_id)->sum('amt_paid');
-
-                    $sale = Sale::find($sale_id);
-                    $sale->paid_debt = $sum_debts;
-                    if($send_tot == $sum_debts){
-                        $sale->paid = 'Paid';
-                    }
-                    $sale->save();
-
-
-                    // $cat->save();
-                    return redirect(url()->previous())->with('success', 'Payment of Gh₵ '.$amt_paid.' successfull made.');
-                   
-                    //Hash::make($data['password']);
-    
-                break;
-
-                case 'add_wbcontent':
-
-                    $wb_id = $request->input('wb_id');
-                    $qty = $request->input('qty');
-                    $item_id = $request->input('item');
-
-                    $wbcont_check = Wbcontent::where('waybill_id', $wb_id)->where('item_id', $item_id)->get();
-                    $item = Item::find($item_id);
-                    if (count($wbcont_check) > 0) {
-                        return redirect(url()->previous())->with('error', 'Oops..! Item `'.$item->item_no.' - '.$item->name.'` already added.');
-                    }
-
-                    try {
-                        $wb_insert = Wbcontent::firstOrCreate([
-                            'user_id' => auth()->user()->id,
-                            'waybill_id' => $wb_id,
-                            'item_id' => $item_id,
-                            'qty' => $qty,
-                        ]);
-                    } catch (\Throwable $th) {
-                        throw $th;
-                    }
-                    return redirect(url()->previous())->with('success', 'Item `'.$item->item_no.' - '.$item->name.'` successfully added.');
-    
-                break;
-
-                case 'set_closure':
-
-                    $month = session('cldate');
-                    $m = date('m', strtotime($month));
-                    $y = date('Y', strtotime($month));
-                    $om = $m - 1;
-                    if ($om < 10) {
-                        $om = '0'.$om;
-                    }
-                    if ($m == '01' || $m == '1') {
-                        $y = $y - 1;
-                        $old_month = date($y.'-12-01');
-                    } else {
-                        $old_month = date($y.'-'.$om.'-01');
-                    }
-                    // return $old_month;
-                    
-
-                    if ($m < date('m')) {
-                        return redirect(url()->previous())->with('error', 'Oops..! Openings cannot be made for previous month');
-                    }
-
-                    $closure_check = Closure::where('month', $old_month)->latest()->first();
-                    // return $closure_check;
-                    
-                    if ($closure_check != '') {
-                        if ($closure_check->status == 'open') {
-                            return redirect(url()->previous())->with('error', 'Warning..! Set closure for previous month to proceed');
-                        }
-                    }else{
-                        return redirect(url()->previous())->with('error', 'Opps..! close previous month in order to create openning for '.date('F, Y', strtotime($month)));
-                    }
-                    $month = session('cldate');
-                    $closure = Closure::firstOrCreate([
-                        'user_id' => auth()->user()->id,
-                        'month' => $month,
-                        'status' => 'open',
-                    ]);
-                    return redirect(url()->previous())->with('success', 'Openning for '.date('F, Y', strtotime($month)).' successfully set');
-                break;
-
-                case 'closure':
-
-                    $month = session('cldate');
-                    $m = date('m', strtotime($month));
-                    $y = date('Y', strtotime($month));
-                    $om = $m - 1;
-                    if ($om < 10) {
-                        $om = '0'.$om;
-                    }
-                    if ($m == '01' || $m == '1') {
-                        $y = $y - 1;
-                        $old_month = date($y.'-12-01');
-                    } else {
-                        $old_month = date($y.'-'.$om.'-01');
-                    }
-                    $closure_check = Closure::where('month', $old_month)->count();
-                    // return $old_month;
-                    if ($closure_check > 0) {
-                    } else {
-                        return redirect(url()->previous())->with('error', 'Warning..! Set closure for previous month to proceed');
-                        return redirect(url()->previous())->with('error', 'Closure not set for '.date('F, Y', strtotime($old_month)));
-                    }
-                    // return date('Y-m-t', strtotime($month));
-
-                    try {
-                        $closure = Closure::where('month', $month)->latest()->first();
-                        // $closure = Closure::firstOrCreate([
-                        //     'user_id' => auth()->user()->id,
-                        //     'month' => $month,
-                        //     'tot_qty' => session('sales_history')->sum('qty'),
-                        //     'avl_qty' => session('items')->sum('qty'),
-                        //     'amt_sold' => session('sales_history')->sum('tot'),
-                        //     // 'exp_amt' => ($sp - $cp)*$qty,
-                        //     'profits' => session('sales_history')->sum('profits'),
-                        //     'status' => 'open',
-                        // ]);
-
-                        $closure->month = $month;
-                        $closure->tot_qty = session('sales_history')->sum('qty');
-                        $closure->avl_qty = session('items')->sum('qty');
-                        $closure->amt_sold = session('sales_history')->sum('tot');
-                        // $closure->exp_amt = ($sp - $cp)*$qty;
-                        $closure->profits = session('sales_history')->sum('profits');
-                        $closure->status = 'closed';
-                        $closure->save();
-
-                        for ($i=1; $i <= count(session('compbranch')); $i++) { 
-                            $salesH = SalesHistory::where('user_bv', $i)->whereBetween('created_at', [$month, date('Y-m-t', strtotime($month))])->get();
-                            $qq = 'q'.$i;
-                            $closure->$qq = $salesH->sum('qty');
-                            $closure->save();
-                        }
-                        // return $salesH;
-                    } catch (\Throwable $th) {
-                        throw $th;
-                    }
-                    return redirect(url()->previous())->with('success', 'Closure set for '.date('F, Y', strtotime($month)));
-                   
-
-                break;
-
             }
         
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
         } catch (\Throwable $e) {
-            return redirect()->back()->with('error', 'Oops..! Something went wrong while processing that request.');
+            return redirect()->back()->with('error', 'Oops..! Something went wrong while processing that request. '.$e->getMessage());
         }
     }
 
@@ -1190,6 +737,7 @@ class ItemsController extends Controller
 
             $branchPayload[] = [
                 'index' => $i + 1,
+                'tag' => (string) $branches[$i]->tag,
                 'name' => $branches[$i]->name,
                 'qty' => (int) ($item->$qField ?? 0),
                 'price' => number_format((float) ($item->$bField ?? 0), 2, '.', ''),
@@ -1210,7 +758,50 @@ class ItemsController extends Controller
             'creator_name' => $item->user->name ?? 'Unknown',
             'branches' => $branchPayload,
             'update_url' => action('ItemsController@update', $item->id),
+            'transfer_url' => action('ItemsController@transferStock', $item->id),
         ]);
+    }
+
+    public function transferStock(Request $request, $id)
+    {
+        if (auth()->user()->status != 'Administrator') {
+            return redirect('/dashboard');
+        }
+
+        $validated = $request->validate([
+            'from_branch' => 'required|string',
+            'to_branch' => 'required|string|different:from_branch',
+            'qty' => 'required|integer|min:1',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        $item = Item::find($id);
+
+        if (! $item || $item->del === 'yes') {
+            return redirect('/items')->with('error', 'Item not found.');
+        }
+
+        try {
+            $service = app(BranchTransferService::class);
+            $transfer = $service->transfer(
+                $item,
+                $validated['from_branch'],
+                $validated['to_branch'],
+                (int) $validated['qty'],
+                auth()->user(),
+                $validated['notes'] ?? null
+            );
+        } catch (\InvalidArgumentException $exception) {
+            return redirect()->back()->with('error', $exception->getMessage());
+        }
+
+        $fromName = $service->branchName($transfer->from_branch);
+        $toName = $service->branchName($transfer->to_branch);
+
+        return redirect()->back()->with(
+            'success',
+            'Transferred '.number_format((int) $transfer->qty).' units of '.$item->name.' from '.$fromName.' to '.$toName.'.'
+        );
     }
 
     /**
@@ -1224,25 +815,6 @@ class ItemsController extends Controller
     {
         //
         switch ($request->input('store_action')) {
-
-            case 'update_user':
-
-                $ps1 = $request->input('password');
-                $ps2 = $request->input('password_confirmation');
-
-                if($ps1 == $ps2){
-                    $user = User::find($id);
-                    $user->name = $request->input('name');
-                    $user->email = $request->input('email');
-                    $user->password = Hash::make($ps1);
-                    $user->save();
-
-                    return redirect(url()->previous())->with('success', 'Update Successful');
-                }else{
-                    return redirect(url()->previous())->with('error', 'Passwords do not match');
-                }
-
-            break;
 
             case 'update_item':
 
@@ -1299,15 +871,6 @@ class ItemsController extends Controller
 
             break;
 
-            case 'del_waybil':
-
-                $wb = Waybill::find($id);
-                $wb->del = 'yes';
-                $wb->save();
-                return redirect(url()->previous())->with('success', 'Waybill deletion successful');
-                
-            break;
-
             case 'del_item':
 
                 $item = Item::find($id);
@@ -1343,315 +906,17 @@ class ItemsController extends Controller
 
             break;
 
-            case 'update_sales':
-
-                $pay_mode = $request->input('pay_mode');
-                if($pay_mode == '-- Mode of Payment --'){
-                    return redirect('/sales')->with('error', "Select -- Mode of Payment -- / -- Delivery Status -- to proceed..");
-                }
-
-                $sale = Sale::find($id);
-                if ($sale->pay_mode == 'Post Payment(Debt)' && $sale->paid != 'Paid' && $pay_mode != 'Post Payment(Debt)') {
-                    return redirect('/sales')->with('error', "Oops..! Pay debt in full before changing pay mode to ".$pay_mode);
-                }
-                try {
-                    $sale->pay_mode = $pay_mode;
-                    $sale->buy_name = $request->input('buy_name');
-                    $sale->buy_contact = $request->input('buy_contact');
-                    $sale->save();
-                    return redirect(url()->previous())->with('success', 'Update Successful');
-                } catch(Exception $ex){
-                    return redirect(url()->previous())->with('error', 'Oops..! Error updating record.');
-                }      
-                    
-            break;
-
-            case 'update_waybill':
-
-                $waybill = Waybill::find($id);
-
-                try {
-                    //code...
-                    
-                    $waybill->user_id = auth()->user()->id;
-                    $waybill->comp_name = $request->input('comp_name');
-                    $waybill->comp_add = $request->input('comp_add');
-                    $waybill->comp_contact = $request->input('comp_contact');
-                    $waybill->drv_name = $request->input('drv_name');
-                    $waybill->drv_contact = $request->input('drv_contact');
-                    $waybill->vno = $request->input('vno');
-                    $waybill->bill_no = $request->input('bill_no');
-                    $waybill->weight = $request->input('weight');
-                    $waybill->nop = $request->input('nop');
-                    $waybill->tot_qty = $request->input('tot_qty');
-                    $waybill->del_date = $request->input('del_date');
-                    $waybill->status = $request->input('status');
-                    $waybill->save();
-
-                    return redirect('/waybillview')->with('success', 'Bill Successfully Updated');
-
-                } catch (\Throwable $th) {
-                    //throw $th;
-                    return redirect('/waybillview')->with('error', 'Oops..! Unhandled Error!');
-                }
-
-            break;
-
-            case 'qty_change':
-
-                $my_url = $request->input('my_url');
-
-                $cart = Cart::find($id);
-                $cart_qty = $cart->qty;
-                $it_id = $cart->item_id;
-                $price = $request->input('price');
-                $change = $request->input('change');
-
-
-                // Get available qty
-                $uId = auth()->user()->bv;
-                $q = 'q'.$uId;
-                $item = Item::find($it_id);
-                $mainQty = $item->qty;
-                $avQty = $item->$q;
-
-                // return $it_id;
-
-                if (($change - $cart_qty) > $avQty) {
-                    # code...
-                    return redirect('/sales')->with('error', 'Sorry..! Available Stock Quantity: '.$avQty);
-                }
-
-                if ($change > $cart_qty){
-                    $diff = $change - $cart_qty;
-                    // if increase... Available Qty for q1, q2, q3....
-                    $avQty = $avQty - $diff;
-                    // Available Qty main 
-                    $mainQty = $mainQty - $diff;
-                }elseif ($change < $cart_qty){
-                    $diff = $cart_qty - $change;
-                    // if decrease... Available Qty for q1, q2, q3....
-                    $avQty = $avQty + $diff;
-                    // Available Qty main 
-                    $mainQty = $mainQty + $diff;
-                }else{
-                }
-
-                try {
-                    $newTot = $price*$change;
-                    $cart->qty = $change;
-                    $cart->profits = $change*($cart->unit_price - $cart->cost_price);
-                    $cart->tot = $newTot;
-                    $cart->save();
-
-                    // Update qty in stock
-                    $qtyUp = Item::find($it_id);
-                    $qtyUp->qty = $mainQty;
-                    $qtyUp->$q = $avQty;
-                    $qtyUp->save();
-
-                    return redirect('/sales')->with('success', ' quantity updated..');
-                } catch(Exception $ex){
-                    return redirect('/sales')->with('error', 'Oops..! Unhandled Error!');
-                }      
-
-                    
-            break;
-
-            case 'del_cart':
-            case 'cart_del':
-
-                $cart = Cart::find($id);
-
-                if (!$cart) {
-                    return redirect(url()->previous())->with('error', 'Cart item not found');
-                }
-
-                try {
-                    $item = Item::find($cart->item_id);
-
-                    if ($item) {
-                        $item->restoreCartStockReservation(auth()->user()->bv, (int) $cart->qty);
-                    }
-
-                    $cartName = $cart->name;
-                    $cart->delete();
-
-                    return redirect(url()->previous())->with('success', $cartName . ' deleted successfully');
-                } catch (Exception $ex) {
-                    return redirect(url()->previous())->with('error', 'Oops..! Unhandled Error!');
-                }
-
-            break;
-
             case 'print_invoice':
 
                 return view('pages.dash.invoice');  
                     
             break;
 
-            case 'deliver':
-
-                $sale_id = $request->input('send_sale_id');
-                $sh = SalesHistory::find($id);
-                $uid = $sh->user_id;
-
-                $match = ['sale_id' => $sale_id, 'del_status' => 'Not Delivered'];
-                try {
-                    $sh->del_status = 'Delivered';
-                    $sh->save();
-
-                    $sh_count = SalesHistory::where($match)->count();
-                    // return $sh_count;
-                    if ( $sh_count == 0) {
-                        # code...
-                        $sale = Sale::find($sale_id);
-                        $sale->del_status = 'Delivered';
-                        $sale->save();
-                    }
-                    return redirect('/sales')->with('success', 'Item delivered');
-                } catch(Exception $ex){
-                    return redirect('/sales')->with('error', 'Oops..! Unhandled Error! ');
-                }      
-
-                    
-            break;
-
-            case 'undeliver':
-
-                $sale_id = $request->input('send_sale_id');
-                $sh = SalesHistory::find($id);
-                $uid = $sh->user_id;
-
-                $match = ['sale_id' => $sale_id, 'del_status' => 'Not Delivered'];
-                $sh_count = SalesHistory::where($match)->count();
-                // try {
-                    $sh->del_status = 'Not Delivered';
-                    $sh->save();
-
-                    if ( $sh_count == 0) {
-                        # code...
-                        $sale = Sale::find($sale_id);
-                        $sale->del_status = 'Not Delivered';
-                        $sale->save();
-                    }
-                    return redirect('/sales')->with('success', 'Item undelivered');
-                // } catch(Exception $ex){
-                //     return redirect('/sales')->with('error', 'Oops..! Unhandled Error! ');
-                // }      
-
-                    
-            break;
-
-            case 'up_wbcontent':
-                $wb = Wbcontent::find($id);
-                $wb->qty = $request->input('qty');
-                $wb->save();
-                return redirect(url()->previous())->with('success', 'Waybill quantity update successful');
-            break;
-
-            case 'del_wbcontent':
-                // Check availabity or if dustributed in Wbdistribution before deletion
-                $wb = Wbcontent::find($id);
-                // $wb->del = 'yes';
-                $wb->delete();
-                return redirect(url()->previous())->with('success', 'Item removed from waybill');
-            break;
-
-            case 'up_wbdist':
-                $q1=0; $q2=0; $q3=0; $q4=0; $q5=0; $q6=0; $q7=0;
-                $wbc = Wbcontent::find($id);
-                $wbd = Wbdistribution::where('waybill_id', $wbc->waybill_id)->where('item_id', $wbc->item_id)->latest()->first();
-                if ($request->input('q1'.$wbc->item_id)) {
-                    $q1 = $request->input('q1'.$wbc->item_id);
-                }
-                if ($request->input('q2'.$wbc->item_id)) {
-                    $q2 = $request->input('q2'.$wbc->item_id);
-                }
-                if ($request->input('q3'.$wbc->item_id)) {
-                    $q3 = $request->input('q3'.$wbc->item_id);
-                }
-                if ($request->input('q4'.$wbc->item_id)) {
-                    $q4 = $request->input('q4'.$wbc->item_id);
-                }
-                if ($request->input('q5'.$wbc->item_id)) {
-                    $q5 = $request->input('q5'.$wbc->item_id);
-                }
-                if ($request->input('q6'.$wbc->item_id)) {
-                    $q6 = $request->input('q6'.$wbc->item_id);
-                }
-                if ($request->input('q7'.$wbc->item_id)) {
-                    $q7 = $request->input('q7'.$wbc->item_id);
-                }
-                // return $q1.', '.$q2.', '.$q3.', '.$q4.', '.$q5.', '.$q6.', '.$q7;
-
-                $itup = Item::find($wbc->item_id);
-                $totQs = $q1 + $q2 + $q3 + $q4 + $q5 + $q6 + $q7;
-                if ($wbc->qty == $wbc->qty_dist) {
-                    return redirect(url()->previous())->with('error', 'Oops..! Restock item `'.$itup->name.'` in order to distribute. 0 left');
-                }
-                if ($wbc->qty - ($wbc->qty_dist + $totQs) < 0) {
-                    return redirect(url()->previous())->with('error', 'Oops..! Only '.$wbc->qty - $wbc->qty_dist.' available for distribution to branches');
-                }
-                $wbc->qty_dist = $wbc->qty_dist + $totQs;
-                $wbc->save();
-
-                // if ($wbd) {
-                //     $wbd->q1 = $wbd->q1 + $q1;
-                //     $wbd->q2 = $wbd->q2 + $q2;
-                //     $wbd->q3 = $wbd->q3 + $q3;
-                //     $wbd->q4 = $wbd->q4 + $q4;
-                //     $wbd->q5 = $wbd->q5 + $q5;
-                //     $wbd->q6 = $wbd->q6 + $q6;
-                //     $wbd->q7 = $wbd->q7 + $q7;
-                //     $wbd->save();
-                // } else {
-                    $wbd_insert = Wbdistribution::firstOrCreate([
-                        'user_id' => auth()->user()->id,
-                        'waybill_id' => $wbc->waybill_id,
-                        'item_id' => $wbc->item_id,
-                        'q1' => $q1,
-                        'q2' => $q2,
-                        'q3' => $q3,
-                        'q4' => $q4,
-                        'q5' => $q5,
-                        'q6' => $q6,
-                        'q7' => $q7,
-                    ]);
-                // }
-                // return redirect(url()->previous())->with('success', 'Waybill branch quantities update successful');
-                
-                $itup->q1 = $itup->q1 + $q1;
-                $itup->q2 = $itup->q2 + $q2;
-                $itup->q3 = $itup->q3 + $q3;
-                $itup->q4 = $itup->q4 + $q4;
-                $itup->q5 = $itup->q5 + $q5;
-                $itup->q6 = $itup->q6 + $q6;
-                $itup->q7 = $itup->q7 + $q7;
-                $itup->qty = $itup->qty + $totQs;
-                $itup->save();
-                
-                // Update wbc quantiy distributed. To obtain remaining qty.
-                // $wb = Wbcontent::where('waybill_id', $wbc->waybill_id)->where('item_id', $wbc->item_id)->latest()->first();
-                return redirect(url()->previous())->with('success', 'Waybill branch quantities update successful');
-            break;
-
-            case 'del_paid_debt':
-                $sp = SalesPayment::find($id);
-                $order = Sale::where('id', $sp->sale_id)->first();
-                $replace = $order->paid_debt - $sp->amt_paid;
-                $order->paid_debt = $replace;
-                $order->paid = 'No';
-                $order->save();
-                $sp->del = 'yes';
-                $sp->save();
-                return redirect(url()->previous())->with('success', 'Record deletion successfull');
-            break;
-
         }
 
         return redirect('/items')->with('error', 'Unknown update action.');
     }
+
 
     /**
      * Remove the specified resource from storage.
@@ -1666,14 +931,17 @@ class ItemsController extends Controller
 
             case 'cat_del':
                 $cat = Category::find($id);
-                $cat->delete();
-                return redirect(url()->previous())->with('success', 'Category Deleted.');
-            break;
 
-            case 'expense_del':
-                $exp = Expense::find($id);
-                $exp->del = 'yes';
-                $exp->save();
+                if (! $cat) {
+                    return redirect(url()->previous())->with('error', 'Category not found.');
+                }
+
+                if ($cat->isInUse()) {
+                    return redirect(url()->previous())->with('error', 'Cannot delete category — it is assigned to one or more inventory items.');
+                }
+
+                $cat->delete();
+
                 return redirect(url()->previous())->with('success', 'Category Deleted.');
             break;
 

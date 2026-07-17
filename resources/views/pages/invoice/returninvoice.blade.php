@@ -30,26 +30,14 @@
             <div style="height: 50px">
             </div>
             
-            <p style="color: #aaa; font-size: 0.9em; letter-spacing: 0.5px">Order Returns Report</p>
-            <div class="invCenter">
-                <table class="invCenterTbl">
-                    <tbody>
-                        <tr>
-                            <td class="col-sm-3">Date From :</td>
-                            @if (session('date_from') != '')
-                                <td class="col-sm-3">{{ session('date_from') }}</td>
-                            @else
-                                <td class="col-sm-3">Today</td>
-                            @endif
-                            <td class="col-sm-4"></td>
-                        </tr>
-                        <tr>
-                            <td class="col-sm-3">Date To :</td>
-                            <td class="col-sm-3">{{ session('date_to') }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <x-report-print-meta
+              title="Order Returns Report"
+              :date-from="$printMeta['date_from'] ?? session('date_from')"
+              :date-to="$printMeta['date_to'] ?? session('date_to')"
+              :branch="$printMeta['branch'] ?? null"
+              :search="$printMeta['search'] ?? null"
+              :search-label="$printMeta['searchLabel'] ?? 'Search'"
+            />
 
             <div class="invBottom">
                 <table class="invBottomTbl">

@@ -66,6 +66,10 @@
   color: rgba(255, 255, 255, 0.82);
 }
 
+.dash-page-header {
+  overflow: visible;
+}
+
 .dash-page-header-actions {
   display: flex;
   align-items: center;
@@ -75,6 +79,7 @@
   margin-bottom: 0;
   flex: 0 0 auto;
   align-self: center;
+  overflow: visible;
 }
 
 .dash-page-header-btn {
@@ -121,6 +126,16 @@
   border-color: rgba(255, 255, 255, 0.62);
   color: #fff;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+a.inventory-branch-control-btn {
+  text-decoration: none;
+}
+
+a.inventory-branch-control-btn:hover,
+a.inventory-branch-control-btn:focus {
+  text-decoration: none;
+  color: #fff;
 }
 
 @media (max-width: 767px) {

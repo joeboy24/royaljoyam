@@ -30,38 +30,12 @@
             <div style="height: 50px">
             </div>
             
-            <div class="invCenter">
-                <table class="invCenterTbl">
-                    <tbody>
-                        <tr>
-                            <td class="col-sm-3">Date From :</td>
-                            @if (session('date_from') != '')
-                                <td class="col-sm-3">{{ session('date_from') }}</td>
-                            @else
-                                <td class="col-sm-3">Today</td>
-                            @endif
-                            {{-- <td class="col-sm-2"><b>Tot. Quantity :</b></td> --}}
-                            <td class="col-sm-4"></td>
-                        </tr>
-                        <tr>
-                            <td class="col-sm-3">Date To :</td>
-                            <td class="col-sm-3">{{ session('date_to') }}</td>
-                        </tr>
-                        <!--tr>
-                            <td class="col-sm-3"></td>
-                            <td class="col-sm-3"></td>
-                            <td class="col-sm-2">Sales Person :</td>
-                            {{-- <td class="col-sm-4">Royal Joham V... {{session('company')->contact}}</td> --}}
-                        </tr>
-                        <tr>
-                            <td class="col-sm-3">Payment Methods :</td>
-                            <td class="col-sm-3">Cash/Cheque/Momo..</td>
-                            <td class="col-sm-2">Report Date :</td>
-                            {{-- <td class="col-sm-4">{{date('d-m-Y')}}</td> --}}
-                        </tr-->
-                    </tbody>
-                </table>
-            </div>
+            <x-report-print-meta
+              title="Expenses Report"
+              :date-from="$printMeta['date_from'] ?? session('date_from')"
+              :date-to="$printMeta['date_to'] ?? session('date_to')"
+              :branch="$printMeta['branch'] ?? null"
+            />
 
             <div class="invBottom">
                 <table class="invBottomTbl">

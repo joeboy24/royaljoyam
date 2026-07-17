@@ -2,576 +2,307 @@
 
 @section('content')
 
-  <!-- End Navbar -->
   <div class="content">
-        <div class="container-fluid">
-          <div class="row">
-            <div class="col-md-7">
+    <div class="container-fluid">
+      <div class="row dash-config-layout">
 
-              @include('inc.messages')
+        <div class="col-lg-7">
+          @include('inc.messages')
 
-              {{-- <form action="{{action('PostsController@store')}}" method="POST">
-                @csrf --}}
+          <div class="card">
+            <x-dash-page-header
+              title="Registry"
+              subtitle="Register users and categories."
+              icon="fa fa-edit"
+            >
+              <x-slot:actions>
+                <button
+                  type="button"
+                  class="dash-page-header-btn inventory-action-btn inventory-action-btn-primary dash-tip"
+                  data-toggle="modal"
+                  data-target="#usrModal"
+                  data-tip="Register user"
+                >
+                  <i class="fa fa-user-plus"></i>
+                  <span>Register user</span>
+                </button>
+                <button
+                  type="button"
+                  class="dash-page-header-btn inventory-action-btn dash-tip"
+                  data-toggle="modal"
+                  data-target="#catModal"
+                  data-tip="Add category"
+                >
+                  <i class="fa fa-folder-open"></i>
+                  <span>Add category</span>
+                </button>
+              </x-slot:actions>
+            </x-dash-page-header>
 
-                <div class="form-group row mb-0">
-                  <div class="col-md-3 offset-md-0">
-                      <button type="submit" class="btn btn-primary"  data-toggle="modal" data-target="#usrModal"><i class="fa fa-users"></i> &nbsp; Register User</button>
-                  </div>
-
-                  <div class="col-md-9 offset-md-0">
-                      <button type="submit" class="btn btn-info pull-right" data-toggle="modal" data-target="#catModal"><i class="fa fa-users"></i> &nbsp; Add Category</button>
-                  </div>
-                </div>
-
-              {{-- </form> --}}
-
-              <div class="card">
-                <x-dash-page-header
-                  title="Registry"
-                  subtitle="Register items, users, and categories for stock management."
-                  icon="fa fa-edit"
-                />
-                <div class="card-body">
-            
-                  <div class="container">
-                      <div class="row justify-content-center">
-                          <div class="col-md-8">
-                              
-                                  <div class="card-header">Input Details</div>
-                  
-                                  <div class="card-body">
-
-                                    <form action="{{action('ItemsController@store')}}" method="POST" enctype="multipart/form-data">
-                                      @csrf
-                                      <div class="form-group">
-                                        <input type="text" class="form-control" name="name" placeholder="Item Name" required/>
-                                      </div>
-    
-                                      <div class="form-group">
-                                        <textarea name="desc" class="form-control" rows="3" placeholder="Item Description" required></textarea>
-                                      </div>
-
-                                      <div class="form-group">
-                                        <label for="recipient-name" class="col-form-label">Choose Category</label>
-                                        <select name="cat" class="form-control" id="assign_tch" required>
-                                          @if(count($category) > 0)
-                                            @foreach ($category as $cat)
-                                              <option>{{$cat->name}}</option>
-                                            @endforeach
-                                          @endif
-                                        </select>
-                                      </div>
-
-                                      <div class="form-group">
-                                        <input type="text" class="form-control" name="brand" placeholder="Brand / Manufacturer"/>
-                                      </div>
-    
-                                      <div class="form-group">
-                                        <input type="text" class="form-control" name="barcode" placeholder="Barcode"/>
-                                      </div>
-                          
-                                      <div class="form-group">
-                                        <input type="number" class="form-control" min="0" name="qty" placeholder="Quantity" required/>
-                                      </div>
-
-                                      <!--div class="form-group">
-                                        <input type="text" class="form-control" name="cost_price" placeholder="Cost Price" required/>
-                                      </div-->
-    
-                                      <div class="form-group">
-                                        <input type="number" class="form-control" min="0c" name="price" placeholder="Cost Price" required/>
-                                      </div>
-                                      
-                                      <div class="">
-                                        <label class="upfiles">Upload Image(s): &nbsp; </label>
-                                        <input type="file" name="items[]" multiple>
-                                      </div>
-                                      
-                                      <div class="modal-footer">
-                                        <button type="submit" class="btn btn-info" name="store_action" value="add_item"><i class="fa fa-save"></i> &nbsp; Save</button>
-                                      </div>
-                                    </form>
-
-                                  </div>
-                              
-                          </div>
-                      </div>
-                  </div>
-                </div>
+            <div class="card-body dash-form-body dash-config-side-body">
+              <div class="dist-section-toolbar">
+                <h6 class="inventory-edit-section-title"><i class="fa fa-users"></i> Registered users</h6>
+                <span class="dash-config-branch-count">{{ $users->where('created_at', '!=', '')->count() }}</span>
               </div>
 
-
-            </div>
-
-
-                          
-            <div class="col-md-5">
-              <div class="card card-profile">
-                <div class="card-body myScroll">
-                  <h4 class="card-title">All Registered Categories</h4>
-
-                    @if (count($category) > 0)
-                      <table class="newtable1">
-                        <thead class="text-secondary">
-                          <th class="text_left">Category / Description</th>
-                          <th class="ryt">
-                            Action
-                          </th>
-                        </thead>
-                        <tbody>
-
-
-                        @foreach ($category as $cat)
-                            <tr>
-                              <td>{{$i++}} &nbsp; <b class="myb">{{$cat->name}}</b><br>{{$cat->desc}}</td>
-                              <td class="ryt">
-                                <form action="{{ action('ItemsController@destroy', $cat->id) }}" method="POST">
-
-                                  {{-- <input type="checkbox" class="checkbox1" id="myCheck{{$i}}" name="" value="{{$course->name}}" onclick="myFunction{{$i}}()"> --}}
-
-                                  <input type="hidden" name="_method" value="DELETE">
-                                  @csrf
-                                  <button type="submit" name="del_action" value="cat_del" rel="tooltip" title="Delete Category" class="close2" onclick="return confirm('Are you sure you want to delete this Category?');"><i class="fa fa-close"></i></button>
-                              
-                                </form>
-                              </td>
-                            </tr>
-                        @endforeach
-
-                        </tbody>
-                      </table>
-
-                    @else
-                      <p>No Category Added Yet</p>
-                    @endif
-
-                </div>
-              </div>
-
-              <div style="height: 30px">
-              </div>
-
-              <div class="card card-profile">
-                <div class="card-body">
-                  <h4 class="card-title">Branch Pricing / Quantity</h4>
-                  <p class="card-category">Select to set up branch prices & quantity for items here</p>
-
-                    <ul class="nav nav_radio">
-                        <li>
-                            <label><input id="radioRegister" onclick="showPrice()" name="choice" type="radio"> Pricing</label>
-                        </li>
-                        <li>
-                            <label><input id="radioGuest" onclick="showQuantity()" name="choice" type="radio"> Quantity</label>
-                        </li>
-                    </ul>
-
-                  <div id="price_div" class="col-md-12">
-                    <form action="{{action('ItemsController@store')}}" method="POST">
-                      @csrf
-        
-                        <div class="my_panel">
-
-                          <div class="dropdown">
-                            <div class="input_div">
-                              <h4>Manage Pricing</h4>
-                              <p>Item Name: </p>
-                              <input type="text" name="comp_name" placeholder="Search Item..." id="myInput" onkeyup="filterFunction()" required/>
-                            </div>
-                              @if (count($items) > 0)
-
-                              {{-- <input id="b1" type="hidden" value="ererwe"/> --}}
-                                <div id="myDropdown" class="dropdown_content" onselect="myFunction()">
-                                  @foreach ($items as $item)
-                                    
-                                    <a id="selItem{{$item->id}}" onclick="selFunction{{$item->id}}()">{{$item->name}}</a>
-                                    <input id="b{{$item->id}}" type="hidden" value="{{$item->b1}}"/>
-                                    <input id="c{{$item->id}}" type="hidden" value="{{$item->b2}}"/>
-                                    <input id="d{{$item->id}}" type="hidden" value="{{$item->b3}}"/>
-
-                                    <script>
-                                      
-                                      function myFunction() {
-                                        var drp = document.getElementById("myDropdown");
-                                        drp.style.display = "none";
-                                      }
-                                      
-                                      function selFunction{{$item->id}}() {
-                                        var selItem = document.getElementById("selItem{{$item->id}}");
-                                        document.getElementById("myInput").value = selItem.innerHTML;
-                                        document.getElementById("myDropdown").style.display = "none";
-
-                                        document.getElementById("bb1").value = document.getElementById("b{{$item->id}}").value
-                                        document.getElementById("bb2").value = document.getElementById("c{{$item->id}}").value
-                                        document.getElementById("bb3").value = document.getElementById("d{{$item->id}}").value
-                                        document.getElementById("id").value = "{{$item->id}}";
-                                      }
-                                      
-                                      function filterFunction() {
-                                      
-                                        document.getElementById("myDropdown").style.display = "block";
-                                        
-                                        var input, filter, ul, li, a, i;
-                                        input = document.getElementById("myInput");
-                                        filter = input.value.toUpperCase();
-                                        div = document.getElementById("myDropdown");
-                                        a = div.getElementsByTagName("a");
-                                        for (i = 0; i < a.length; i++) {
-                                          txtValue = a[i].textContent || a[i].innerText;
-                                          if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                                            a[i].style.display = "";
-                                          } else {
-                                            a[i].style.display = "none";
-                                          }
-                                        }
-                                      }
-
-                                    </script>
-
-                                  @endforeach
-                                </div>
-                                  {{-- {{$item->name}} --}}
+              @if ($users->where('created_at', '!=', '')->count() > 0)
+                <div class="table-responsive dist-branch-table-wrap dash-config-branch-table-wrap">
+                  <table class="table mt dist-branch-table dash-config-branch-table">
+                    <thead class="text-secondary hideMe">
+                      <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th class="ryt actsize">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @foreach ($users as $user)
+                        @if ($user->created_at != '')
+                          <tr @class(['rowColour' => $loop->even, 'dash-registry-user-deleted' => $user->del === 'yes'])>
+                            <td>
+                              <span class="dash-config-branch-name">{{ $user->name }}</span>
+                              @if ($user->del === 'yes')
+                                <p class="waybill-table-meta">Deleted</p>
                               @endif
-                              
-                          </div>
-                          
-
-                          <div class="input_div">
-                              <p>Branch 1: Price</p>
-                              <input id="bb1" min="0" type="number" name="b1"/>
-                              <input id="id" type="hidden" name="id"/>
-                          </div>
-
-                          <div class="input_div">
-                              <p>Branch 2: Price</p>
-                              <input id="bb2" min="0" type="number" name="b2"/>
-                          </div>
-
-                          <div class="input_div">
-                              <p>Branch 3: Price</p>
-                              <input id="bb3" min="0" type="number" name="b3"/>
-                          </div>
-
-                        </div>
-                            
-                        <div class="modal-footer">
-                          <button type="submit" class="btn btn-info" name="store_action" value="update_branch"><i class="fa fa-save"></i> &nbsp; Update</button>
-                        </div>
-                    </form>
-                  </div>
-
-
-                  <div id="quantity_div" class="col-md-12">
-                    <form action="{{action('ItemsController@store')}}" method="POST">
-                      @csrf
-        
-                        <div class="my_panel">
-
-                          <div class="dropdown">
-                            <div class="input_div2">
-                              <h4>Manage Quantity</h4>
-                              <p>Item Name: </p>
-                              <input type="text" name="comp_name2" placeholder="Search Item..." id="myInput2" onkeyup="filterFunction2()" required/>
-                            </div>
-                              @if (count($items) > 0)
-
-                              {{-- <input id="b1" type="hidden" value="ererwe"/> --}}
-                                <div id="myDropdown2" class="dropdown_content2" onselect="myFunction2()">
-                                  @foreach ($items as $item)
-                                    
-                                    <a id="selItem2{{$item->id}}" onclick="selFunction2{{$item->id}}()">{{$item->name}}</a>
-                                    <input id="x{{$item->id}}" type="hidden" value="{{$item->q1}}"/>
-                                    <input id="y{{$item->id}}" type="hidden" value="{{$item->q2}}"/>
-                                    <input id="z{{$item->id}}" type="hidden" value="{{$item->q3}}"/>
-
-                                    <script>
-                                      
-                                      function myFunction2() {
-                                        var drp = document.getElementById("myDropdown2");
-                                        drp.style.display = "none";
-                                      }
-                                      
-                                      function selFunction2{{$item->id}}() {
-                                        var selItem = document.getElementById("selItem2{{$item->id}}");
-                                        document.getElementById("myInput2").value = selItem.innerHTML;
-                                        document.getElementById("myDropdown2").style.display = "none";
-
-                                        document.getElementById("xx1").value = document.getElementById("x{{$item->id}}").value
-                                        document.getElementById("yy2").value = document.getElementById("y{{$item->id}}").value
-                                        document.getElementById("zz3").value = document.getElementById("z{{$item->id}}").value
-                                        document.getElementById("id2").value = "{{$item->id}}";
-                                      }
-                                      
-                                      function filterFunction2() {
-                                      
-                                        document.getElementById("myDropdown2").style.display = "block";
-                                        
-                                        var input, filter, ul, li, a, i;
-                                        input = document.getElementById("myInput2");
-                                        filter = input.value.toUpperCase();
-                                        div = document.getElementById("myDropdown2");
-                                        a = div.getElementsByTagName("a");
-                                        for (i = 0; i < a.length; i++) {
-                                          txtValue = a[i].textContent || a[i].innerText;
-                                          if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                                            a[i].style.display = "";
-                                          } else {
-                                            a[i].style.display = "none";
-                                          }
-                                        }
-                                      }
-
-                                    </script>
-
-                                  @endforeach
-                                </div>
-                                  {{-- {{$item->name}} --}}
-                              @endif
-                              
-                          </div>
-                          
-
-                          <div class="input_div">
-                              <p>Branch 1: Qty.</p>
-                              <input id="xx1" min="0" type="number" name="x1"/>
-                              <input id="id2" type="hidden" name="id2" value="27"/>
-                          </div>
-
-                          <div class="input_div">
-                              <p>Branch 2: Qty.</p>
-                              <input id="yy2" min="0" type="number" name="y2"/>
-                          </div>
-
-                          <div class="input_div">
-                              <p>Branch 3: Qty.</p>
-                              <input id="zz3" min="0" type="number" name="z3"/>
-                          </div>
-
-                        </div>
-                            
-                        <div class="modal-footer">
-                          <button type="submit" class="btn btn-primary" name="store_action" value="update_branch_qty"><i class="fa fa-save"></i> &nbsp; Update</button>
-                        </div>
-                    </form>
-                  </div>
-                        
-                </div>
-              </div>
-
-              <div style="height: 30px">
-              </div>
-
-              <div class="card card-profile">
-                <div class="card-body">
-                  
-                  <div class="form-group inputHold">
-                    <a href="/items"><button type="submit" class="btn btn-secondary" data-toggle="modal" data-target="#view_items"><i class="fa fa-archive"></i> &nbsp; Inventory</button></a>
-                    <button type="submit" class="btn btn-secondary" data-toggle="modal" data-target="#view_users"><i class="fa fa-folder-open"></i> &nbsp; View All Users</button>
-                  </div>
-                  <p class="small_p" style="margin-top: -10px;">Inventory is managed separately from registry users and configuration.</p>
-                  
-                </div>
-              </div>
-
-            </div>
-
-
-          </div>
-        </div>
-  </div>
-
-
-
-  <div class="modal fade" id="usrModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel"><i class="fa fa-plus-circle"></i>&nbsp;&nbsp; Register User Here</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-
-          
-          <form action="{{action('ItemsController@store')}}" method="POST">
-              @csrf
-
-              <div class="form-group row">
-                  <div class="col-md-12">
-                      <input id="name" placeholder="Name" type="text" class="form-control" name="name" required autofocus>
-                  </div>
-              </div>
-
-              <div class="form-group row">
-                  <div class="col-md-12">
-                      <input id="email" placeholder="Email" type="email" class="form-control" name="email" required>
-                  </div>
-              </div>
-
-              <div class="form-group row">
-              <label class="col-form-label myLabel" style="margin-left:20px">User Type / Branch Name</label>
-                <div class="col-md-12">
-                  <select name="status" class="form-control" id="assign_tch" required>
-                    <option>Administrator</option>
-                    @if (count($branches) > 0)
-                      @foreach ($branches as $branch)
-                        <option value="{{ $branch->id }}">{{ $branch->name }}</option> 
-                      @endforeach
-                    @endif
-                  </select>
-                </div>
-              </div>
-
-              <div class="form-group row">
-                  <div class="col-md-12">
-                      <input id="password" placeholder="Password" type="password" class="form-control" name="password" required>
-                  </div>
-              </div>
-
-              <div class="form-group row">
-                  <div class="col-md-12">
-                      <input id="password-confirm" placeholder="Confirm Password" type="password" class="form-control" name="password_confirmation" required>
-                  </div>
-              </div>
-
-              <div class="form-group row mb-0">
-                  <div class="col-md-6 offset-md-4">
-                      <button type="submit" class="btn btn-info" name="store_action" value="create_user"><i class="fa fa-save"></i> &nbsp; Add User</button>
-                  </div>
-              </div>
-          </form>
-
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal fade" id="catModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel"><i class="fa fa-plus-circle"></i>&nbsp;&nbsp; Add Category Here</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-
-          
-          <form action="{{action('ItemsController@store')}}" method="POST">
-              @csrf
-
-              <div class="form-group row">
-                  <div class="col-md-12">
-                      <input id="name" placeholder="Name" type="text" class="form-control" name="name" required autofocus>
-                  </div>
-              </div>
-
-              <div class="form-group row">
-                <div class="col-md-12">
-                  <textarea name="desc" class="form-control" rows="2" placeholder="Category Description"></textarea>
-                </div>
-              </div>
-
-              <div class="form-group row mb-0">
-                  <div class="col-md-6 offset-md-4">
-                      <button type="submit" class="btn btn-info" name="store_action" value="add_cat"><i class="fa fa-save"></i> &nbsp; Add Category</button>
-                  </div>
-              </div>
-          </form>
-
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal fade" id="view_users" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modtop" role="document">
-      <div id="printarea" class="modal-content">
-          <div class="card card-profile">
-            <div class="card-avatar">
-              <a href="#">              </a>
-            </div>
-            <div class="card-body">
-              <h6 class="card-category text-gray"></h6>
-              <div style="height: 30px">
-              </div>
-
-              <h3 class="card-title">All Users</h3>
-
-              @if(count($users) != 0)
-
-              <table id="config_tbl">
-                <thead>
-                  <th><h5 class="card-title">Username</h5></th>
-                  <th><h5 class="card-title">Email</h5></th>
-                  <th><h5 class="card-title">Status</h5></th>
-                </thead>
-                <tbody>
-                  @foreach ($users as $user)
-
-                    @if ($user->created_at != '')
-                      <form action="{{ action('ItemsController@destroy', $user->id) }}" method="POST">
-
-                        <input type="hidden" name="_method" value="DELETE">
-                        @csrf
-
-                        @if ($user->del == 'yes')
-                          {{-- @if ($c%2==0) --}}
-                          <tr class="alert-danger">
-                        @else
-                          <tr>
-                        @endif
-                          <td>{{$user->name}}</td>
-                          <td>{{$user->email}}</td>
-                          <td>{{$user->status}}
-                        @if ($user->del == 'yes')
-                          <button type="submit" name="del_action" value="usr_restore" rel="tooltip" title="Restore User" class="close2 color10" onclick="return confirm('Are you sure you want to restore user?');"><i class="fa fa-reply"></i></button>
-                        @else
-                          <button type="submit" name="del_action" value="usr_del" rel="tooltip" title="Delete User" class="close2" onclick="return confirm('Are you sure you want to delete user?');"><i class="fa fa-close"></i></button>
-                        @endif
+                            </td>
+                            <td>{{ $user->email }}</td>
+                            <td>{{ $user->status }}</td>
+                            <td class="ryt">
+                              <form action="{{ action('ItemsController@destroy', $user->id) }}" method="POST" class="dash-config-delete-form">
+                                @csrf
+                                @method('DELETE')
+                                @if ($user->del === 'yes')
+                                  <button
+                                    type="submit"
+                                    name="del_action"
+                                    value="usr_restore"
+                                    class="inventory-action-btn inventory-action-btn-icon dash-registry-restore-btn dash-tip"
+                                    data-tip="Restore user"
+                                    onclick="return confirm('Are you sure you want to restore this user?');"
+                                  >
+                                    <i class="fa fa-reply"></i>
+                                  </button>
+                                @else
+                                  <button
+                                    type="submit"
+                                    name="del_action"
+                                    value="usr_del"
+                                    class="inventory-action-btn inventory-action-btn-icon dash-config-delete-btn dash-tip"
+                                    data-tip="Delete user"
+                                    onclick="return confirm('Are you sure you want to delete this user?');"
+                                  >
+                                    <i class="fa fa-trash"></i>
+                                  </button>
+                                @endif
+                              </form>
                             </td>
                           </tr>
-                        {{-- @endif --}}
-
-                      </form>
-                    @endif
-
-                  @endforeach
-
-                </tbody>
-              </table>
-
+                        @endif
+                      @endforeach
+                    </tbody>
+                  </table>
+                </div>
               @else
-                <p>Oops..! No user registered yet!</p>
+                <div class="dash-empty-state dash-config-empty">
+                  <span class="dash-empty-state-icon" aria-hidden="true"><i class="fa fa-users"></i></span>
+                  <p class="dash-empty-state-title">No users yet</p>
+                  <p class="dash-empty-state-text">Use <strong>Register user</strong> in the header to add the first account.</p>
+                </div>
               @endif
 
+              <div class="dist-callout dash-registry-notice dash-registry-notice-spaced">
+                <i class="fa fa-info-circle" aria-hidden="true"></i>
+                <span>Stock items, branch pricing, and quantities are managed from <a href="/items">inventory</a>.</span>
+              </div>
             </div>
           </div>
-      </div>
+        </div>
 
+        <div class="col-lg-5">
+          <div class="card dash-config-side-card">
+            <div class="card-body dash-form-body dash-config-side-body">
+              <div class="dist-section-toolbar">
+                <h6 class="inventory-edit-section-title"><i class="fa fa-folder-open"></i> Registered categories</h6>
+                <span class="dash-config-branch-count">{{ count($category) }}</span>
+              </div>
+
+              @if (count($category) > 0)
+                <div class="table-responsive dist-branch-table-wrap dash-config-branch-table-wrap">
+                  <table class="table mt dist-branch-table dash-config-branch-table">
+                    <thead class="text-secondary hideMe">
+                      <tr>
+                        <th>Category</th>
+                        <th class="ryt actsize">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @foreach ($category as $cat)
+                        @php $categoryInUse = $cat->isInUse(); @endphp
+                        <tr @class(['rowColour' => $loop->even])>
+                          <td>
+                            <span class="dash-config-branch-name">{{ $cat->name }}</span>
+                            @if ($cat->desc)
+                              <p class="waybill-table-meta">{{ $cat->desc }}</p>
+                            @endif
+                            @if ($categoryInUse)
+                              <p class="waybill-table-meta">{{ $cat->linkedItemCount() }} item(s) assigned</p>
+                            @endif
+                          </td>
+                          <td class="ryt">
+                            <form action="{{ action('ItemsController@destroy', $cat->id) }}" method="POST" class="dash-config-delete-form">
+                              @csrf
+                              @method('DELETE')
+                              <span
+                                class="dash-tip dash-config-delete-tip"
+                                data-tip="{{ $categoryInUse ? 'Cannot delete — category is assigned to inventory items' : 'Delete category' }}"
+                              >
+                                <button
+                                  type="submit"
+                                  name="del_action"
+                                  value="cat_del"
+                                  class="inventory-action-btn inventory-action-btn-icon dash-config-delete-btn{{ $categoryInUse ? ' is-disabled' : '' }}"
+                                  @disabled($categoryInUse)
+                                  @if (! $categoryInUse) onclick="return confirm('Are you sure you want to delete this category?');" @endif
+                                >
+                                  <i class="fa fa-trash"></i>
+                                </button>
+                              </span>
+                            </form>
+                          </td>
+                        </tr>
+                      @endforeach
+                    </tbody>
+                  </table>
+                </div>
+              @else
+                <div class="dash-empty-state dash-config-empty">
+                  <span class="dash-empty-state-icon" aria-hidden="true"><i class="fa fa-folder-open"></i></span>
+                  <p class="dash-empty-state-title">No categories yet</p>
+                  <p class="dash-empty-state-text">Use <strong>Add category</strong> in the header to create your first category.</p>
+                </div>
+              @endif
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
 
-  <script>
+  {{-- Register user --}}
+  <div class="modal fade" id="usrModal" tabindex="-1" role="dialog" aria-labelledby="usrModalLabel" aria-hidden="true">
+    <div class="modal-dialog inventory-edit-dialog modal-dialog-centered" role="document">
+      <div class="modal-content inventory-edit-modal">
+        <form action="{{ action('ItemsController@store') }}" method="POST">
+          @csrf
 
-    function showPrice(){
-        var x = document.getElementById('price_div');
-        x.style.display = "block";
-        var y = document.getElementById('quantity_div');
-        y.style.display = "none";
+          <div class="inventory-edit-header">
+            <div class="inventory-edit-header-inner">
+              <div class="inventory-edit-thumb inventory-edit-thumb-placeholder">
+                <i class="fa fa-user-plus"></i>
+              </div>
+              <div class="inventory-edit-header-text">
+                <span class="inventory-edit-kicker">New user</span>
+                <h4 class="inventory-edit-title" id="usrModalLabel">Register user</h4>
+                <p class="inventory-edit-meta">Create a dashboard account for a staff member or administrator.</p>
+              </div>
+            </div>
+            <button type="button" class="inventory-edit-close" data-dismiss="modal" aria-label="Close">
+              <i class="material-icons">close</i>
+            </button>
+          </div>
 
-    }
+          <div class="inventory-edit-body">
+            <label class="inventory-edit-field">
+              <span class="inventory-edit-label">Username</span>
+              <input id="usr_name" type="text" class="inventory-edit-input" name="name" placeholder="Username" required autofocus>
+            </label>
 
-    function showQuantity(){
-        var x = document.getElementById('quantity_div');
-        x.style.display = "block";
-        var y = document.getElementById('price_div');
-        y.style.display = "none";
+            <label class="inventory-edit-field">
+              <span class="inventory-edit-label">Email</span>
+              <input id="usr_email" type="email" class="inventory-edit-input" name="email" placeholder="Email address" required>
+            </label>
 
-    }
-    
+            <label class="inventory-edit-field">
+              <span class="inventory-edit-label">User type / branch</span>
+              <select name="status" class="inventory-edit-input inventory-edit-select" required>
+                <option>Administrator</option>
+                @if (count($branches) > 0)
+                  @foreach ($branches as $branch)
+                    <option value="{{ $branch->id }}">{{ $branch->name }}</option>
+                  @endforeach
+                @endif
+              </select>
+            </label>
 
-</script>
+            <div class="inventory-edit-field-row">
+              <label class="inventory-edit-field">
+                <span class="inventory-edit-label">Password</span>
+                <input id="usr_password" type="password" class="inventory-edit-input" name="password" placeholder="Password" required>
+              </label>
+              <label class="inventory-edit-field">
+                <span class="inventory-edit-label">Confirm password</span>
+                <input id="usr_password_confirm" type="password" class="inventory-edit-input" name="password_confirmation" placeholder="Confirm password" required>
+              </label>
+            </div>
+          </div>
+
+          <div class="inventory-edit-footer">
+            <button type="button" class="inventory-edit-btn inventory-edit-btn-muted" data-dismiss="modal">Cancel</button>
+            <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary" name="store_action" value="create_user">
+              <i class="fa fa-save"></i> Add user
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {{-- Add category --}}
+  <div class="modal fade" id="catModal" tabindex="-1" role="dialog" aria-labelledby="catModalLabel" aria-hidden="true">
+    <div class="modal-dialog inventory-edit-dialog modal-dialog-centered" role="document">
+      <div class="modal-content inventory-edit-modal">
+        <form action="{{ action('ItemsController@store') }}" method="POST">
+          @csrf
+
+          <div class="inventory-edit-header">
+            <div class="inventory-edit-header-inner">
+              <div class="inventory-edit-thumb inventory-edit-thumb-placeholder">
+                <i class="fa fa-folder-open"></i>
+              </div>
+              <div class="inventory-edit-header-text">
+                <span class="inventory-edit-kicker">New category</span>
+                <h4 class="inventory-edit-title" id="catModalLabel">Add category</h4>
+                <p class="inventory-edit-meta">Group inventory items under a shared category.</p>
+              </div>
+            </div>
+            <button type="button" class="inventory-edit-close" data-dismiss="modal" aria-label="Close">
+              <i class="material-icons">close</i>
+            </button>
+          </div>
+
+          <div class="inventory-edit-body">
+            <label class="inventory-edit-field">
+              <span class="inventory-edit-label">Category name</span>
+              <input type="text" class="inventory-edit-input" name="name" placeholder="Category name" required autofocus>
+            </label>
+
+            <label class="inventory-edit-field">
+              <span class="inventory-edit-label">Description</span>
+              <textarea name="desc" class="inventory-edit-input inventory-edit-textarea" rows="3" placeholder="Category description"></textarea>
+            </label>
+          </div>
+
+          <div class="inventory-edit-footer">
+            <button type="button" class="inventory-edit-btn inventory-edit-btn-muted" data-dismiss="modal">Cancel</button>
+            <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary" name="store_action" value="add_cat">
+              <i class="fa fa-save"></i> Add category
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
 @endsection

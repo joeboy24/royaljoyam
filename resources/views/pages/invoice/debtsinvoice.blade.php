@@ -30,41 +30,26 @@
             <div style="height: 50px">
             </div>
             
+            <x-report-print-meta
+              title="Outstanding Debts Report"
+              :date-from="$printMeta['date_from'] ?? session('date_from')"
+              :date-to="$printMeta['date_to'] ?? session('date_to')"
+              :branch="$printMeta['branch'] ?? null"
+              :search="$printMeta['search'] ?? null"
+              :search-label="$printMeta['searchLabel'] ?? 'Search'"
+            />
+
             <div class="invCenter">
                 <table class="invCenterTbl">
                     <tbody>
                         <tr>
-                            <td class="col-sm-3">Date From :</td>
-                            @if (session('date_from') != '')
-                                <td class="col-sm-3">{{ session('date_from') }}</td>
-                            @else
-                                <td class="col-sm-3">Today</td>
-                            @endif
-                            {{-- <td class="col-sm-2"><b>Tot. Quantity :</b></td> --}}
-                            <td class="col-sm-4"></td>
-                        </tr>
-                        <tr>
-                            <td class="col-sm-3">Date To :</td>
-                            <td class="col-sm-3">{{ session('date_to') }}</td>
                             <td class="col-sm-3">Total Amt. : Gh₵</td>
-                            <td class="col-sm-3"><b>{{ number_format(session('debts')->sum('tot'), 2) }}</b></td>
+                            <td class="col-sm-3"><b>{{ number_format(($debts ?? session('debts'))->sum('tot'), 2) }}</b></td>
                         </tr>
                         <tr>
                             <td class="col-sm-3">Tot. Count :</td>
-                            <td class="col-sm-3"><b>{{ count(session('debts')) }}</b></td>
+                            <td class="col-sm-3"><b>{{ count($debts ?? session('debts')) }}</b></td>
                         </tr>
-                        <!--tr>
-                            <td class="col-sm-3"></td>
-                            <td class="col-sm-3"></td>
-                            <td class="col-sm-2">Sales Person :</td>
-                            {{-- <td class="col-sm-4">Royal Joham V... {{session('company')->contact}}</td> --}}
-                        </tr>
-                        <tr>
-                            <td class="col-sm-3">Payment Methods :</td>
-                            <td class="col-sm-3">Cash/Cheque/Momo..</td>
-                            <td class="col-sm-2">Report Date :</td>
-                            {{-- <td class="col-sm-4">{{date('d-m-Y')}}</td> --}}
-                        </tr-->
                     </tbody>
                 </table>
             </div>
@@ -84,8 +69,9 @@
                     </thead>
                     <tbody>
                         <input type="hidden" value="{{$c = 1}}">
-                        @if(count(session('debts')) > 0)
-                            @foreach (session('debts') as $sale)
+                        @php $debtRows = $debts ?? session('debts'); @endphp
+                        @if(count($debtRows) > 0)
+                            @foreach ($debtRows as $sale)
 
                               @if ($sale->del == 'no')
                                 
@@ -128,7 +114,11 @@
                                       &nbsp; <i class="fa fa-check" style="color: rgb(0, 163, 0)"></i>
                                     @endif
                                   </td>  
-                                  <td>{{$sale->buy_name}}<br>{{$sale->buy_contact}}</td>
+                                  <td>{{$sale->buy_name}}<br>{{$sale->buy_contact}}
+                                    @if (filled($sale->notes))
+                                      <br><span class="small_p">Notes: {{ $sale->notes }}</span>
+                                    @endif
+                                  </td>
                                   <td>{{$sale->del_status}}</td>
                                   <td>{{$sale->created_at}}<br><p style="color: #0071ce; margin: 0">{{$sale->updated_at}}</p></td>  
 

@@ -2,186 +2,241 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Hash;
-// use App\Models\Company;
-// use App\Models\User;
 use App\Models\Item;
-// use App\Models\Cart;
-use App\Models\Sale;
-// use App\Models\Order;
-// use App\Models\Expense;
-// use App\Models\Waybill;
-use App\Models\ItemAudit;
 use App\Models\SalesHistory;
-// use App\Models\SalesPayment;
-// use App\Models\CompanyBranch;
-// use App\Models\ItemImage;
-// use App\Models\Category;
-// use App\Models\Wbcontent;
 use App\Models\Wbdistribution;
 use App\Models\Closure;
-use Exception;
-use Session;
+use App\Services\ClosureService;
+use App\Services\ClosureSummaryService;
+use Illuminate\Http\Request;
+use InvalidArgumentException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ClosureController extends Controller
 {
-    public function __construct(){
+    public function __construct(
+        private readonly ClosureService $closureService,
+        private readonly ClosureSummaryService $summaryService
+    ) {
         $this->middleware(['auth', 'load_auth']);
-    } 
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    }
+
     public function index()
     {
         //
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
         //
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
         //
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function show($full_date)
     {
-        //
-        if(auth()->user()->status != 'Administrator'){
-            return redirect('/dashboard'); 
-        }
-        // return $id;
-        // Session::put('stockfill', 1);
-        // $full_date = $id;
-        $mth = date('m', strtotime($full_date));
-        $yr = date('Y', strtotime($full_date));
-        $om = $mth - 1;
-        if ($om < 10) {
-            $om = '0'.$om;
-        }
-        $old_month = date($yr.'-'.$om.'-01');
-        
-        $date_from = date($yr.'-'.$mth.'-01');
-        $date_to = date($yr.'-'.$mth.'-t');
-        $closure_state = '';
-
-        $openning_check = Closure::where('month', $date_from)->latest()->first();
-        if ($openning_check != '') {
-            $closure_state = $openning_check->status;
-            Session::put('mth_openning', 1);
-        } else {
-            Session::put('mth_openning', 0);
+        if (auth()->user()->status != 'Administrator') {
+            return redirect('/dashboard');
         }
 
-        // $closure_check = Closure::where('month', $old_month)->latest()->first();
-        // if ($closure_check != '') {
-        //     Session::put('mth_closure', 1);
-        // } else {
-        //     // return redirect(url()->previous())->with('error', 'Set closure for '.date('F, Y', strtotime($old_month)));
-        //     Session::put('mth_closure', 0);
-        // }
-        
-        $items = ItemAudit::where('del', 'no')->whereBetween('created_at', [$date_from, $date_to])->orderBy('id', 'desc')->paginate(10);
-        $items_send = ItemAudit::where('del', 'no')->whereBetween('created_at', [$date_from, $date_to])->orderBy('id', 'desc')->get();
-        $saleshistory_send = SalesHistory::where('del', 'no')->whereBetween('created_at', [$date_from, $date_to])->get();
-        $dist_send = Wbdistribution::where('del', 'no')->whereBetween('created_at', [$date_from, $date_to])->get();
-        $dist_dist = Wbdistribution::where('del', 'no')->select('item_id')->whereBetween('created_at', [$date_from, $date_to])->distinct('item_id')->get();
-        $stock = SalesHistory::where('del', 'no')->select('item_id')->whereBetween('created_at', [$date_from, $date_to])->distinct('item_id')->get();
-        
-        // return $stock;
-        // return count($saleshistory_send);
+        try {
+            $pass = $this->monthDetailPayload($full_date);
+        } catch (InvalidArgumentException $e) {
+            return redirect('/closure_page')->with('error', $e->getMessage());
+        }
 
-        Session::put('stock', $stock);
-        Session::put('items', Item::all());
-        Session::put('sales_history', $saleshistory_send);
-        Session::put('cldate', $date_from);
-
-        $pass = [
-            'yr' => $yr,
-            'p' => 1,
-            'c' => 1,
-            'x' => 1,
-            'y' => 1,
-            't' => 1,
-            'br1' => 0,
-            'br2' => 0,
-            'br3' => 0,
-            'br4' => 0,
-            'br5' => 0,
-            'br6' => 0,
-            'br7' => 0,
-            'xh' => 0,
-            'qtr' => 0,
-            'qts' => 0,
-            'tamt' => 0,
-            'tprof' => 0,
-            'exists' => 0,
-            'qtr_tot' => 0,
-            'stock' => $stock,
-            'dist_dist' => $dist_dist,
-            'distribution' => $dist_send,
-            'closure_state' => $closure_state,
-            // 'closure_id' => $closure_check->id,
-            'sales_history' => $saleshistory_send
-        ];
-        
-        return view('pages.invoice.closureinvoice')->with($pass);
+        return view('pages.dash.closuredetail', $pass);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+    public function print(string $month)
+    {
+        if (auth()->user()->status != 'Administrator') {
+            return redirect('/dashboard');
+        }
+
+        try {
+            $pass = $this->monthDetailPayload($month);
+        } catch (InvalidArgumentException $e) {
+            return redirect('/closure_page')->with('error', $e->getMessage());
+        }
+
+        $pass['printMeta'] = [
+            'date_from' => $pass['date_from'],
+            'date_to' => $pass['date_to'],
+        ];
+
+        return view('pages.invoice.closureprint', $pass);
+    }
+
+    public function export(string $month): StreamedResponse|\Illuminate\Http\RedirectResponse
+    {
+        if (auth()->user()->status != 'Administrator') {
+            return redirect('/dashboard');
+        }
+
+        try {
+            $pass = $this->monthDetailPayload($month);
+        } catch (InvalidArgumentException $e) {
+            return redirect('/closure_page')->with('error', $e->getMessage());
+        }
+
+        $filename = 'closure-'.$pass['date_from'].'.csv';
+
+        return response()->streamDownload(function () use ($pass) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Month', $pass['month_label']]);
+            fputcsv($out, ['Status', $pass['closure_status']]);
+            fputcsv($out, []);
+            fputcsv($out, ['Summary', 'Value']);
+            fputcsv($out, ['Qty sold', $pass['summary']['qty_sold']]);
+            fputcsv($out, ['Amount sold', $pass['summary']['amt_sold']]);
+            fputcsv($out, ['Profit', $pass['summary']['profit']]);
+            fputcsv($out, ['Qty available', $pass['summary']['qty_available']]);
+            fputcsv($out, []);
+            fputcsv($out, ['Branch', 'Qty sold', 'Amount sold', 'Profit']);
+            foreach ($pass['branch_summaries'] as $branch) {
+                fputcsv($out, [
+                    $branch['name'],
+                    $branch['qty_sold'],
+                    $branch['amt_sold'],
+                    $branch['profit'],
+                ]);
+            }
+            fputcsv($out, []);
+            fputcsv($out, ['Sales item', 'Branch', 'Qty sold', 'Amount', 'Qty rem', 'Profit']);
+            foreach ($pass['sales_rows'] as $row) {
+                foreach ($pass['branches'] as $branch) {
+                    $cell = $row['branches'][(string) $branch->tag] ?? null;
+                    if (! $cell) {
+                        continue;
+                    }
+                    fputcsv($out, [
+                        $row['name'],
+                        $branch->name,
+                        $cell['qty_sold'],
+                        $cell['amt_sold'],
+                        $cell['qty_rem'],
+                        $cell['profit'],
+                    ]);
+                }
+            }
+            fclose($out);
+        }, $filename, [
+            'Content-Type' => 'text/csv',
+        ]);
+    }
+
+    public function open(Request $request, string $month)
+    {
+        if ($request->user()->status != 'Administrator') {
+            return redirect('/dashboard');
+        }
+
+        try {
+            $monthKey = $this->closureService->resolveMonthKey($month);
+            $this->closureService->openMonth($monthKey, $request->user());
+        } catch (InvalidArgumentException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+
+        return redirect()
+            ->back()
+            ->with('success', 'Opening for '.$this->closureService->monthLabel($monthKey).' successfully set.');
+    }
+
+    public function close(Request $request, string $month)
+    {
+        if ($request->user()->status != 'Administrator') {
+            return redirect('/dashboard');
+        }
+
+        try {
+            $monthKey = $this->closureService->resolveMonthKey($month);
+            $this->closureService->closeMonth($monthKey, $request->user());
+        } catch (InvalidArgumentException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+
+        return redirect()
+            ->back()
+            ->with('success', 'Closure set for '.$this->closureService->monthLabel($monthKey).'.');
+    }
+
     public function edit($id)
     {
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, $id)
     {
         //
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function destroy($id)
     {
         //
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function monthDetailPayload(string $fullDate): array
+    {
+        $date_from = $this->closureService->resolveMonthKey($fullDate);
+        $date_to = date('Y-m-t', strtotime($date_from));
+        $rangeEnd = $date_to.' 23:59:59';
+
+        $closure = Closure::where('month', $date_from)->latest()->first();
+        $closure_state = $closure?->status ?? '';
+
+        $items = Item::where('del', 'no')->get();
+        $salesHistory = SalesHistory::with('item')
+            ->where('del', 'no')
+            ->whereBetween('created_at', [$date_from, $rangeEnd])
+            ->get();
+        $distributions = Wbdistribution::with('item')
+            ->where('del', 'no')
+            ->whereBetween('created_at', [$date_from, $rangeEnd])
+            ->get();
+
+        $summary = $this->summaryService->build($salesHistory, $distributions, $items);
+
+        $status = match ($closure_state) {
+            'open' => 'open',
+            'closed' => 'closed',
+            default => 'not_opened',
+        };
+
+        $openBlockedReason = $status === 'not_opened'
+            ? $this->closureService->openBlockedReason($date_from)
+            : null;
+        $previousMonthKey = $this->closureService->previousMonthKey($date_from);
+
+        return [
+            'yr' => (int) date('Y', strtotime($date_from)),
+            'month_label' => $this->closureService->monthLabel($date_from),
+            'month_slug' => date('d-m-Y', strtotime($date_from)),
+            'date_from' => $date_from,
+            'date_to' => $date_to,
+            'closure' => $closure,
+            'closure_status' => $status,
+            'closure_state' => $closure_state,
+            'is_opened' => (bool) $closure,
+            'can_open' => $status === 'not_opened' && $openBlockedReason === null,
+            'open_blocked_reason' => $openBlockedReason,
+            'previous_month_label' => $this->closureService->monthLabel($previousMonthKey),
+            'previous_month_slug' => date('d-m-Y', strtotime($previousMonthKey)),
+            'branches' => $summary['branches'],
+            'column_keys' => $summary['column_keys'],
+            'summary' => $summary['summary'],
+            'branch_summaries' => $summary['branch_summaries'],
+            'distribution_rows' => $summary['distribution_rows'],
+            'distribution_totals' => $summary['distribution_totals'],
+            'sales_rows' => $summary['sales_rows'],
+            'sales_totals' => $summary['sales_totals'],
+        ];
     }
 }

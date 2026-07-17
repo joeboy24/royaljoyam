@@ -3757,6 +3757,41 @@ h2.title {
   text-align: right;
 }
 
+.waybill-print-status-col {
+  width: 96px;
+  min-width: 96px;
+  text-align: left;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.waybill-print-date-col {
+  width: 92px;
+  min-width: 92px;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.waybill-print-status {
+  display: inline-block;
+  font-size: 0.85em;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.waybill-print-status-delivered {
+  color: #2e7d32;
+}
+
+.waybill-print-status-transit {
+  color: #1565c0;
+}
+
+.waybill-print-status-pending {
+  color: #f57f17;
+}
+
 .invTot {
   border-top: #ccc!important;
 }

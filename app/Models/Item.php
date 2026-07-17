@@ -63,6 +63,33 @@ class Item extends Model
         $this->save();
     }
 
+    public function availableBranchQty(int|string $branchId): int
+    {
+        $column = $this->branchQtyColumn($branchId);
+
+        return max(0, (int) ($this->$column ?? 0));
+    }
+
+    public function reserveCartStock(int|string $branchId, int $qty): bool
+    {
+        if ($qty <= 0) {
+            return false;
+        }
+
+        $column = $this->branchQtyColumn($branchId);
+        $branchQty = $this->availableBranchQty($branchId);
+
+        if ($qty > $branchQty) {
+            return false;
+        }
+
+        $this->qty = (int) $this->qty - $qty;
+        $this->$column = $branchQty - $qty;
+        $this->save();
+
+        return true;
+    }
+
     public function needsGeneralQtyRepair(): bool
     {
         $generalQty = (int) $this->qty;

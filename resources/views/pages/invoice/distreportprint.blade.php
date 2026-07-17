@@ -17,14 +17,24 @@
 
 <body style="background: #eee">
 
+    @php
+      $wbdreports = collect($wbdreports ?? []);
+      $date_from = $date_from ?? '';
+      $date_to = $date_to ?? '';
+      $branches = collect($branches ?? []);
+      $branchKeys = collect($branchKeys ?? $branches->keys()->map(fn ($index) => 'q'.($index + 1)));
+    @endphp
+
     <section id="invoice">
         <div class="invoiceContent">
 
             <div class="invHeaderTop">
                 <h1>ROYAL JOYAM</h1>
                 <h4>Ventures</h4>
-                <P class="locInfo">{{session('company')->address}}</P>
-                <P class="contactInfo">{{session('company')->contact}}, {{session('company')->email}}</P>
+                @if ($company)
+                  <P class="locInfo">{{ $company->address }}</P>
+                  <P class="contactInfo">{{ $company->contact }}, {{ $company->email }}</P>
+                @endif
             </div>
 
             <div style="height: 50px">
@@ -36,16 +46,16 @@
                     <tbody>
                         <tr>
                             <td class="col-sm-3">Date From :</td>
-                            @if (session('date_from') != '')
-                                <td class="col-sm-3">{{ session('date_from') }}</td>
+                            @if (! empty($date_from))
+                                <td class="col-sm-3">{{ $date_from }}</td>
                             @else
-                                <td class="col-sm-3">Today</td>
+                                <td class="col-sm-3">All</td>
                             @endif
                             <td class="col-sm-4"></td>
                         </tr>
                         <tr>
                             <td class="col-sm-3">Date To :</td>
-                            <td class="col-sm-3">{{ session('date_to') }}</td>
+                            <td class="col-sm-3">{{ $date_to ?: '—' }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -56,46 +66,51 @@
                     <thead>
                         <th>#</th>
                         <th>Item</th>
-                        @foreach (session('compbranch') as $br)
-                            <th class="col-sm-1 pr">Br {{$br->tag}}</th>
+                        @foreach ($branches as $br)
+                            <th class="col-sm-1 pr">Br {{ $br->tag }}</th>
                         @endforeach
                         <th class="pr">Date Distributed</th>
                     </thead>
                     <tbody>
-                        @if(count(session('wbdreports')) > 0)
-                            @foreach (session('wbdreports') as $wbd)
+                        @if ($wbdreports->count() > 0)
+                            @foreach ($wbdreports as $wbd)
                                 @if ($wbd->del != 'yes')
                                 <tr>
-                                    <td>{{$count++}}</td>
-                                    <td>{{$wbd->item->item_no.' - '.$wbd->item->name}}<br><p class="small_p">{{$wbd->waybill->comp_name}}</p></td>
-                                    @foreach (session('compbranch') as $br)
-                                      <input type="hidden" value="{{$x = 'q'.$br->tag}}">
-                                      <td class="col-sm-1 pr">{{$wbd->$x}}</td>
+                                    <td>{{ $count++ }}</td>
+                                    <td>
+                                      @if ($wbd->item)
+                                        {{ $wbd->item->item_no.' - '.$wbd->item->name }}
+                                        @if ($wbd->waybill)
+                                          <br><p class="small_p">{{ $wbd->waybill->comp_name }}</p>
+                                        @endif
+                                      @else
+                                        Item unavailable
+                                      @endif
+                                    </td>
+                                    @foreach ($branches as $branchIndex => $br)
+                                      @php $qtyKey = 'q'.($branchIndex + 1); @endphp
+                                      <td class="col-sm-1 pr">{{ $wbd->{$qtyKey} ?? 0 }}</td>
                                     @endforeach
-                                    <td class="pr">{{date('M. d, Y', strtotime($wbd->created_at))}}</td>
+                                    <td class="pr">{{ date('M. d, Y', strtotime($wbd->created_at)) }}</td>
                                 </tr>
                                 @endif
                             @endforeach
                         @else
-                            <p>No records to print out</p>
+                            <tr>
+                              <td colspan="{{ 3 + $branches->count() }}">No records to print out</td>
+                            </tr>
                         @endif
                        
+                        @if ($wbdreports->count() > 0)
                         <tr class="invTot">
                             <td class="col-sm-1"></td>
                             <td class="col-sm-1"><h4>Total</h4>Distribution<br></td>
-                            @foreach (session('compbranch') as $br)
-                                <input type="hidden" value="{{$x = 'q'.$br->tag}}">
-                                <input type="hidden" value="{{$sum = $sum + session('wbdreports')->sum($x)}}">
-                                <td class="col-sm-1 pr"><h4>{{ number_format(session('wbdreports')->sum($x))}}</h4></td>
+                            @foreach ($branchKeys as $key)
+                                <td class="col-sm-1 pr"><h4>{{ number_format($wbdreports->sum($key)) }}</h4></td>
                             @endforeach
-                            <td class="col-sm-1 pr"><h4>
-                                {{session('wbdreports')->sum(['q1'])+session('wbdreports')->sum(['q2'])+
-                                session('wbdreports')->sum(['q3'])+session('wbdreports')->sum(['q4'])+
-                                session('wbdreports')->sum(['q5'])+session('wbdreports')->sum(['q6'])+
-                                session('wbdreports')->sum(['q7'])}}</h4>
-                            </td>
-
+                            <td class="col-sm-1 pr"><h4>{{ $branchKeys->sum(fn ($key) => $wbdreports->sum($key)) }}</h4></td>
                         </tr>
+                        @endif
                         
                     </tbody>
                 </table>

@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Expense;
-use App\Models\CompanyBranch;
 use Session;
 
 class PagesController extends Controller
@@ -32,27 +30,6 @@ class PagesController extends Controller
         }
 
         return redirect('/dashboard');
-    }
-
-    public function expenses()
-    {
-        if (session('sales_permit') == 0) {
-            return redirect('/dashboard')->with('error', 'Oops..! Contact administrator to initialize '.date('F, Y').' opening');
-        }
-
-        $match = [
-            'del' => 'no',
-            'companybranch_id' => auth()->user()->bv,
-        ];
-
-        $pass = [
-            'i' => 1,
-            'branches' => CompanyBranch::all(),
-            'genexp' => Expense::where($match)->where('created_at', 'LIKE', '%'.date('Y-m').'%')->get(),
-            'expenses' => Expense::where($match)->where('created_at', 'LIKE', '%'.date('Y-m').'%')->orderBy('id', 'DESC')->paginate(20),
-        ];
-
-        return view('pages.dash.expenses')->with($pass);
     }
 
     public function try()

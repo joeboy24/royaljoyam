@@ -4,10 +4,10 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use App\Models\Closure as Closures;
 use App\Models\Company;
 use App\Models\Category;
 use App\Models\CompanyBranch;
+use App\Services\ClosureService;
 use Session;
 
 class load_auth
@@ -27,13 +27,11 @@ class load_auth
             return redirect('/')->with('error', 'Oops..! Access Denied');
         }
 
-        $cl = Closures::where('month', date('Y-m-01'))->latest()->first();
+        $closureService = app(ClosureService::class);
+        $cl = $closureService->currentMonthClosure();
+
         Session::put('cl', $cl);
-        if ($cl == '' && auth()->user()->status != 'Administrator') {
-            Session::put('sales_permit', 0);
-        } else {
-            Session::put('sales_permit', 1);
-        }
+        Session::put('sales_permit', $closureService->salesPermitFor(auth()->user()));
 
         $branchLabels = ['A', 'B', 'C', 'D', 'E'];
         for ($tag = 1; $tag <= 5; $tag++) {

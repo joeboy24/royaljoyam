@@ -14,7 +14,14 @@
 
                   <div class="col-md-8 offset-md-0 myTrim">
 
-                    <form method="GET" action="{{ url('/items') }}" class="inventory-filter-form">
+                    @php
+                      $clearUrl = $showRecycle ? url('/items?recycle=1') : url('/items');
+                      $activeFilterCount = ($filterCategory !== '' ? 1 : 0)
+                        + ($filterStock !== '' ? 1 : 0)
+                        + ($perPage !== 10 ? 1 : 0);
+                    @endphp
+
+                    <form method="GET" action="{{ url('/items') }}" class="inventory-filter-form inventory-list-toolbar">
                       @if ($showRecycle)
                         <input type="hidden" name="recycle" value="1">
                       @endif
@@ -42,60 +49,63 @@
                               <span>Search</span>
                             </button>
 
-                            <a href="{{ $showRecycle ? url('/items?recycle=1') : url('/items') }}" class="inventory-search-btn inventory-search-btn-clear" title="Clear filters">
+                            <div class="inventory-filters-panel is-collapsed" data-collapsible-filters>
+                              <button
+                                type="button"
+                                class="inventory-filters-toggle inventory-search-btn inventory-search-btn-muted dash-tip"
+                                aria-expanded="false"
+                                aria-controls="itemFiltersControls"
+                                data-tip="Filters"
+                              >
+                                <i class="fa fa-filter"></i>
+                                @if ($activeFilterCount > 0)
+                                  <span class="inventory-filters-count">{{ $activeFilterCount }}</span>
+                                @endif
+                              </button>
+
+                              <div class="inventory-filters-body" id="itemFiltersControls">
+                                <div class="inventory-filters-controls">
+                                  <label class="inventory-filter-field">
+                                    <span class="inventory-filter-field-icon"><i class="fa fa-folder-open"></i></span>
+                                    <select name="category" class="inventory-filter-select" title="Filter by category">
+                                      <option value="">All categories</option>
+                                      @foreach ($filterCategories as $categoryName)
+                                        <option value="{{ $categoryName }}" @if ($filterCategory === $categoryName) selected @endif>{{ $categoryName }}</option>
+                                      @endforeach
+                                    </select>
+                                  </label>
+
+                                  @unless ($showRecycle)
+                                    <label class="inventory-filter-field">
+                                      <span class="inventory-filter-field-icon"><i class="fa fa-signal"></i></span>
+                                      <select name="stock" class="inventory-filter-select" title="Filter by stock status">
+                                        <option value="">All stock levels</option>
+                                        <option value="low" @if ($filterStock === 'low') selected @endif>Low / out of stock</option>
+                                        <option value="has_branch" @if ($filterStock === 'has_branch') selected @endif>Has branch stock</option>
+                                      </select>
+                                    </label>
+                                  @endunless
+
+                                  <label class="inventory-filter-field inventory-filter-field-compact">
+                                    <span class="inventory-filter-field-icon"><i class="fa fa-list-ol"></i></span>
+                                    <select name="per_page" class="inventory-filter-select inventory-per-page-select" title="Rows per page">
+                                      @foreach ([10, 25, 50] as $pageSize)
+                                        <option value="{{ $pageSize }}" @if ($perPage === $pageSize) selected @endif>{{ $pageSize }} / page</option>
+                                      @endforeach
+                                    </select>
+                                  </label>
+
+                                  <button type="submit" class="inventory-search-btn inventory-search-btn-primary inventory-filters-apply">
+                                    <i class="fa fa-filter"></i>
+                                    <span>Apply</span>
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+
+                            <a href="{{ $clearUrl }}" class="inventory-search-btn inventory-search-btn-clear inventory-search-btn-icon dash-tip" data-tip="Clear filters">
                               <i class="fa fa-refresh"></i>
-                              <span>Clear</span>
                             </a>
-                          </div>
-                        </div>
-
-                        @php
-                          $activeFilterCount = ($filterCategory !== '' ? 1 : 0)
-                            + ($filterStock !== '' ? 1 : 0)
-                            + ($perPage !== 10 ? 1 : 0);
-                        @endphp
-
-                        <div class="inventory-filters-panel">
-                          <div class="inventory-filters-heading">
-                            <span class="inventory-filters-label">
-                              <i class="fa fa-filter"></i>
-                              Filters
-                              @if ($activeFilterCount > 0)
-                                <span class="inventory-filters-count">{{ $activeFilterCount }}</span>
-                              @endif
-                            </span>
-                          </div>
-
-                          <div class="inventory-filters-controls">
-                            <label class="inventory-filter-field">
-                              <span class="inventory-filter-field-icon"><i class="fa fa-folder-open"></i></span>
-                              <select name="category" class="inventory-filter-select" onchange="this.form.submit()" title="Filter by category">
-                                <option value="">All categories</option>
-                                @foreach ($filterCategories as $categoryName)
-                                  <option value="{{ $categoryName }}" @if ($filterCategory === $categoryName) selected @endif>{{ $categoryName }}</option>
-                                @endforeach
-                              </select>
-                            </label>
-
-                            @unless ($showRecycle)
-                              <label class="inventory-filter-field">
-                                <span class="inventory-filter-field-icon"><i class="fa fa-signal"></i></span>
-                                <select name="stock" class="inventory-filter-select" onchange="this.form.submit()" title="Filter by stock status">
-                                  <option value="">All stock levels</option>
-                                  <option value="low" @if ($filterStock === 'low') selected @endif>Low / out of stock</option>
-                                  <option value="has_branch" @if ($filterStock === 'has_branch') selected @endif>Has branch stock</option>
-                                </select>
-                              </label>
-                            @endunless
-
-                            <label class="inventory-filter-field inventory-filter-field-compact">
-                              <span class="inventory-filter-field-icon"><i class="fa fa-list-ol"></i></span>
-                              <select name="per_page" class="inventory-filter-select inventory-per-page-select" onchange="this.form.submit()" title="Rows per page">
-                                @foreach ([10, 25, 50] as $pageSize)
-                                  <option value="{{ $pageSize }}" @if ($perPage === $pageSize) selected @endif>{{ $pageSize }} / page</option>
-                                @endforeach
-                              </select>
-                            </label>
                           </div>
                         </div>
                       </div>
@@ -135,6 +145,12 @@
                 >
                   @if (count(session('compbranch')) > 0 && ! $showRecycle)
                     <x-slot:actions>
+                      @if (count(session('compbranch')) > 1)
+                        <a href="{{ url('/branchtransfers') }}" class="inventory-branch-control-btn dash-tip" data-tip="View branch transfer history">
+                          <i class="fa fa-exchange"></i>
+                          <span>Branch transfers</span>
+                        </a>
+                      @endif
                       <button type="button" class="inventory-branch-control-btn" id="toggleAllBranches" aria-expanded="false">
                         <i class="fa fa-angle-double-down"></i>
                         <span>Expand all</span>
@@ -201,6 +217,9 @@
                                           <button type="submit" name="store_action" value="restore_item" class="inventory-row-action-btn inventory-row-action-btn-restore dash-tip" data-tip="Restore item" onclick="return confirm('Restore this item to inventory?');"><i class="fa fa-reply"></i></button>
                                         </form>
                                       @else
+                                        @if (count(session('compbranch')) > 1)
+                                          <button type="button" class="inventory-row-action-btn inventory-row-action-btn-transfer dash-tip" data-tip="Transfer between branches" data-item-id="{{ $item->id }}" onclick="event.stopPropagation(); openBranchTransferModal({{ $item->id }});"><i class="fa fa-exchange"></i></button>
+                                        @endif
                                         <button type="button" class="inventory-row-action-btn inventory-row-action-btn-edit item-edit-btn dash-tip" data-tip="Edit record" data-item-id="{{ $item->id }}" onclick="event.stopPropagation(); openItemEditModal({{ $item->id }});"><i class="fa fa-pencil"></i></button>
                                         <form action="{{ action('ItemsController@update', $item->id) }}" method="POST" class="item-delete-form" onclick="event.stopPropagation()">
                                           @csrf
@@ -508,19 +527,82 @@
     </div>
   </div>
 
+  @if (count(session('compbranch')) > 1 && ! $showRecycle)
+  <div class="modal fade item-transfer-modal" id="branchTransferModal" tabindex="-1" role="dialog" aria-labelledby="branchTransferModalLabel" aria-hidden="true">
+    <div class="modal-dialog inventory-edit-dialog modal-dialog-centered" role="document">
+      <div class="modal-content inventory-edit-modal">
+        <form id="branchTransferForm" action="{{ url('/items/0/transfer') }}" method="POST">
+          @csrf
+
+          <div class="inventory-edit-header">
+            <div class="inventory-edit-header-inner">
+              <div class="inventory-edit-header-text">
+                <span class="inventory-edit-kicker">Inventory</span>
+                <h4 class="inventory-edit-title" id="branchTransferModalLabel">Transfer stock</h4>
+                <p class="inventory-edit-meta" id="branchTransferMeta">Move quantity from one branch to another.</p>
+              </div>
+            </div>
+            <button type="button" class="inventory-edit-close" data-dismiss="modal" aria-label="Close">
+              <i class="material-icons">close</i>
+            </button>
+          </div>
+
+          <div class="inventory-edit-body" id="branchTransferBody">
+            <div class="inventory-edit-loading" id="branchTransferLoading">
+              <i class="fa fa-spinner fa-spin"></i> Loading item...
+            </div>
+
+            <div id="branchTransferFields" hidden>
+              <p class="inventory-edit-hint inventory-transfer-lead">
+                Use this when a branch needs stock for a sale but another branch has extra on hand. Total company quantity stays the same.
+              </p>
+
+              <div class="inventory-edit-field-row">
+                <label class="inventory-edit-field">
+                  <span class="inventory-edit-label">From branch</span>
+                  <select name="from_branch" id="transferFromBranch" class="inventory-edit-input inventory-edit-select" required></select>
+                </label>
+
+                <label class="inventory-edit-field">
+                  <span class="inventory-edit-label">To branch</span>
+                  <select name="to_branch" id="transferToBranch" class="inventory-edit-input inventory-edit-select" required></select>
+                </label>
+              </div>
+
+              <label class="inventory-edit-field">
+                <span class="inventory-edit-label">Quantity to transfer</span>
+                <input type="number" class="inventory-edit-input" name="qty" id="transferQty" min="1" step="1" required />
+                <span class="inventory-edit-field-hint" id="transferQtyHint">Available at source branch: 0</span>
+              </label>
+
+              <label class="inventory-edit-field">
+                <span class="inventory-edit-label">Notes (optional)</span>
+                <textarea class="inventory-edit-input inventory-edit-textarea" name="notes" id="transferNotes" rows="2" placeholder="e.g. Customer will pick up from source branch"></textarea>
+              </label>
+            </div>
+          </div>
+
+          <div class="inventory-edit-footer">
+            <button type="button" class="inventory-edit-btn inventory-edit-btn-muted" data-dismiss="modal">Cancel</button>
+            <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary inventory-transfer-submit" id="branchTransferSubmit">
+              <i class="fa fa-exchange inventory-edit-submit-icon"></i>
+              <span class="inventory-edit-submit-label">Transfer stock</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  @endif
+
 
 @endsection
 
 @section('footer')
 
+<script src="/maindir/js/inventory-collapsible-filters.js?v=2"></script>
+
 <style>
-  .content,
-  #addItemModal,
-  .item-edit-modal {
-    --inv-accent: #00acc1;
-    --inv-accent-dark: #0097a7;
-    --inv-accent-rgb: 0, 172, 193;
-  }
   .inventory-filter-row {
     display: flex;
     flex-wrap: wrap;
@@ -657,6 +739,13 @@
     color: #1b5e20;
     border-color: rgba(46, 125, 50, 0.4);
   }
+  .inventory-list-toolbar .inventory-filters-panel[data-collapsible-filters] {
+    flex: 0 0 auto;
+    padding: 0;
+    background: none;
+    border: none;
+    box-shadow: none;
+  }
   .inventory-filters-panel {
     flex: 1 1 420px;
   }
@@ -734,59 +823,6 @@
   }
   .inventory-filter-field:focus-within .inventory-filter-field-icon {
     opacity: 1;
-  }
-  .inventory-toolbar-actions {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-  }
-  .inventory-actions-group {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .inventory-action-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    height: 38px;
-    padding: 0 14px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1;
-    text-decoration: none !important;
-    border: 1px solid #e0e0e0;
-    background: #fff;
-    color: #666;
-    cursor: pointer;
-    white-space: nowrap;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
-  }
-  .inventory-action-btn:hover {
-    background: #f8f8f8;
-    color: #444;
-    border-color: rgba(var(--inv-accent-rgb), 0.25);
-  }
-  .inventory-action-btn-icon {
-    width: 38px;
-    padding: 0;
-    font-size: 14px;
-  }
-  .inventory-action-btn-primary {
-    background: var(--inv-accent, #00acc1);
-    color: #fff;
-    border-color: transparent;
-    box-shadow: 0 2px 6px rgba(var(--inv-accent-rgb, 0, 172, 193), 0.24);
-  }
-  .inventory-action-btn-primary:hover {
-    background: var(--inv-accent-dark, #0097a7);
-    color: #fff;
-    border-color: transparent;
   }
   .stock-badge {
     display: inline-block;
@@ -970,6 +1006,18 @@
     border-color: rgba(46, 125, 50, 0.35);
     color: #1b5e20;
   }
+  .inventory-row-action-btn-transfer {
+    color: #1565c0;
+    border-color: rgba(21, 101, 192, 0.22);
+  }
+  .inventory-row-action-btn-transfer:hover {
+    background: rgba(21, 101, 192, 0.08);
+    border-color: rgba(21, 101, 192, 0.35);
+    color: #0d47a1;
+  }
+  .inventory-transfer-lead {
+    margin-top: 0;
+  }
   .item-row-actions {
     overflow: visible;
     position: relative;
@@ -1087,32 +1135,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 28px;
   }
-  .inventory-edit-section-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0 0 14px;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--inv-accent);
-  }
-  .inventory-edit-section-title-spaced {
-    margin-top: 22px;
-  }
-  .inventory-edit-section-title .fa {
-    font-size: 13px;
-  }
-  .inventory-edit-field {
-    display: block;
-    margin-bottom: 14px;
-  }
-  .inventory-edit-field-row {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-  }
   .inventory-edit-branch-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1120,51 +1142,6 @@
   }
   .inventory-edit-field-compact {
     margin-bottom: 0;
-  }
-  .inventory-edit-label {
-    display: block;
-    margin-bottom: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #666;
-  }
-  .inventory-edit-input {
-    display: block;
-    width: 100%;
-    height: 40px;
-    padding: 0 14px;
-    font-size: 13px;
-    font-weight: 500;
-    color: #333;
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  }
-  .inventory-edit-textarea {
-    height: auto;
-    min-height: 88px;
-    padding: 10px 14px;
-    resize: vertical;
-  }
-  .inventory-edit-select {
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    padding-right: 34px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%2300acc1' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    cursor: pointer;
-  }
-  .inventory-edit-input:hover {
-    border-color: rgba(var(--inv-accent-rgb), 0.35);
-  }
-  .inventory-edit-input:focus {
-    outline: none;
-    border-color: var(--inv-accent);
-    box-shadow: 0 0 0 3px rgba(var(--inv-accent-rgb), 0.12);
   }
   .inventory-edit-hint {
     margin: -6px 0 14px;
@@ -1202,6 +1179,12 @@
   #editItemFields[hidden] {
     display: none !important;
   }
+  #branchTransferFields[hidden] {
+    display: none !important;
+  }
+  .inventory-edit-body.is-loading #branchTransferFields {
+    display: none !important;
+  }
   .inventory-edit-file-field {
     margin-bottom: 0;
   }
@@ -1231,50 +1214,6 @@
     margin-top: 8px;
     font-size: 12px;
     color: #888;
-  }
-  .inventory-edit-footer {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 10px;
-    padding: 16px 24px;
-    background: #fff;
-    border-top: 1px solid #eee;
-    flex-shrink: 0;
-  }
-  .inventory-edit-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    height: 40px;
-    padding: 0 18px;
-    border-radius: 999px;
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1;
-    border: 1px solid transparent;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-  }
-  .inventory-edit-btn-muted {
-    background: #f5f5f5;
-    color: #666;
-    border-color: #e0e0e0;
-  }
-  .inventory-edit-btn-muted:hover {
-    background: #ececec;
-    color: #444;
-  }
-  .inventory-edit-btn-primary {
-    background: var(--inv-accent, #00acc1);
-    color: #fff;
-    box-shadow: 0 2px 8px rgba(var(--inv-accent-rgb, 0, 172, 193), 0.24);
-  }
-  .inventory-edit-btn-primary:hover {
-    background: var(--inv-accent-dark, #0097a7);
-    color: #fff;
   }
   .inventory-edit-btn-primary:disabled,
   .inventory-edit-btn-primary.is-saving {
@@ -1659,6 +1598,234 @@
 
   $('#toggleAllBranches').on('click', toggleAllBranchDetails);
   restoreBranchDetailState();
+
+  var branchTransferCache = null;
+
+  function setBranchTransferLoading(isLoading) {
+    var body = document.getElementById('branchTransferBody');
+    var fields = document.getElementById('branchTransferFields');
+    var loading = document.getElementById('branchTransferLoading');
+    var submitBtn = document.getElementById('branchTransferSubmit');
+
+    if (body) {
+      body.classList.toggle('is-loading', isLoading);
+    }
+
+    if (fields) {
+      fields.hidden = isLoading;
+    }
+
+    if (loading) {
+      loading.style.display = isLoading ? 'flex' : 'none';
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = isLoading;
+    }
+  }
+
+  function setTransferFormSaving(form, isSaving) {
+    var submitBtn = form.querySelector('.inventory-transfer-submit');
+
+    if (!submitBtn) {
+      return;
+    }
+
+    var icon = submitBtn.querySelector('.inventory-edit-submit-icon');
+    var label = submitBtn.querySelector('.inventory-edit-submit-label');
+
+    submitBtn.disabled = isSaving;
+    submitBtn.classList.toggle('is-saving', isSaving);
+
+    if (icon) {
+      icon.className = isSaving ? 'fa fa-spinner fa-spin inventory-edit-submit-icon' : 'fa fa-exchange inventory-edit-submit-icon';
+    }
+
+    if (label) {
+      label.textContent = isSaving ? 'Transferring...' : 'Transfer stock';
+    }
+  }
+
+  function buildBranchSelectOptions(select, branches, includeZero) {
+    if (!select) {
+      return;
+    }
+
+    select.innerHTML = '';
+
+    (branches || []).forEach(function(branch) {
+      if (!includeZero && Number(branch.qty || 0) <= 0) {
+        return;
+      }
+
+      var option = document.createElement('option');
+      option.value = branch.tag;
+      option.textContent = branch.name + ' (' + Number(branch.qty || 0).toLocaleString() + ' available)';
+      option.dataset.qty = String(branch.qty || 0);
+      select.appendChild(option);
+    });
+  }
+
+  function updateTransferQtyHint() {
+    var fromSelect = document.getElementById('transferFromBranch');
+    var qtyInput = document.getElementById('transferQty');
+    var hint = document.getElementById('transferQtyHint');
+
+    if (!fromSelect || !hint) {
+      return;
+    }
+
+    var selected = fromSelect.options[fromSelect.selectedIndex];
+    var available = selected ? Number(selected.dataset.qty || 0) : 0;
+
+    hint.textContent = 'Available at source branch: ' + available.toLocaleString();
+
+    if (qtyInput) {
+      qtyInput.max = available > 0 ? String(available) : '';
+    }
+  }
+
+  function populateBranchTransferForm(data) {
+    var form = document.getElementById('branchTransferForm');
+    var fromSelect = document.getElementById('transferFromBranch');
+    var toSelect = document.getElementById('transferToBranch');
+    var qtyInput = document.getElementById('transferQty');
+    var notesInput = document.getElementById('transferNotes');
+
+    if (!form) {
+      return;
+    }
+
+    branchTransferCache = data;
+    form.action = data.transfer_url;
+
+    document.getElementById('branchTransferModalLabel').textContent = data.name;
+    document.getElementById('branchTransferMeta').textContent = 'Item No. ' + data.item_no + ' · move stock between branches';
+
+    buildBranchSelectOptions(fromSelect, data.branches, false);
+    buildBranchSelectOptions(toSelect, data.branches, true);
+
+    if (fromSelect && fromSelect.options.length === 0 && data.branches && data.branches.length > 0) {
+      buildBranchSelectOptions(fromSelect, data.branches, true);
+    }
+
+    if (toSelect && toSelect.options.length > 0 && fromSelect && fromSelect.options.length > 0) {
+      if (toSelect.value === fromSelect.value) {
+        toSelect.selectedIndex = toSelect.options.length > 1 ? 1 : 0;
+      }
+    }
+
+    if (qtyInput) {
+      qtyInput.value = '';
+    }
+
+    if (notesInput) {
+      notesInput.value = '';
+    }
+
+    updateTransferQtyHint();
+    setTransferFormSaving(form, false);
+  }
+
+  function openBranchTransferModal(itemId) {
+    var $modal = $('#branchTransferModal');
+    var form = document.getElementById('branchTransferForm');
+
+    if (!$modal.length) {
+      return;
+    }
+
+    setBranchTransferLoading(true);
+    $modal.modal('show');
+
+    fetch('/items/' + itemId + '/edit', {
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      credentials: 'same-origin'
+    })
+      .then(function(response) {
+        if (!response.ok) {
+          throw new Error('Could not load item details.');
+        }
+
+        return response.json();
+      })
+      .then(function(data) {
+        populateBranchTransferForm(data);
+        setBranchTransferLoading(false);
+      })
+      .catch(function() {
+        $modal.modal('hide');
+        alert('Could not load item details. Please try again.');
+        setBranchTransferLoading(false);
+
+        if (form) {
+          setTransferFormSaving(form, false);
+        }
+      });
+  }
+
+  $(document).on('change', '#transferFromBranch, #transferToBranch', function() {
+    var fromSelect = document.getElementById('transferFromBranch');
+    var toSelect = document.getElementById('transferToBranch');
+
+    if (fromSelect && toSelect && fromSelect.value && fromSelect.value === toSelect.value) {
+      alert('Choose two different branches.');
+      if (this.id === 'transferFromBranch' && toSelect.options.length > 1) {
+        toSelect.selectedIndex = fromSelect.selectedIndex === 0 ? 1 : 0;
+      } else if (fromSelect.options.length > 1) {
+        fromSelect.selectedIndex = toSelect.selectedIndex === 0 ? 1 : 0;
+      }
+    }
+
+    updateTransferQtyHint();
+  });
+
+  $(document).on('submit', '#branchTransferForm', function(e) {
+    var fromSelect = document.getElementById('transferFromBranch');
+    var toSelect = document.getElementById('transferToBranch');
+    var qtyInput = document.getElementById('transferQty');
+    var available = 0;
+
+    if (fromSelect && fromSelect.selectedIndex >= 0) {
+      available = Number(fromSelect.options[fromSelect.selectedIndex].dataset.qty || 0);
+    }
+
+    var qty = Number(qtyInput ? qtyInput.value : 0);
+
+    if (!fromSelect || !toSelect || !fromSelect.value || !toSelect.value) {
+      e.preventDefault();
+      alert('Select both branches.');
+      return;
+    }
+
+    if (fromSelect.value === toSelect.value) {
+      e.preventDefault();
+      alert('Choose two different branches.');
+      return;
+    }
+
+    if (!Number.isFinite(qty) || qty <= 0) {
+      e.preventDefault();
+      alert('Enter a quantity greater than zero.');
+      return;
+    }
+
+    if (qty > available) {
+      e.preventDefault();
+      alert('Not enough stock at the source branch (available: ' + available + ').');
+      return;
+    }
+
+    if (!confirm('Transfer ' + qty.toLocaleString() + ' units from ' + fromSelect.options[fromSelect.selectedIndex].text + ' to ' + toSelect.options[toSelect.selectedIndex].text + '?')) {
+      e.preventDefault();
+      return;
+    }
+
+    setTransferFormSaving(this, true);
+  });
 
   $.ajaxSetup({ headers: { 'csrftoken' : '{{ csrf_token() }}' } });
 </script>

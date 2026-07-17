@@ -1,237 +1,236 @@
 @extends('layouts.dashlay')
 
+@php
+  $activeBranches = $branches->where('del', 'no');
+  $hasCompany = count($company) > 0;
+  $comp = $hasCompany ? $company->first() : null;
+  $branchLimitReached = $activeBranches->count() >= 5;
+@endphp
+
 @section('content')
 
-  <!-- End Navbar -->
   <div class="content">
-        <div class="container-fluid">
-          <div class="row">
-            <div class="col-md-7">
+    <div class="container-fluid">
+      <div class="row dash-config-layout">
 
-              @include('inc.messages')
+        <div class="col-lg-7">
+          @include('inc.messages')
 
-              <div class="card">
+          <div class="card">
+            <x-dash-page-header
+              title="Configuration"
+              subtitle="Set up company information, branches, and system options."
+              icon="fa fa-cogs"
+            />
 
-                <x-dash-page-header
-                  title="Configuration"
-                  subtitle="Set up company information, branches, and system options."
-                  icon="fa fa-cogs"
-                />
-                <div class="card-body">
-            
-                  <div class="container">
-                      <div class="row justify-content-center">
-                          <div class="col-md-8">
-                            <div class="card-header">Register</div>
-                  
-                              <div class="card-body">
+            <div class="card-body dash-form-body">
+              <form action="{{ action('ItemsController@store') }}" method="POST" enctype="multipart/form-data">
+                @csrf
 
-                                <form action="{{action('ItemsController@store')}}" method="POST" enctype="multipart/form-data">
-                                  @csrf
+                <div class="dash-config-form-stack">
+                  <h6 class="inventory-edit-section-title"><i class="fa fa-building"></i> Company details</h6>
 
-                                  @if (count($company) < 1)
+                  <label class="inventory-edit-field">
+                    <span class="inventory-edit-label">Company name</span>
+                    <input
+                      type="text"
+                      class="inventory-edit-input"
+                      name="name"
+                      value="{{ $comp->name ?? '' }}"
+                      placeholder="Name of company"
+                      required
+                    />
+                  </label>
 
-                                    <div class="form-group">
-                                      <input type="text" class="form-control" name="name" placeholder="Name of Company" required/>
-                                    </div>
+                  <label class="inventory-edit-field">
+                    <span class="inventory-edit-label">Address</span>
+                    <textarea
+                      name="company_add"
+                      class="inventory-edit-input inventory-edit-textarea"
+                      rows="4"
+                      placeholder="Company address"
+                      required
+                    >{{ $comp->address ?? '' }}</textarea>
+                  </label>
 
-                                    <div class="form-group">
-                                      <textarea name="company_add" class="form-control" rows="3" placeholder="Address" required></textarea>
-                                    </div>
+                  <label class="inventory-edit-field">
+                    <span class="inventory-edit-label">Location</span>
+                    <input
+                      type="text"
+                      class="inventory-edit-input"
+                      name="loc"
+                      value="{{ $comp->location ?? '' }}"
+                      placeholder="City or area"
+                    />
+                  </label>
 
-                                    <div class="form-group">
-                                      <input type="text" class="form-control" name="loc" placeholder="Location"/>
-                                    </div>
-                                    
-                        
-                                    <div class="form-group">
-                                      <input type="text" class="form-control" name="contact" placeholder="Contact No." required/>
-                                    </div>
+                  <h6 class="inventory-edit-section-title inventory-edit-section-title-spaced"><i class="fa fa-phone"></i> Contact &amp; online</h6>
 
-                                    <div class="form-group">
-                                      <input type="text" class="form-control" name="email" placeholder="Email" />
-                                    </div>
+                  <label class="inventory-edit-field">
+                    <span class="inventory-edit-label">Contact number</span>
+                    <input
+                      type="text"
+                      class="inventory-edit-input"
+                      name="contact"
+                      value="{{ $comp->contact ?? '' }}"
+                      placeholder="Phone number"
+                      required
+                    />
+                  </label>
 
-                                    <div class="form-group">
-                                      <input type="text" class="form-control" name="company_web" placeholder="Website" />
-                                    </div>
-                                    
-                                    <div class="">
-                                      <label class="upfiles">Upload Logo: &nbsp; </label>
-                                      <input type="file" name="company_logo" required>
-                                    </div>
-                                  
-                                    <div class="modal-footer">
-                                      <button type="submit" class="btn btn-info" name="store_action" value="admi_config"><i class="fa fa-save"></i> &nbsp; Save</button>
-                                    </div>
+                  <label class="inventory-edit-field">
+                    <span class="inventory-edit-label">Email</span>
+                    <input
+                      type="email"
+                      class="inventory-edit-input"
+                      name="email"
+                      value="{{ $comp->email ?? '' }}"
+                      placeholder="Email address"
+                    />
+                  </label>
 
-                                  @else
+                  <label class="inventory-edit-field">
+                    <span class="inventory-edit-label">Website</span>
+                    <input
+                      type="text"
+                      class="inventory-edit-input"
+                      name="company_web"
+                      value="{{ $comp->website ?? '' }}"
+                      placeholder="Website URL"
+                    />
+                  </label>
 
-                                    @foreach ($company as $comp)
-                                        
-                                      <div class="form-group">
-                                        <input type="text" class="form-control" name="name" placeholder="Name of Company" value="{{ $comp->name }}" required/>
-                                      </div>
-
-                                      <div class="form-group">
-                                        <textarea name="company_add" class="form-control" rows="3" placeholder="Address" required>{{ $comp->address }}</textarea>
-                                      </div>
-
-                                      <div class="form-group">
-                                        <input type="text" class="form-control" name="loc" placeholder="Location" value="{{ $comp->location }}"/>
-                                      </div>
-                                      
-                          
-                                      <div class="form-group">
-                                        <input type="text" class="form-control" name="contact" placeholder="Contact No." value="{{ $comp->contact }}" required/>
-                                      </div>
-
-                                      <div class="form-group">
-                                        <input type="text" class="form-control" name="email" placeholder="Email" value="{{ $comp->email }}" />
-                                      </div>
-
-                                      <div class="form-group">
-                                        <input type="text" class="form-control" name="company_web" placeholder="Website" value="{{ $comp->website }}" />
-                                      </div>
-                                      
-                                      <div class="">
-                                        <!--label class="upfiles">Upload Logo: &nbsp; </label>
-                                        <input type="file" name="company_logo"-->
-                                        <input type="hidden" name="company_logo" value="{{$comp->logo}}" />
-                                      </div>
-                                      
-                                      <div class="modal-footer">
-                                        <p class="grants">Access Granted: Company Details Already Set</p>
-                                        <button type="submit" class="btn btn-primary" name="store_action" value="admi_config"><i class="fa fa-save"></i> &nbsp; Update</button>
-                                      </div>
-
-                                    @endforeach
-
-                                  @endif
-                                </form>
-
-                              </div>
-                                 
-                            </div>
-                              
-                          </div>
-                      </div>
-                  </div>
-              </div>
-
-            </div>
-
-            <div class="col-md-5">
-            
-                    <div style="height: 30px">
+                  @if (! $hasCompany)
+                    <label class="inventory-edit-field dash-config-file-field">
+                      <span class="inventory-edit-label">Company logo</span>
+                      <input type="file" class="dash-config-file-input" name="company_logo" accept="image/*" required>
+                      <span class="inventory-edit-field-hint">Upload a logo for invoices and reports.</span>
+                    </label>
+                  @else
+                    <input type="hidden" name="company_logo" value="{{ $comp->logo }}">
+                    <div class="dist-callout dash-config-notice">
+                      <i class="fa fa-check-circle" aria-hidden="true"></i>
+                      <span>Company details are already set. Update the fields above to apply changes.</span>
                     </div>
-
-              <div class="card card-profile">
-                <div class="card-body">
-                  <h4 class="card-title">Add Company Branches</h4>
-
-                  <div class="col-md-10 offset-md-1">
-                  <form action="{{action('ItemsController@store')}}" method="POST">
-                    @csrf
-
-                    <label for="cat-title" class="col-form-label myLabel">Branch Name:</label>
-                    <div class="form-group">
-                      <input type="text" class="form-control" name="name" placeholder="eg. RJV Adum Branch." required/>
-                    </div>
-
-                    <label for="cat-title" class="col-form-label myLabel">Location</label>
-                    <div class="form-group">
-                      <input type="text" class="form-control" name="loc" placeholder="eg. Adum" required/>
-                    </div>
-
-                    <label for="cat-title" class="col-form-label myLabel">Contact:</label>
-                    <div class="form-group">
-                      <input type="text" class="form-control" name="contact" required/>
-                    </div>
-                    @if (count($branches) < 5)
-                      <div class="modal-footer">
-                        <button type="submit" class="btn btn-info" name="store_action" value="create_branch"><i class="fa fa-save"></i> &nbsp; Save</button>
-                      </div>
-                    @endif
-                  </form>
-                  </div>
-                   
+                  @endif
                 </div>
-              </div>
-      
-                    <div style="height: 30px">
-                    </div>
-              
-              <div class="card card-profile">
-                <div class="card-body">
-                        
-                  <div class="form-group inputHold">
-                    <button type="submit" class="btn btn-secondary" data-toggle="modal" data-target="#comp_branch"><i class="fa fa-folder-open"></i> &nbsp; View Branches</button>
-                    {{-- <button type="submit" class="btn btn-secondary" data-toggle="modal" data-target="#add_items"><i class="fa fa-folder-open"></i> &nbsp; View Additional Items</button> --}}
-                  </div>
-                        
-                </div>
-              </div>
-      
-            </div>
 
+                <div class="dash-form-footer dash-config-form-footer">
+                  <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary" name="store_action" value="admi_config">
+                    <i class="fa fa-save"></i>
+                    {{ $hasCompany ? 'Update company' : 'Save company' }}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
-  </div>
 
-
-
-  <div class="modal fade" id="comp_branch" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modtop" role="document">
-      <div id="printarea" class="modal-content">
-          <div class="card card-profile">
-            <div class="card-body">
-              <h6 class="card-category text-gray"></h6>
-              <div style="height: 30px">
+        <div class="col-lg-5">
+          <div class="card dash-config-side-card">
+            <div class="card-body dash-form-body dash-config-side-body">
+              <div class="dist-section-header">
+                <h6 class="inventory-edit-section-title"><i class="fa fa-sitemap"></i> Add branch</h6>
               </div>
 
-              <h3 class="card-title">All Branches</h3>
-
-              @if(count($branches) != 0)
-
-              <table id="config_tbl">
-                <thead>
-                  <th><h5 class="card-title">Name</h5></th>
-                  <th><h5 class="card-title">Location</h5></th>
-                  <th><h5 class="card-title">Contact</h5></th>
-                </thead>
-                <tbody>
-                  @foreach ($branches as $branch)
-
-                    <form action="{{ action('ItemsController@destroy', $branch->id) }}" method="POST">
-                      <input type="hidden" name="_method" value="DELETE">
-                      @csrf
-
-                      <tr>
-                        <td>{{$branch->name}}</td>
-                        <td>{{$branch->loc}}</td>
-                        <td>{{$branch->contact}}
-                        <button type="submit" name="del_action" value="branch_del" rel="tooltip" title="Delete Branch" class="close2" onclick="return confirm('Are you sure you want to delete branch?');"><i class="fa fa-close"></i></button>
-                        </td>
-                      </tr>
-
-                    </form>
-
-                  @endforeach
-
-                </tbody>
-              </table>
-
+              @if ($branchLimitReached)
+                <div class="dist-callout dist-callout-warning">
+                  <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+                  <span>Maximum of 5 branches reached. Remove a branch before adding another.</span>
+                </div>
               @else
-              <p>Oops..! No branch registered yet!</p>
-              @endif
+                <form action="{{ action('ItemsController@store') }}" method="POST">
+                  @csrf
 
+                  <label class="inventory-edit-field">
+                    <span class="inventory-edit-label">Branch name</span>
+                    <input type="text" class="inventory-edit-input" name="name" placeholder="e.g. RJV Adum Branch" required>
+                  </label>
+
+                  <label class="inventory-edit-field">
+                    <span class="inventory-edit-label">Location</span>
+                    <input type="text" class="inventory-edit-input" name="loc" placeholder="e.g. Adum" required>
+                  </label>
+
+                  <label class="inventory-edit-field">
+                    <span class="inventory-edit-label">Contact</span>
+                    <input type="text" class="inventory-edit-input" name="contact" placeholder="Branch contact" required>
+                  </label>
+
+                  <div class="dash-config-side-actions">
+                    <button type="submit" class="inventory-edit-btn inventory-edit-btn-primary" name="store_action" value="create_branch">
+                      <i class="fa fa-plus"></i>
+                      Add branch
+                    </button>
+                  </div>
+                </form>
+              @endif
             </div>
           </div>
-      </div>
 
+          <div class="card dash-config-side-card">
+            <div class="card-body dash-form-body dash-config-side-body">
+              <div class="dist-section-toolbar">
+                <h6 class="inventory-edit-section-title"><i class="fa fa-list"></i> Registered branches</h6>
+                <span class="dash-config-branch-count">{{ $activeBranches->count() }} / 5</span>
+              </div>
+
+              @if ($activeBranches->count() > 0)
+                <div class="table-responsive dist-branch-table-wrap dash-config-branch-table-wrap">
+                  <table class="table mt dist-branch-table dash-config-branch-table">
+                    <thead class="text-secondary hideMe">
+                      <tr>
+                        <th>Name</th>
+                        <th>Location</th>
+                        <th>Contact</th>
+                        <th class="ryt actsize">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @foreach ($activeBranches as $branch)
+                        <tr @class(['rowColour' => $loop->even])>
+                          <td>
+                            <span class="dash-config-branch-name">{{ $branch->name }}</span>
+                            @if ($branch->tag)
+                              <p class="waybill-table-meta">Tag {{ $branch->tag }}</p>
+                            @endif
+                          </td>
+                          <td>{{ $branch->loc }}</td>
+                          <td>{{ $branch->contact }}</td>
+                          <td class="ryt">
+                            <form action="{{ action('ItemsController@destroy', $branch->id) }}" method="POST" class="dash-config-delete-form">
+                              @csrf
+                              @method('DELETE')
+                              <button
+                                type="submit"
+                                name="del_action"
+                                value="branch_del"
+                                class="inventory-action-btn inventory-action-btn-icon dash-config-delete-btn dash-tip"
+                                data-tip="Delete branch"
+                                onclick="return confirm('Are you sure you want to delete this branch?');"
+                              >
+                                <i class="fa fa-trash"></i>
+                              </button>
+                            </form>
+                          </td>
+                        </tr>
+                      @endforeach
+                    </tbody>
+                  </table>
+                </div>
+              @else
+                <div class="dash-empty-state dash-config-empty">
+                  <span class="dash-empty-state-icon" aria-hidden="true"><i class="fa fa-sitemap"></i></span>
+                  <p class="dash-empty-state-title">No branches yet</p>
+                  <p class="dash-empty-state-text">Add your first branch using the form above.</p>
+                </div>
+              @endif
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
-
 
 @endsection

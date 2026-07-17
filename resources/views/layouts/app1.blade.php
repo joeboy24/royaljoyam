@@ -18,6 +18,7 @@
 
     <!-- Styles -->
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="/maindir/css/dash-flash.css?v=1">
 </head>
 <body>
     <div id="app">

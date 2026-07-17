@@ -33,6 +33,26 @@ class CartStockTest extends TestCase
             'updated_at' => now(),
         ]);
 
+        DB::table('closures')->insert([
+            'user_id' => '1',
+            'month' => now()->format('Y-m-01'),
+            'tot_qty' => '0',
+            'avl_qty' => '0',
+            'amt_sold' => '0',
+            'exp_amt' => '0',
+            'profits' => '0',
+            'q1' => '0',
+            'q2' => '0',
+            'q3' => '0',
+            'q4' => '0',
+            'q5' => '0',
+            'q6' => '0',
+            'q7' => '0',
+            'status' => 'open',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
         $this->branchUser = User::findOrFail(DB::table('users')->insertGetId([
             'company_branch_id' => '1',
             'name' => 'branch.one',
@@ -73,6 +93,70 @@ class CartStockTest extends TestCase
         return Item::findOrFail($id);
     }
 
+    protected function cartPayload(Item $item, int $qty = 10): array
+    {
+        return [
+            'item_id' => $item->id,
+            'item_no' => $item->item_no,
+            'name' => $item->name,
+            'qty' => $qty,
+            'price' => 35.00,
+        ];
+    }
+
+    public function test_add_to_cart_reserves_branch_and_main_qty(): void
+    {
+        $item = $this->createItem();
+
+        $response = $this->actingAs($this->branchUser)->post('/sales/cart', $this->cartPayload($item, 10));
+
+        $response->assertRedirect('/sales');
+        $this->assertSame(1, Cart::count());
+
+        $item->refresh();
+        $this->assertSame(90, (int) $item->qty);
+        $this->assertSame(90, (int) $item->q1);
+    }
+
+    public function test_add_to_cart_rejects_insufficient_stock(): void
+    {
+        $item = $this->createItem(['q1' => '5', 'qty' => '5']);
+
+        $response = $this->actingAs($this->branchUser)->post('/sales/cart', $this->cartPayload($item, 10));
+
+        $response->assertRedirect('/sales');
+        $response->assertSessionHas('error');
+        $this->assertSame(0, Cart::count());
+
+        $item->refresh();
+        $this->assertSame(5, (int) $item->qty);
+        $this->assertSame(5, (int) $item->q1);
+    }
+
+    public function test_checkout_keeps_reserved_stock_decremented(): void
+    {
+        $item = $this->createItem();
+
+        $this->actingAs($this->branchUser)->post('/sales/cart', $this->cartPayload($item, 10));
+
+        $response = $this->actingAs($this->branchUser)->post('/sales/checkout', [
+            'pay_mode' => 'Cash',
+            'del_status' => 'Delivered',
+            'buy_name' => 'Jane Buyer',
+            'buy_contact' => '0244000000',
+            'discount' => 0,
+            'payment' => 350,
+        ]);
+
+        $response->assertRedirect('/sales');
+        $response->assertSessionHas('success');
+        $this->assertSame(0, Cart::count());
+
+        $item->refresh();
+        $this->assertSame(90, (int) $item->qty);
+        $this->assertSame(90, (int) $item->q1);
+    }
+
     public function test_cart_delete_restores_main_and_branch_qty(): void
     {
         $item = $this->createItem();
@@ -94,10 +178,7 @@ class CartStockTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $response = $this->actingAs($this->branchUser)->put('/items/' . $cartId, [
-            '_method' => 'PUT',
-            'store_action' => 'cart_del',
-        ]);
+        $response = $this->actingAs($this->branchUser)->delete('/sales/cart/' . $cartId);
 
         $response->assertRedirect();
         $this->assertNull(Cart::find($cartId));
