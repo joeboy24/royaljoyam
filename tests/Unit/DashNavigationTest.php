@@ -29,6 +29,13 @@ class DashNavigationTest extends TestCase
         $this->assertSame('sales', DashNavigation::activeKey($request));
     }
 
+    public function test_resolves_sales_for_paid_debts_route(): void
+    {
+        $request = Request::create('/paid_debts', 'GET');
+
+        $this->assertSame('sales', DashNavigation::activeKey($request));
+    }
+
     public function test_items_include_active_flag(): void
     {
         $request = Request::create('/dashuser', 'GET');

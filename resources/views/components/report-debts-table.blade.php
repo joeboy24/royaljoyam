@@ -1,8 +1,23 @@
-@props(['sales'])
+@props([
+    'sales',
+    'debtStatus' => 'outstanding',
+])
 
 @php
   $allDebts = session('debts', collect());
   $grandTotal = (float) $allDebts->sum('tot');
+
+  $summaryLabel = match ($debtStatus) {
+      'cleared' => 'Cleared total',
+      'all' => 'Debt orders total',
+      default => 'Outstanding total',
+  };
+
+  $emptyMessage = match ($debtStatus) {
+      'cleared' => 'No cleared debt orders found for the selected filters.',
+      'all' => 'No debt orders found for the selected filters.',
+      default => 'No outstanding debts found for the selected filters.',
+  };
 @endphp
 
 @if ($sales->count() > 0)
@@ -120,7 +135,7 @@
 
   <div class="dash-reports-table-summary">
     <span><strong>{{ number_format($sales->total()) }}</strong> records</span>
-    <span>Outstanding total: <strong>Gh₵ {{ number_format($grandTotal, 2) }}</strong></span>
+    <span>{{ $summaryLabel }}: <strong>Gh₵ {{ number_format($grandTotal, 2) }}</strong></span>
   </div>
 
   {{ $sales->appends([
@@ -128,7 +143,8 @@
     'date_to' => request()->query('date_to'),
     'branch' => request()->query('branch'),
     'debtsearch' => request()->query('debtsearch'),
+    'debt_status' => request()->query('debt_status'),
   ])->links() }}
 @else
-  <x-report-empty-state icon="fa fa-folder-open" message="No outstanding debts found for the selected filters." />
+  <x-report-empty-state icon="fa fa-folder-open" :message="$emptyMessage" />
 @endif

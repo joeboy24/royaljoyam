@@ -328,7 +328,7 @@ class WaybillPageTest extends TestCase
     public function test_waybill_report_refresh_link_points_to_waybill_report(): void
     {
         $this->actingAs($this->admin)
-            ->get('/waybillreport')
+            ->get('/waybillreport?date_from='.now()->format('Y-m-d'))
             ->assertOk()
             ->assertSee('href="/waybillreport"', false);
     }

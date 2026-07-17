@@ -10,8 +10,12 @@
   padding-bottom: 36px;
 }
 
+.main-panel > .content.dash-reports-content {
+  padding-top: 14px;
+}
+
 .dash-reports-body {
-  padding-top: 8px;
+  padding-top: 0;
 }
 
 .dash-reports-nav {
@@ -28,7 +32,7 @@
   white-space: nowrap;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  padding: 8px 6px 10px;
+  padding: 4px 6px 10px;
   border-radius: 4px;
   background: #dce3e8;
 }
@@ -559,8 +563,151 @@ a.dash-reports-kpi:focus {
   color: #6b7a86;
 }
 
+.dash-reports-breakdown-formulas {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.dash-reports-breakdown-formula {
+  padding: 12px 14px;
+  border: 1px solid #e8ecef;
+  border-radius: 10px;
+  background: #fafcfd;
+}
+
+.dash-reports-breakdown-formula.is-drawer {
+  border-color: rgba(21, 101, 192, 0.18);
+  background: rgba(21, 101, 192, 0.04);
+}
+
+.dash-reports-breakdown-formula.is-net {
+  border-color: rgba(255, 140, 0, 0.22);
+  background: rgba(255, 140, 0, 0.05);
+}
+
+.dash-reports-breakdown-formula-title {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #5f6f7a;
+}
+
+.dash-reports-breakdown-formula.is-drawer .dash-reports-breakdown-formula-title {
+  color: #1565c0;
+}
+
+.dash-reports-breakdown-formula.is-net .dash-reports-breakdown-formula-title {
+  color: #e65100;
+}
+
+.dash-reports-breakdown-formula-chain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.dash-reports-breakdown-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #42515c;
+  background: #fff;
+  border: 1px solid #dde4ea;
+}
+
+.dash-reports-breakdown-chip.is-result.is-drawer {
+  background: linear-gradient(135deg, #0d47a1 0%, #42a5f5 100%);
+  border-color: transparent;
+  color: #fff;
+}
+
+.dash-reports-breakdown-chip.is-result.is-net {
+  background: linear-gradient(135deg, #e65100 0%, #ffb347 100%);
+  border-color: transparent;
+  color: #fff;
+}
+
+.dash-reports-breakdown-op {
+  font-size: 12px;
+  font-weight: 700;
+  color: #8a9aa3;
+}
+
+.dash-reports-breakdown-tag-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.dash-reports-breakdown-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.dash-reports-breakdown-tag--drawer {
+  color: #1565c0;
+  background: rgba(21, 101, 192, 0.1);
+  border: 1px solid rgba(21, 101, 192, 0.18);
+}
+
+.dash-reports-breakdown-tag--net {
+  color: #e65100;
+  background: rgba(255, 140, 0, 0.12);
+  border: 1px solid rgba(255, 140, 0, 0.22);
+}
+
+.dash-reports-breakdown-formula-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.dash-reports-breakdown-formula-badge--drawer {
+  background: linear-gradient(135deg, #0d47a1 0%, #42a5f5 100%);
+  color: #fff;
+}
+
+.dash-reports-breakdown-formula-badge--orange {
+  background: linear-gradient(135deg, #e65100 0%, #ffb347 100%);
+  color: #fff;
+}
+
+.dash-reports-breakdown-table tbody th,
+.dash-reports-breakdown-table tbody td {
+  border-bottom: none;
+}
+
+.dash-reports-breakdown-table tbody tr + tr > th,
+.dash-reports-breakdown-table tbody tr + tr > td,
+.dash-reports-breakdown-table tfoot tr > th,
+.dash-reports-breakdown-table tfoot tr > td {
+  box-shadow: inset 0 1px 0 #eef2f5;
+}
+
 .dash-reports-breakdown-scroll {
   overflow-x: auto;
+  overflow-y: visible;
   border: 1px solid #e8ecef;
   border-radius: 4px;
   background: #fff;
@@ -638,8 +785,16 @@ a.dash-reports-kpi:focus {
   background: rgba(21, 101, 192, 0.04);
 }
 
-.dash-reports-breakdown-table tr.is-net-total th,
-.dash-reports-breakdown-table tr.is-net-total td {
+.dash-reports-breakdown-table tr.is-cash-hand th[scope="row"] .dash-reports-breakdown-formula-badge--drawer {
+  box-shadow: 0 0 0 1px rgba(21, 101, 192, 0.15);
+}
+
+.dash-reports-breakdown-table tr.is-net-total th[scope="row"] .dash-reports-breakdown-formula-badge--orange {
+  box-shadow: 0 0 0 1px rgba(255, 140, 0, 0.28);
+}
+
+.dash-reports-breakdown-table tr.is-net-total td,
+.dash-reports-breakdown-table tr.is-net-total th[scope="row"] {
   border-bottom: none;
   border-top: 2px solid color-mix(in srgb, var(--reports-accent) 24%, #e8ecef);
   background: color-mix(in srgb, var(--reports-accent) 8%, #fff);
@@ -816,6 +971,56 @@ a.dash-reports-kpi:focus {
   min-width: 220px;
   flex: 1 1 260px;
   max-width: 360px;
+}
+
+.dash-reports-related-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.dash-reports-related-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--reports-accent) 18%, #e8ecef);
+  background: #fff;
+  color: var(--reports-accent-dark);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.dash-reports-related-link:hover,
+.dash-reports-related-link:focus {
+  text-decoration: none;
+  background: color-mix(in srgb, var(--reports-accent) 8%, #fff);
+  color: var(--reports-accent-dark);
+}
+
+.dash-reports-stock-wrap {
+  overflow-x: auto;
+}
+
+.dash-reports-stock-table {
+  min-width: 720px;
+}
+
+.dash-reports-stock-table .small_gr {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8a9aa6;
+}
+
+.dash-reports-stock-table td.ryt,
+.dash-reports-stock-table th.ryt {
+  text-align: right;
 }
 
 @media (max-width: 1199px) {

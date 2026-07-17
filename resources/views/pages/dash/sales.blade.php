@@ -93,6 +93,10 @@
           icon="fa fa-shopping-cart"
         >
           <x-slot:actions>
+            <a href="{{ url('/paid_debts') }}" class="dash-page-header-btn inventory-action-btn dash-tip" data-tip="View collected debt payments">
+              <i class="fa fa-check-circle"></i>
+              <span>Paid debts</span>
+            </a>
             <a href="/expenses" class="dash-page-header-btn inventory-action-btn dash-tip" data-tip="Go to expenditure">
               <i class="fa fa-money"></i>
               <span>Expenses</span>

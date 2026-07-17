@@ -201,6 +201,8 @@ class SiblingReportsPageTest extends TestCase
             ->assertOk()
             ->assertSee('Debts Report')
             ->assertSee('Debts filters', false)
+            ->assertSee('/paid_debts', false)
+            ->assertSee('Paid debts', false)
             ->assertSee('No outstanding debts found for the selected filters.');
     }
 
@@ -264,6 +266,90 @@ class SiblingReportsPageTest extends TestCase
             ->assertSee('Debt Buyer')
             ->assertDontSee('DEBT-002')
             ->assertSee('Gh₵ 300.00');
+    }
+
+    public function test_debts_report_filters_by_cleared_status(): void
+    {
+        Sale::create([
+            'user_id' => (string) $this->admin->id,
+            'user_bv' => '1',
+            'order_no' => 'DEBT-CLEARED',
+            'qty' => '1',
+            'tot' => '200',
+            'pay_mode' => Sale::PAY_MODE_DEBT,
+            'buy_name' => 'Cleared Buyer',
+            'buy_contact' => '0244222222',
+            'del_status' => 'Delivered',
+            'discount' => '0',
+            'payment' => '200',
+            'change' => '0',
+            'paid' => 'Paid',
+            'paid_debt' => '200',
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        Sale::create([
+            'user_id' => (string) $this->admin->id,
+            'user_bv' => '1',
+            'order_no' => 'DEBT-OPEN',
+            'qty' => '1',
+            'tot' => '100',
+            'pay_mode' => Sale::PAY_MODE_DEBT,
+            'buy_name' => 'Open Buyer',
+            'buy_contact' => '0244333333',
+            'del_status' => 'Delivered',
+            'discount' => '0',
+            'payment' => '0',
+            'change' => '0',
+            'paid' => 'no',
+            'paid_debt' => '0',
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get('/debts?debt_status=cleared')
+            ->assertOk()
+            ->assertSee('DEBT-CLEARED')
+            ->assertSee('Cleared total:', false)
+            ->assertDontSee('DEBT-OPEN');
+
+        $this->actingAs($this->admin)
+            ->get('/debts?debt_status=all')
+            ->assertOk()
+            ->assertSee('DEBT-CLEARED')
+            ->assertSee('DEBT-OPEN')
+            ->assertSee('Debt orders total:', false);
+    }
+
+    public function test_report_nav_preserves_active_filters(): void
+    {
+        $this->actingAs($this->admin)
+            ->get('/debts?date_from=2026-07-01&date_to=2026-07-16&branch=1&debt_status=cleared')
+            ->assertOk()
+            ->assertSee('date_from=2026-07-01', false)
+            ->assertSee('date_to=2026-07-16', false)
+            ->assertSee('branch=1', false)
+            ->assertSee('debt_status=cleared', false);
+    }
+
+    public function test_expenses_and_returns_reports_do_not_include_related_links(): void
+    {
+        $today = now()->format('Y-m-d');
+
+        $this->actingAs($this->admin)
+            ->withSession(['date_today' => $today])
+            ->get('/expensereport')
+            ->assertOk()
+            ->assertDontSee('dash-reports-related-links', false);
+
+        $this->actingAs($this->admin)
+            ->get('/returnsreport')
+            ->assertOk()
+            ->assertDontSee('dash-reports-related-links', false);
     }
 
     public function test_stock_balances_report_shows_empty_state_when_no_data_loaded(): void

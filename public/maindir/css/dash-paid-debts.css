@@ -34,10 +34,37 @@
   background: linear-gradient(180deg, #ffffff 0%, #f8fbfc 100%);
 }
 
+.dash-paid-debts-filter-form {
+  margin-bottom: 28px;
+  padding-bottom: 4px;
+}
+
+.dash-paid-debts-filter-form .dash-reports-filter-error {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: #b42318;
+}
+
+.dash-paid-debts-branch-readonly {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #42515a;
+  background: #f4f8fa;
+  border: 1px solid rgba(var(--pd-accent-rgb), 0.12);
+  white-space: nowrap;
+}
+
 .dash-paid-debts-summary {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+  margin-top: 4px;
   margin-bottom: 20px;
 }
 

@@ -31,9 +31,9 @@
   </x-slot:filters>
 
   <div id="printarea1">
-              
-                    @if (count(session('stock')) > 0)
-                      <table class="table mt">
+    @if (count(session('stock')) > 0)
+      <div class="dash-reports-table-wrap table-responsive dash-reports-stock-wrap">
+        <table class="table mt dash-reports-data-table dash-reports-stock-table">
                         <thead class=" text-secondary hideMe">
                           <th>#</th>
                           <th>Item Details.</th>
@@ -117,6 +117,7 @@
 
                         </tbody>
                       </table>
+      </div>
 
     @else
       <x-report-empty-state

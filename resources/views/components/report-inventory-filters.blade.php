@@ -6,6 +6,7 @@
     'showBranch' => true,
     'showDelivery' => false,
     'showSearch' => false,
+    'showDebtStatus' => false,
     'searchName' => 'search',
     'searchPlaceholder' => 'Search records...',
     'branches' => collect(),
@@ -17,6 +18,7 @@
   $dateTo = request()->query('date_to', '');
   $branch = request()->query('branch', 'All Branches');
   $delvr = request()->query('delvr', 'Del. / Not Delivered');
+  $debtStatus = request()->query('debt_status', 'outstanding');
   $search = $showSearch ? trim((string) request()->query($searchName, '')) : '';
 
   $activeFilterCount = 0;
@@ -38,6 +40,10 @@
   }
 
   if ($showDelivery && $delvr !== 'Del. / Not Delivered') {
+      $activeFilterCount++;
+  }
+
+  if ($showDebtStatus && $debtStatus !== 'outstanding') {
       $activeFilterCount++;
   }
 @endphp
@@ -126,6 +132,17 @@
           </label>
         @endif
 
+        @if ($showDebtStatus)
+          <label class="inventory-filter-field">
+            <span class="inventory-filter-field-icon"><i class="fa fa-filter"></i></span>
+            <select name="debt_status" class="inventory-filter-select" title="Filter by debt status">
+              <option value="outstanding" @selected($debtStatus === 'outstanding')>Outstanding debts</option>
+              <option value="cleared" @selected($debtStatus === 'cleared')>Cleared debts</option>
+              <option value="all" @selected($debtStatus === 'all')>All debt orders</option>
+            </select>
+          </label>
+        @endif
+
         <div class="dash-reports-filter-actions">
           <button type="submit" class="inventory-search-btn inventory-search-btn-primary dash-tip" data-tip="Apply filters">
             <i class="fa fa-filter"></i>
@@ -139,13 +156,13 @@
           @endif
 
           @if ($printUrl)
-            <a href="{{ $printUrl }}" class="inventory-search-btn inventory-search-btn-muted inventory-search-btn-icon dash-tip" data-tip="Print report" aria-label="Print report" target="_blank" rel="noopener">
+            <a href="{{ \App\Support\ReportPrintQuery::url($printUrl) }}" class="inventory-search-btn inventory-search-btn-muted inventory-search-btn-icon dash-tip" data-tip="Print report" aria-label="Print report" target="_blank" rel="noopener">
               <i class="fa fa-print"></i>
             </a>
           @endif
 
           @if ($exportUrl)
-            <a href="{{ $exportUrl }}" class="inventory-search-btn inventory-search-btn-muted dash-tip" data-tip="Export CSV">
+            <a href="{{ \App\Support\ReportPrintQuery::url($exportUrl) }}" class="inventory-search-btn inventory-search-btn-muted dash-tip" data-tip="Export CSV">
               <i class="fa fa-download"></i>
               <span class="dash-reports-filter-export-label">Export</span>
             </a>

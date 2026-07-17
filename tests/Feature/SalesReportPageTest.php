@@ -310,6 +310,21 @@ class SalesReportPageTest extends TestCase
         $this->actingAs($this->admin)
             ->get('/reporting?date_from=' . $today)
             ->assertOk()
-            ->assertSee('Cash in drawer (est.)', false);
+            ->assertSee('Cash in drawer (est.)', false)
+            ->assertSee('dash-reports-breakdown-formulas', false)
+            ->assertSee('dash-reports-breakdown-formula-chain', false)
+            ->assertSee('dash-reports-breakdown-tag--drawer', false)
+            ->assertSee('dash-reports-breakdown-formula-badge--drawer', false)
+            ->assertSee('dash-reports-breakdown-formula-badge--orange', false)
+            ->assertDontSee('data-rail-drawer', false)
+            ->assertDontSee('data-rail-orange', false);
+    }
+
+    public function test_saleshistory_redirects_to_sales_report_with_filters(): void
+    {
+        $this->actingAs($this->admin)
+            ->get('/saleshistory?date_from=2026-07-01&date_to=2026-07-16&branch=1')
+            ->assertRedirect('/reporting?date_from=2026-07-01&date_to=2026-07-16&branch=1')
+            ->assertSessionHas('info', 'Sales history is available on the main Sales report.');
     }
 }

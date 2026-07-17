@@ -9,18 +9,11 @@
   icon="fa fa-truck"
 >
   <x-slot:filters>
-    @php
-      $waybillQuery = array_filter([
-        'date_from' => $date_from ?? null,
-        'date_to' => $date_to ?? null,
-        'waybillsearch' => $waybillsearch ?? null,
-      ]);
-    @endphp
     <x-report-inventory-filters
       :action="url('/waybillreport')"
       clear-url="/waybillreport"
-      :print-url="url('/waybillprint?' . http_build_query($waybillQuery))"
-      :export-url="url('/waybillreport/export?' . http_build_query($waybillQuery))"
+      print-url="/waybillprint"
+      export-url="/waybillreport/export"
       filter-label="Waybill filters"
       :show-branch="false"
       :show-search="true"

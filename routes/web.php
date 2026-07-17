@@ -71,9 +71,7 @@ Route::get('/waybillprint/{id}', 'WaybillReportController@waybillPrintSingle');
 Route::get('/waybillprint', 'WaybillReportController@waybillPrint');
 Route::get('/distreportprint', 'WaybillReportController@distReportPrint');
 
-Route::get('/debtsreportprinting', function () {
-    return view('pages.invoice.debtsinvoice');
-});
+Route::get('/debtsreportprinting', 'DashController@debtsreportprinting');
 
 
 

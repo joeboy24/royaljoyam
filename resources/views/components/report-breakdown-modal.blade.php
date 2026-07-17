@@ -9,6 +9,46 @@
 
     return $branch ? \Illuminate\Support\Str::limit($branch->name, 14) : 'Branch '.$slot;
   };
+
+  $breakdownTags = [
+    'cash' => ['drawer', 'net'],
+    'cheque' => ['net'],
+    'momo' => ['net'],
+    'debt-collected' => ['drawer', 'net'],
+    'expenses' => ['drawer', 'net'],
+  ];
+
+  $renderBreakdownTags = function (array $tags) {
+      foreach ($tags as $tag) {
+          $label = $tag === 'drawer' ? 'Drawer' : 'Net';
+          echo '<span class="dash-reports-breakdown-tag dash-reports-breakdown-tag--'.e($tag).'">'.e($label).'</span>';
+      }
+  };
+
+  $renderBreakdownLabel = function (string $label, ?string $badge = null, array $tags = []) {
+      if ($badge === 'drawer') {
+          echo '<span class="dash-reports-breakdown-formula-badge dash-reports-breakdown-formula-badge--drawer">'.e($label).'</span>';
+
+          return;
+      }
+
+      if ($badge === 'orange') {
+          echo '<span class="dash-reports-breakdown-formula-badge dash-reports-breakdown-formula-badge--orange">'.e($label).'</span>';
+
+          return;
+      }
+
+      echo e($label);
+
+      if (count($tags) > 0) {
+          echo '<span class="dash-reports-breakdown-tag-group">';
+          foreach ($tags as $tag) {
+              $tagLabel = $tag === 'drawer' ? 'Drawer' : 'Net';
+              echo '<span class="dash-reports-breakdown-tag dash-reports-breakdown-tag--'.e($tag).'">'.e($tagLabel).'</span>';
+          }
+          echo '</span>';
+      }
+  };
 @endphp
 
 <div class="modal fade dash-reports-breakdown-modal" id="totbreakdownModal" tabindex="-1" role="dialog" aria-labelledby="totbreakdownModalLabel" aria-hidden="true">
@@ -27,10 +67,41 @@
       </div>
 
       <div class="inventory-edit-body dash-reports-breakdown-body">
+        <div class="dash-reports-breakdown-formulas">
+          <div class="dash-reports-breakdown-formula is-drawer">
+            <span class="dash-reports-breakdown-formula-title">Cash in drawer (est.)</span>
+            <div class="dash-reports-breakdown-formula-chain">
+              <span class="dash-reports-breakdown-chip">Cash</span>
+              <span class="dash-reports-breakdown-op">+</span>
+              <span class="dash-reports-breakdown-chip">Paid debts collected</span>
+              <span class="dash-reports-breakdown-op">−</span>
+              <span class="dash-reports-breakdown-chip">Expenditure</span>
+              <span class="dash-reports-breakdown-op">=</span>
+              <span class="dash-reports-breakdown-chip is-result is-drawer">Cash in drawer</span>
+            </div>
+          </div>
+
+          <div class="dash-reports-breakdown-formula is-net">
+            <span class="dash-reports-breakdown-formula-title">Net total</span>
+            <div class="dash-reports-breakdown-formula-chain">
+              <span class="dash-reports-breakdown-chip">Cash</span>
+              <span class="dash-reports-breakdown-op">+</span>
+              <span class="dash-reports-breakdown-chip">Cheque</span>
+              <span class="dash-reports-breakdown-op">+</span>
+              <span class="dash-reports-breakdown-chip">Mobile money</span>
+              <span class="dash-reports-breakdown-op">+</span>
+              <span class="dash-reports-breakdown-chip">Paid debts collected</span>
+              <span class="dash-reports-breakdown-op">−</span>
+              <span class="dash-reports-breakdown-chip">Expenditure</span>
+              <span class="dash-reports-breakdown-op">=</span>
+              <span class="dash-reports-breakdown-chip is-result is-net">Net total</span>
+            </div>
+          </div>
+        </div>
+
         <p class="dash-reports-breakdown-lead">
-          Net total = cash + cheque + mobile money + paid debts collected − expenditure.
-          Cash in drawer (est.) = cash + paid debts collected − expenditure (physical cash only; excludes cheque and mobile money).
-          Profits (margin) = sum of item margins (unit price − cost) on sales in this period; not reduced by expenditure.
+          Profits (margin) = sum of item margins on sales in this period; not reduced by expenditure.
+          Rows tagged <strong>Drawer</strong> or <strong>Net</strong> show which total they feed.
         </p>
 
         <div class="dash-reports-breakdown-scroll">
@@ -47,7 +118,13 @@
             <tbody>
               @foreach ($breakdown['rows'] as $row)
                 <tr @class(['is-'.$row['kind'] => true])>
-                  <th scope="row">{{ $row['label'] }}</th>
+                  <th scope="row">
+                    {!! $renderBreakdownLabel(
+                      $row['label'],
+                      ($row['key'] ?? '') === 'cash_at_hand' ? 'drawer' : null,
+                      $breakdownTags[$row['key']] ?? []
+                    ) !!}
+                  </th>
                   @foreach ($row['values'] as $value)
                     <td>{{ number_format($value, 2) }}</td>
                   @endforeach
@@ -56,7 +133,9 @@
 
                 @if (! empty($row['subrow']))
                   <tr class="is-subrow">
-                    <th scope="row">{{ $row['subrow']['label'] }}</th>
+                    <th scope="row">
+                      {!! $renderBreakdownLabel($row['subrow']['label'], null, $breakdownTags['debt-collected'] ?? []) !!}
+                    </th>
                     @foreach ($row['subrow']['values'] as $value)
                       <td>{{ number_format($value, 2) }}</td>
                     @endforeach
@@ -67,7 +146,7 @@
             </tbody>
             <tfoot>
               <tr class="is-net-total">
-                <th scope="row">Net total</th>
+                <th scope="row">{!! $renderBreakdownLabel('Net total', 'orange') !!}</th>
                 @foreach ($breakdown['columns'] as $column)
                   <td>{{ number_format($column['net'], 2) }}</td>
                 @endforeach

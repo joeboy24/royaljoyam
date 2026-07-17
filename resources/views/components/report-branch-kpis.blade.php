@@ -54,7 +54,7 @@
     @endif
   @endforeach
 
-  <a href="/expenses" class="dash-reports-kpi">
+  <a href="{{ \App\Support\ReportPrintQuery::url('/expensereport') }}" class="dash-reports-kpi">
     <span class="dash-reports-kpi-icon dash-reports-kpi-icon--rose">
       <i class="fa fa-money"></i>
     </span>

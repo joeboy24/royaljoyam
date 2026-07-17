@@ -65,7 +65,7 @@ return [
             'label' => 'Sales',
             'url' => '/sales',
             'icon' => 'fa fa-shopping-basket',
-            'match' => ['sales', 'sales/*', 'mpt_cart', 'expenses', 'expenses/*'],
+            'match' => ['sales', 'sales/*', 'mpt_cart', 'expenses', 'expenses/*', 'paid_debts', 'paid_debts/*'],
         ],
         [
             'key' => 'report',

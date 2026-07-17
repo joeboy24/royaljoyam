@@ -10,7 +10,7 @@
   <div class="dash-reports-nav-track">
     @foreach ($items as $item)
       <a
-        href="{{ url($item['url']) }}"
+        href="{{ \App\Support\ReportPrintQuery::url($item['url']) }}"
         @class([
           'dash-reports-nav-tab',
           'is-active' => $item['active'],

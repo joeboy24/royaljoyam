@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="/maindir/css/dash-page-header.css?v=1">
   <link rel="stylesheet" href="/maindir/css/dash-form.css?v=30">
   <link rel="stylesheet" href="/maindir/css/dash-sales.css?v=15">
-  <link rel="stylesheet" href="/maindir/css/dash-reports.css?v=22">
+  <link rel="stylesheet" href="/maindir/css/dash-reports.css?v=34">
   <link rel="stylesheet" href="/maindir/css/dash-profile.css?v=2">
   <link rel="stylesheet" href="/maindir/css/dash-flash.css?v=1">
   <link rel="stylesheet" href="/maindir/css/dash-tip.css?v=2">

@@ -16,6 +16,8 @@ use App\Models\SalesPayment;
 use App\Models\SalesHistory;
 use App\Models\CompanyBranch;
 use App\Models\OrderReturn;
+use App\Services\SalesReportService;
+use App\Services\SiblingReportService;
 use Exception;
 use Illuminate\Support\Facades\Session;
 use DateTime;
@@ -82,34 +84,31 @@ class DashController extends Controller
         return view('pages.dash.dashuser')->with($pass);
     }
 
-    public function debts_paid(){
+    public function debts_paid(Request $request){
         $user = auth()->user();
-        $isAdmin = $user->status === 'Administrator';
-        $salesDate = session('date_today') ?: now()->format('Y-m-d');
 
-        if ($isAdmin) {
-            $dateFrom = date('Y-m-01', strtotime($salesDate));
-            $dateTo = date('Y-m-t', strtotime($salesDate));
-            $periodLabel = \Carbon\Carbon::parse($salesDate)->format('F Y');
-            $paymentsQuery = SalesPayment::with(['sale.user', 'user'])
-                ->whereBetween('created_at', [$dateFrom, new \DateTime($dateTo.'+1 day')]);
-        } else {
-            $periodLabel = \Carbon\Carbon::parse($salesDate)->format('D, d M Y');
-            $paymentsQuery = SalesPayment::with(['sale.user', 'user'])
-                ->where('del', 'no')
-                ->where('user_id', $user->id)
-                ->where('created_at', 'LIKE', '%'.$salesDate.'%');
+        if (empty($request->query('date_from')) && ! empty($request->query('date_to'))) {
+            return redirect()->back()->with('error', 'Oops..! Provide *Date From* in order to proceed');
         }
 
+        $context = app(SiblingReportService::class)->paidDebtsContext($request, $user);
+        $paymentsQuery = $context['query'];
+
         $totalPaid = (float) (clone $paymentsQuery)->sum('amt_paid');
-        $sales_pay = (clone $paymentsQuery)->orderByDesc('id')->paginate(20);
+        $sales_pay = (clone $paymentsQuery)->paginate(20)->withQueryString();
 
         $pass = [
             'c' => 1,
             'sales_pay' => $sales_pay,
-            'periodLabel' => $periodLabel,
+            'periodLabel' => $context['periodLabel'],
             'totalPaid' => $totalPaid,
-            'isAdmin' => $isAdmin,
+            'isAdmin' => $context['isAdmin'],
+            'paidDebtSearch' => $context['search'],
+            'dateFrom' => $context['dateFrom'],
+            'dateTo' => $context['dateTo'],
+            'branch' => $context['branch'],
+            'branchName' => $context['branchName'],
+            'branches' => $context['isAdmin'] ? CompanyBranch::all() : collect(),
         ];
 
         return view('pages.dash.depts_paid')->with($pass);
@@ -284,19 +283,50 @@ class DashController extends Controller
         return view('pages.dash.reportsview')->with($pass);
     }
 
-    public function reportprinting(){
+    public function reportprinting(Request $request){
         if(auth()->user()->status != 'Administrator'){
             return redirect('/dashboard'); 
         }
-        // return url()->previous();
+
         $company = Company::find(1);
-        $pass = [
+        $filters = $request->only(['date_from', 'date_to', 'branch', 'delvr']);
+
+        if (! empty(array_filter($filters, fn ($value) => $value !== null && $value !== ''))) {
+            $report = app(SalesReportService::class)->build([
+                'date_from' => $request->query('date_from'),
+                'date_to' => $request->query('date_to'),
+                'branch' => $request->query('branch', 'All Branches'),
+                'delvr' => $request->query('delvr', 'Del. / Not Delivered'),
+                'session_sales_date' => Session::get('date_today'),
+            ]);
+
+            $legacy = app(SalesReportService::class)->toLegacyViewData($report);
+            Session::put('branch', $report['session_branch']);
+            Session::put('net', $report['net']);
+            Session::put('gross', $report['gross']);
+            Session::put('gen_profits', $report['gen_profits']);
+            Session::put('date_from', $request->query('date_from'));
+            Session::put('date_to', $request->query('date_to'));
+
+            foreach ($legacy as $key => $value) {
+                Session::put($key, $value);
+            }
+
+            $sales = $report['sales_send'];
+        } else {
+            $sales = session('sales', collect());
+        }
+
+        return view('pages.dash.invoice')->with([
             'count' => 1,
             'company' => $company,
-            'sales' => session('sales')
-        ];
-        // return session('sales');
-        return view('pages.dash.invoice')->with($pass);
+            'sales' => $sales,
+            'printMeta' => [
+                'date_from' => $request->query('date_from'),
+                'date_to' => $request->query('date_to'),
+                'branch' => $request->query('branch'),
+            ],
+        ]);
     }
 
     public function stockreportprinting(){
@@ -342,35 +372,83 @@ class DashController extends Controller
     }
 
 
-    public function returnprint(){
+    public function returnprint(Request $request){
         if(auth()->user()->status != 'Administrator'){
             return redirect('/dashboard'); 
         }
-        // // return url()->previous();
-        // $items = Item::all();
-        $company = Company::find(1);
-        $pass = [
+
+        $returns = app(SiblingReportService::class)
+            ->returnsQuery($request)
+            ->get();
+
+        Session::put('returnsrep', $returns);
+        Session::put('date_from', $request->query('date_from'));
+        Session::put('date_to', $request->query('date_to'));
+
+        return view('pages.invoice.returninvoice')->with([
             'count' => 1,
-            'company' => $company,
-            'returns' => session('returnsrep')
-        ];
-        // return session('sales');
-        return view('pages.invoice.returninvoice')->with($pass);
+            'company' => Company::find(1),
+            'returns' => $returns,
+            'printMeta' => [
+                'date_from' => $request->query('date_from'),
+                'date_to' => $request->query('date_to'),
+                'branch' => $request->query('branch'),
+                'search' => $request->query('returnsearch'),
+                'searchLabel' => 'Return search',
+            ],
+        ]);
     }
 
-    public function expensereportprinting(){
+    public function expensereportprinting(Request $request){
         if(auth()->user()->status != 'Administrator'){
             return redirect('/dashboard'); 
         }
-        // return url()->previous();
-        $company = Company::find(1);
-        $pass = [
+
+        $expenses = app(SiblingReportService::class)
+            ->expensesQuery($request)
+            ->get();
+
+        Session::put('expenses', $expenses);
+        Session::put('date_from', $request->query('date_from'));
+        Session::put('date_to', $request->query('date_to'));
+
+        return view('pages.dash.expenseinvoice')->with([
             'count' => 1,
-            'company' => $company,
-            'expenses' => session('expenses')
-        ];
-        // return session('sales');
-        return view('pages.dash.expenseinvoice')->with($pass);
+            'company' => Company::find(1),
+            'expenses' => $expenses,
+            'printMeta' => [
+                'date_from' => $request->query('date_from'),
+                'date_to' => $request->query('date_to'),
+                'branch' => $request->query('branch'),
+            ],
+        ]);
+    }
+
+    public function debtsreportprinting(Request $request){
+        if(auth()->user()->status != 'Administrator'){
+            return redirect('/dashboard'); 
+        }
+
+        $debts = app(SiblingReportService::class)
+            ->debtsQuery($request)
+            ->get();
+
+        Session::put('debts', $debts);
+        Session::put('date_from', $request->query('date_from'));
+        Session::put('date_to', $request->query('date_to'));
+
+        return view('pages.invoice.debtsinvoice')->with([
+            'count' => 1,
+            'company' => Company::find(1),
+            'debts' => $debts,
+            'printMeta' => [
+                'date_from' => $request->query('date_from'),
+                'date_to' => $request->query('date_to'),
+                'branch' => $request->query('branch'),
+                'search' => $request->query('debtsearch'),
+                'searchLabel' => 'Debt search',
+            ],
+        ]);
     }
 
     public function genstockbal(){
@@ -489,58 +567,13 @@ class DashController extends Controller
     }
 
     public function saleshistory(Request $request){
-        // return view('pages.dash.saleshistory'); 
-
-        if(auth()->user()->status != 'Administrator'){
-            return redirect('/dashboard'); 
-        }
-        //
-        $c = 1;
-        $date_from = $request->query('date_from');
-        $date_to = $request->query('date_to');
-        
-        if (!empty($date_from) && empty($date_to)) {
-            // return 12345;
-            # code...
-            $nonedit = 'true';
-            $items = ItemAudit::where('del', 'no')->where('created_at', 'LIKE', '%'.$date_from.'%')->orderBy('id', 'desc')->paginate(10);
-            $items_send = ItemAudit::where('del', 'no')->where('created_at', 'LIKE', '%'.$date_from.'%')->orderBy('id', 'desc')->get();
-            $saleshistory_send = SalesHistory::where('del', 'no')->where('created_at', 'LIKE', '%'.$date_from.'%')->get();
-        }elseif (empty($date_from) && !empty($date_to)) {
-            $nonedit = 'true';
-            return redirect(url()->previous())->with('error', 'Oops..! Provide *Date From* in order to proceed');
-        }elseif (!empty($date_from) && !empty($date_to)) {
-            $nonedit = 'true';
-            $items = ItemAudit::where('del', 'no')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->orderBy('id', 'desc')->paginate(10);
-            $items_send = ItemAudit::where('del', 'no')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->orderBy('id', 'desc')->get();
-            $saleshistory_send = SalesHistory::select('item_no', 'name', 'qty', 'cost_price', 'unit_price', 'tot', 'profits')->where('del', 'no')->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')])->distinct('name')->get();
-        }else{
-            $nonedit = 'false';
-            $items = Item::where('del', 'no')->paginate(10);
-            $items_send = Item::where('del', 'no')->get();
-            $saleshistory_send = SalesHistory::where('del', 'no')->where('created_at', 'LIKE', '%'.session('date_today').'%')->get();
-            // $items = ItemAudit::where('del', 'no')->where('created_at', 'LIKE', '%'.date("Y-m-d").'%')->orderBy('id', 'desc')->paginate(10);
+        if (auth()->user()->status != 'Administrator') {
+            return redirect('/dashboard');
         }
 
-        Session::put('items', $items_send);
-        Session::put('genstockbal', $saleshistory_send);
-
-        Session::put('date_from', $date_from);
-        Session::put('date_to', $date_to);
-
-        $cats = Category::All();
-        $company = Company::find(1);
-        $pass = [
-            'c' => 1,
-            'y' => 1,
-            'cats' => $cats,
-            'items' => $items,
-            'company' => $company,
-            'nonedit' => $nonedit,
-            'sales' => 3
-        ];
-        // $dist_category = Item::select('cat')->where($match)->where('img_count', '>', 1)->distinct()->get();
-        return view('pages.dash.saleshistory')->with($pass);
+        return redirect(
+            \App\Support\ReportPrintQuery::url('/reporting', $request)
+        )->with('info', 'Sales history is available on the main Sales report.');
     }
 
     public function expensereport(Request $request){
@@ -654,45 +687,19 @@ class DashController extends Controller
             return redirect('/dashboard'); 
         }
 
-        $branch = $request->input('branch');
-        if ($branch === null || $branch === '' || $branch == 'All Branches') {
-            $match = ['del' => 'no', 'pay_mode' => 'Post Payment(Debt)', 'paid' => 'no'];
-        } else {
-            $match = ['del' => 'no', 'user_bv' => $branch, 'pay_mode' => 'Post Payment(Debt)', 'paid' => 'no'];
-        }
-        
         $c = 1;
         $date_from = $request->query('date_from');
         $date_to = $request->query('date_to');
-        $debtsearch = trim((string) $request->query('debtsearch', ''));
-
-        if (empty($date_from) && empty($date_to)) {
-            $match = ['del' => 'no', 'pay_mode' => 'Post Payment(Debt)', 'paid' => 'no'];
-        }
-
-        $debtsQuery = function () use ($match, $debtsearch, $date_from, $date_to) {
-            $query = Sale::with('user')->where($match)->reportSearch($debtsearch);
-
-            if (! empty($date_from) && empty($date_to)) {
-                $query->where('created_at', 'LIKE', '%'.$date_from.'%');
-            } elseif (! empty($date_from) && ! empty($date_to)) {
-                $query->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')]);
-            }
-
-            return $query->orderBy('id', 'desc');
-        };
+        $debtsQuery = app(SiblingReportService::class)->debtsQuery($request);
 
         if (! empty($date_from) && empty($date_to)) {
-            $sales = $debtsQuery()->paginate(10);
-            $sales_send = $debtsQuery()->get();
+            $sales = (clone $debtsQuery)->paginate(10);
+            $sales_send = (clone $debtsQuery)->get();
         } elseif (empty($date_from) && ! empty($date_to)) {
             return redirect(url()->previous())->with('error', 'Oops..! Provide *Date From* in order to proceed');
-        } elseif (! empty($date_from) && ! empty($date_to)) {
-            $sales = $debtsQuery()->paginate(10);
-            $sales_send = $debtsQuery()->get();
         } else {
-            $sales = $debtsQuery()->paginate(10);
-            $sales_send = $debtsQuery()->get();
+            $sales = (clone $debtsQuery)->paginate(10);
+            $sales_send = (clone $debtsQuery)->get();
         }
 
         Session::put('debts', $sales_send);
@@ -722,37 +729,16 @@ class DashController extends Controller
         
         $date_from = $request->query('date_from');
         $date_to = $request->query('date_to');
-        $returnsearch = trim((string) $request->query('returnsearch', ''));
-        $branch = $request->query('branch');
-        if ($branch === null || $branch === '' || $branch == 'All Branches') {
-            $match = ['del' => 'no'];
-        } else {
-            $match = ['del' => 'no', 'user_bv' => $branch];
-        }
-
-        $returnsQuery = function () use ($match, $returnsearch, $date_from, $date_to) {
-            $query = OrderReturn::with('user')->where($match)->reportSearch($returnsearch);
-
-            if (! empty($date_from) && empty($date_to)) {
-                $query->where('created_at', 'LIKE', '%'.$date_from.'%');
-            } elseif (! empty($date_from) && ! empty($date_to)) {
-                $query->whereBetween('created_at', [$date_from, new \DateTime($date_to.'+1 day')]);
-            }
-
-            return $query->orderBy('id', 'desc');
-        };
+        $returnsQuery = app(SiblingReportService::class)->returnsQuery($request);
 
         if (! empty($date_from) && empty($date_to)) {
-            $returns = $returnsQuery()->paginate(10);
-            $returns_send = $returnsQuery()->get();
+            $returns = (clone $returnsQuery)->paginate(10);
+            $returns_send = (clone $returnsQuery)->get();
         } elseif (empty($date_from) && ! empty($date_to)) {
             return redirect(url()->previous())->with('error', 'Oops..! Provide *Date From* in order to proceed');
-        } elseif (! empty($date_from) && ! empty($date_to)) {
-            $returns = $returnsQuery()->paginate(10);
-            $returns_send = $returnsQuery()->get();
         } else {
-            $returns = $returnsQuery()->paginate(10);
-            $returns_send = $returnsQuery()->get();
+            $returns = (clone $returnsQuery)->paginate(10);
+            $returns_send = (clone $returnsQuery)->get();
         }
 
         Session::put('returnsrep', $returns_send);
