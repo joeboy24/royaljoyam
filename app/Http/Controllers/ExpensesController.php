@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreExpenseRequest;
 use App\Models\CompanyBranch;
 use App\Models\Expense;
+use App\Services\ClosureService;
 use Illuminate\Http\Request;
 
 class ExpensesController extends Controller
@@ -19,7 +20,7 @@ class ExpensesController extends Controller
         if (session('sales_permit') == 0) {
             return redirect('/dashboard')->with(
                 'error',
-                'Oops..! Contact administrator to initialize '.date('F, Y').' opening'
+                app(ClosureService::class)->salesPermitDeniedMessage()
             );
         }
 

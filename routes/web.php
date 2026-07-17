@@ -62,6 +62,8 @@ Route::resource('/items', 'ItemsController');
 Route::resource('/reporting', 'ReportsController');
 Route::resource('/distribution', 'DistributionController');
 Route::resource('/stock', 'StockController');
+Route::post('/closure/{month}/open', 'ClosureController@open')->name('closure.open');
+Route::post('/closure/{month}/close', 'ClosureController@close')->name('closure.close');
 Route::resource('/closure', 'ClosureController');
 Route::get('/reportprinting', 'DashController@reportprinting');
 Route::get('/stockfillprint', 'DashController@stockfillprint');

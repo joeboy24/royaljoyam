@@ -11,11 +11,9 @@ use App\Models\Item;
 use App\Models\Order;
 use App\Models\Expense;
 use App\Models\ItemAudit;
-use App\Models\SalesHistory;
 use App\Models\CompanyBranch;
 use App\Models\ItemImage;
 use App\Models\Category;
-use App\Models\Closure;
 use App\Services\BranchTransferService;
 use Exception;
 
@@ -671,108 +669,6 @@ class ItemsController extends Controller
                     }
                     // return $my_id;
     
-                break;
-
-                case 'set_closure':
-
-                    $month = session('cldate');
-                    $m = date('m', strtotime($month));
-                    $y = date('Y', strtotime($month));
-                    $om = $m - 1;
-                    if ($om < 10) {
-                        $om = '0'.$om;
-                    }
-                    if ($m == '01' || $m == '1') {
-                        $y = $y - 1;
-                        $old_month = date($y.'-12-01');
-                    } else {
-                        $old_month = date($y.'-'.$om.'-01');
-                    }
-                    // return $old_month;
-                    
-
-                    if ($m < date('m')) {
-                        return redirect(url()->previous())->with('error', 'Oops..! Openings cannot be made for previous month');
-                    }
-
-                    $closure_check = Closure::where('month', $old_month)->latest()->first();
-                    // return $closure_check;
-                    
-                    if ($closure_check != '') {
-                        if ($closure_check->status == 'open') {
-                            return redirect(url()->previous())->with('error', 'Warning..! Set closure for previous month to proceed');
-                        }
-                    }else{
-                        return redirect(url()->previous())->with('error', 'Opps..! close previous month in order to create openning for '.date('F, Y', strtotime($month)));
-                    }
-                    $month = session('cldate');
-                    $closure = Closure::firstOrCreate([
-                        'user_id' => auth()->user()->id,
-                        'month' => $month,
-                        'status' => 'open',
-                    ]);
-                    return redirect(url()->previous())->with('success', 'Openning for '.date('F, Y', strtotime($month)).' successfully set');
-                break;
-
-                case 'closure':
-
-                    $month = session('cldate');
-                    $m = date('m', strtotime($month));
-                    $y = date('Y', strtotime($month));
-                    $om = $m - 1;
-                    if ($om < 10) {
-                        $om = '0'.$om;
-                    }
-                    if ($m == '01' || $m == '1') {
-                        $y = $y - 1;
-                        $old_month = date($y.'-12-01');
-                    } else {
-                        $old_month = date($y.'-'.$om.'-01');
-                    }
-                    $closure_check = Closure::where('month', $old_month)->count();
-                    // return $old_month;
-                    if ($closure_check > 0) {
-                    } else {
-                        return redirect(url()->previous())->with('error', 'Warning..! Set closure for previous month to proceed');
-                        return redirect(url()->previous())->with('error', 'Closure not set for '.date('F, Y', strtotime($old_month)));
-                    }
-                    // return date('Y-m-t', strtotime($month));
-
-                    try {
-                        $closure = Closure::where('month', $month)->latest()->first();
-                        // $closure = Closure::firstOrCreate([
-                        //     'user_id' => auth()->user()->id,
-                        //     'month' => $month,
-                        //     'tot_qty' => session('sales_history')->sum('qty'),
-                        //     'avl_qty' => session('items')->sum('qty'),
-                        //     'amt_sold' => session('sales_history')->sum('tot'),
-                        //     // 'exp_amt' => ($sp - $cp)*$qty,
-                        //     'profits' => session('sales_history')->sum('profits'),
-                        //     'status' => 'open',
-                        // ]);
-
-                        $closure->month = $month;
-                        $closure->tot_qty = session('sales_history')->sum('qty');
-                        $closure->avl_qty = session('items')->sum('qty');
-                        $closure->amt_sold = session('sales_history')->sum('tot');
-                        // $closure->exp_amt = ($sp - $cp)*$qty;
-                        $closure->profits = session('sales_history')->sum('profits');
-                        $closure->status = 'closed';
-                        $closure->save();
-
-                        for ($i=1; $i <= count(session('compbranch')); $i++) { 
-                            $salesH = SalesHistory::where('user_bv', $i)->whereBetween('created_at', [$month, date('Y-m-t', strtotime($month))])->get();
-                            $qq = 'q'.$i;
-                            $closure->$qq = $salesH->sum('qty');
-                            $closure->save();
-                        }
-                        // return $salesH;
-                    } catch (\Throwable $th) {
-                        throw $th;
-                    }
-                    return redirect(url()->previous())->with('success', 'Closure set for '.date('F, Y', strtotime($month)));
-                   
-
                 break;
 
             }

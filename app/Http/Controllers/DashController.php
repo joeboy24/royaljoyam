@@ -17,6 +17,7 @@ use App\Models\SalesHistory;
 use App\Models\CompanyBranch;
 use App\Models\OrderReturn;
 use App\Models\Closure as MonthClosure;
+use App\Services\ClosureService;
 use App\Services\SalesReportService;
 use App\Services\SiblingReportService;
 use Exception;
@@ -122,7 +123,7 @@ class DashController extends Controller
         }
 
         if(session('sales_permit') == 0){
-            return redirect('/dashboard')->with('error', 'Oops..! Contact administrator to initialize '.date('F, Y').' opening');
+            return redirect('/dashboard')->with('error', app(ClosureService::class)->salesPermitDeniedMessage());
         }
 
         $filterPayMode = trim((string) $request->query('pay_mode', ''));

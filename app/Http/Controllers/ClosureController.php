@@ -6,15 +6,17 @@ use App\Models\Item;
 use App\Models\SalesHistory;
 use App\Models\Wbdistribution;
 use App\Models\Closure;
+use App\Services\ClosureService;
 use App\Services\ClosureSummaryService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Session;
-use DateTime;
+use InvalidArgumentException;
 
 class ClosureController extends Controller
 {
-    public function __construct()
-    {
+    public function __construct(
+        private readonly ClosureService $closureService,
+        private readonly ClosureSummaryService $summaryService
+    ) {
         $this->middleware(['auth', 'load_auth']);
     }
 
@@ -61,21 +63,17 @@ class ClosureController extends Controller
             return redirect('/dashboard');
         }
 
-        $parsed = DateTime::createFromFormat('d-m-Y', $full_date)
-            ?: DateTime::createFromFormat('Y-m-d', $full_date);
-
-        if (!$parsed) {
-            return redirect('/closure_page')->with('error', 'Invalid month selected.');
+        try {
+            $date_from = $this->closureService->resolveMonthKey($full_date);
+        } catch (InvalidArgumentException $e) {
+            return redirect('/closure_page')->with('error', $e->getMessage());
         }
 
-        $date_from = $parsed->format('Y-m-01');
-        $date_to = $parsed->format('Y-m-t');
+        $date_to = date('Y-m-t', strtotime($date_from));
         $rangeEnd = $date_to.' 23:59:59';
 
         $closure = Closure::where('month', $date_from)->latest()->first();
         $closure_state = $closure?->status ?? '';
-
-        Session::put('mth_openning', $closure ? 1 : 0);
 
         $items = Item::where('del', 'no')->get();
         $salesHistory = SalesHistory::with('item')
@@ -87,13 +85,7 @@ class ClosureController extends Controller
             ->whereBetween('created_at', [$date_from, $rangeEnd])
             ->get();
 
-        // Kept for ItemsController open/close until that logic moves to a dedicated service.
-        Session::put('stock', $salesHistory->unique('item_id')->values());
-        Session::put('items', $items);
-        Session::put('sales_history', $salesHistory);
-        Session::put('cldate', $date_from);
-
-        $summary = app(ClosureSummaryService::class)->build($salesHistory, $distributions, $items);
+        $summary = $this->summaryService->build($salesHistory, $distributions, $items);
 
         $status = match ($closure_state) {
             'open' => 'open',
@@ -102,8 +94,9 @@ class ClosureController extends Controller
         };
 
         return view('pages.dash.closuredetail', [
-            'yr' => (int) $parsed->format('Y'),
-            'month_label' => $parsed->format('F, Y'),
+            'yr' => (int) date('Y', strtotime($date_from)),
+            'month_label' => $this->closureService->monthLabel($date_from),
+            'month_slug' => date('d-m-Y', strtotime($date_from)),
             'date_from' => $date_from,
             'date_to' => $date_to,
             'closure' => $closure,
@@ -119,6 +112,42 @@ class ClosureController extends Controller
             'sales_rows' => $summary['sales_rows'],
             'sales_totals' => $summary['sales_totals'],
         ]);
+    }
+
+    public function open(Request $request, string $month)
+    {
+        if ($request->user()->status != 'Administrator') {
+            return redirect('/dashboard');
+        }
+
+        try {
+            $monthKey = $this->closureService->resolveMonthKey($month);
+            $this->closureService->openMonth($monthKey, $request->user());
+        } catch (InvalidArgumentException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+
+        return redirect()
+            ->back()
+            ->with('success', 'Opening for '.$this->closureService->monthLabel($monthKey).' successfully set.');
+    }
+
+    public function close(Request $request, string $month)
+    {
+        if ($request->user()->status != 'Administrator') {
+            return redirect('/dashboard');
+        }
+
+        try {
+            $monthKey = $this->closureService->resolveMonthKey($month);
+            $this->closureService->closeMonth($monthKey, $request->user());
+        } catch (InvalidArgumentException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+
+        return redirect()
+            ->back()
+            ->with('success', 'Closure set for '.$this->closureService->monthLabel($monthKey).'.');
     }
 
     /**

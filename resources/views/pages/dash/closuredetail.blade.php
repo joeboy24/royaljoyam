@@ -63,32 +63,22 @@
 
             <div class="dash-closure-status-actions">
               @if ($closure_status === 'not_opened')
-                <form action="{{ action('ItemsController@store') }}" method="POST" class="dash-closure-action-form">
+                <form action="{{ route('closure.open', ['month' => $month_slug]) }}" method="POST" class="dash-closure-action-form">
                   @csrf
-                  <button
-                    type="submit"
-                    name="store_action"
-                    value="set_closure"
-                    class="inventory-action-btn inventory-action-btn-primary"
-                  >
+                  <button type="submit" class="inventory-action-btn inventory-action-btn-primary">
                     <i class="fa fa-unlock-alt"></i>
                     <span>Open month</span>
                   </button>
                 </form>
               @elseif ($closure_status === 'open')
                 <form
-                  action="{{ action('ItemsController@store') }}"
+                  action="{{ route('closure.close', ['month' => $month_slug]) }}"
                   method="POST"
                   class="dash-closure-action-form"
                   onsubmit="return confirm('Close {{ $month_label }}? Period totals will be snapshotted and the month marked closed.');"
                 >
                   @csrf
-                  <button
-                    type="submit"
-                    name="store_action"
-                    value="closure"
-                    class="inventory-action-btn dash-closure-btn-close"
-                  >
+                  <button type="submit" class="inventory-action-btn dash-closure-btn-close">
                     <i class="fa fa-lock"></i>
                     <span>Close month</span>
                   </button>

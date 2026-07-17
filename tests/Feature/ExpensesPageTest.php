@@ -52,6 +52,7 @@ class ExpensesPageTest extends TestCase
         DB::table('closures')->insert([
             'user_id' => '1',
             'month' => date('Y-m-01'),
+            'status' => 'open',
             'created_at' => now(),
             'updated_at' => now(),
         ]);

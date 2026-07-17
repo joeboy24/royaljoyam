@@ -139,8 +139,10 @@ class ClosurePageTest extends TestCase
         $response->assertSee('Open month');
         $response->assertSee('All months');
         $response->assertSee('Items summary');
+        $response->assertSee(route('closure.open', ['month' => $slug]), false);
         $response->assertSee('/maindir/css/dash-closure.css', false);
         $response->assertDontSee('invoiceContent', false);
+        $response->assertDontSee('ItemsController@store', false);
     }
 
     public function test_closure_detail_shows_close_action_when_open(): void
@@ -199,6 +201,125 @@ class ClosurePageTest extends TestCase
         $this->actingAs($this->branchUser)
             ->get('/closure/'.$slug)
             ->assertRedirect('/dashboard');
+    }
+
+    public function test_admin_can_bootstrap_open_current_month(): void
+    {
+        $slug = '01-'.date('m').'-'.date('Y');
+
+        $response = $this->from('/closure/'.$slug)
+            ->actingAs($this->admin)
+            ->post(route('closure.open', ['month' => $slug]));
+
+        $response->assertRedirect('/closure/'.$slug);
+        $response->assertSessionHas('success');
+        $this->assertDatabaseHas('closures', [
+            'month' => date('Y-m-01'),
+            'status' => 'open',
+        ]);
+    }
+
+    public function test_admin_can_close_open_month_via_dedicated_route(): void
+    {
+        $month = date('Y-m-01');
+        $slug = '01-'.date('m').'-'.date('Y');
+
+        DB::table('closures')->insert([
+            'user_id' => (string) $this->admin->id,
+            'month' => $month,
+            'status' => 'open',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->from('/closure/'.$slug)
+            ->actingAs($this->admin)
+            ->post(route('closure.close', ['month' => $slug]));
+
+        $response->assertRedirect('/closure/'.$slug);
+        $response->assertSessionHas('success');
+        $this->assertDatabaseHas('closures', [
+            'month' => $month,
+            'status' => 'closed',
+        ]);
+    }
+
+    public function test_open_is_blocked_when_previous_month_is_still_open(): void
+    {
+        $slug = '01-'.date('m').'-'.date('Y');
+        $previous = date('Y-m-01', strtotime('-1 month'));
+
+        DB::table('closures')->insert([
+            'user_id' => (string) $this->admin->id,
+            'month' => $previous,
+            'status' => 'open',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->from('/closure/'.$slug)
+            ->actingAs($this->admin)
+            ->post(route('closure.open', ['month' => $slug]));
+
+        $response->assertRedirect('/closure/'.$slug);
+        $response->assertSessionHas('error');
+        $this->assertDatabaseMissing('closures', [
+            'month' => date('Y-m-01'),
+            'status' => 'open',
+        ]);
+    }
+
+    public function test_branch_user_is_blocked_from_sales_when_month_not_open(): void
+    {
+        $response = $this->actingAs($this->branchUser)->get('/sales');
+
+        $response->assertRedirect('/dashboard');
+        $response->assertSessionHas('error');
+        $this->assertStringContainsString(
+            'open '.date('F, Y'),
+            session('error')
+        );
+    }
+
+    public function test_branch_user_is_blocked_from_sales_when_month_is_closed(): void
+    {
+        DB::table('closures')->insert([
+            'user_id' => (string) $this->admin->id,
+            'month' => date('Y-m-01'),
+            'status' => 'closed',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->branchUser)->get('/sales');
+
+        $response->assertRedirect('/dashboard');
+        $response->assertSessionHas('error');
+        $this->assertStringContainsString('has been closed', session('error'));
+    }
+
+    public function test_branch_user_can_access_sales_when_month_is_open(): void
+    {
+        DB::table('closures')->insert([
+            'user_id' => (string) $this->admin->id,
+            'month' => date('Y-m-01'),
+            'status' => 'open',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->withSession(['date_today' => date('Y-m-d')])
+            ->actingAs($this->branchUser)
+            ->get('/sales')
+            ->assertOk();
+    }
+
+    public function test_admin_can_access_sales_even_when_month_not_open(): void
+    {
+        $this->withSession(['date_today' => date('Y-m-d')])
+            ->actingAs($this->admin)
+            ->get('/sales')
+            ->assertOk();
     }
 
     public function test_closure_detail_shows_multi_branch_sales_and_distribution(): void
