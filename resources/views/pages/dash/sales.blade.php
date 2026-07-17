@@ -101,6 +101,70 @@
               <i class="fa fa-money"></i>
               <span>Expenses</span>
             </a>
+            <div class="dash-sales-daily-close-menu" data-daily-close-menu>
+              <button
+                type="button"
+                class="dash-page-header-btn inventory-action-btn dash-tip @if (!empty($dailyClose)) is-closed @endif"
+                data-daily-close-toggle
+                data-tip="{{ !empty($dailyClose) ? 'Day closed' : 'Close day' }}"
+                aria-label="{{ !empty($dailyClose) ? 'Day closed' : 'Close day' }}"
+                aria-expanded="false"
+                aria-controls="dashSalesDailyClosePanel"
+              >
+                <i class="fa {{ !empty($dailyClose) ? 'fa-lock' : 'fa-moon-o' }}"></i>
+                <span>{{ !empty($dailyClose) ? 'Day closed' : 'Close day' }}</span>
+              </button>
+
+              <div
+                id="dashSalesDailyClosePanel"
+                class="dash-sales-daily-close-panel"
+                data-daily-close-panel
+                hidden
+              >
+                @if (!empty($dailyClose))
+                  <div class="dash-sales-daily-close-panel-head">
+                    <p class="dash-sales-daily-close-title"><i class="fa fa-lock"></i> Day closed</p>
+                    <p class="dash-sales-daily-close-text">
+                      Snapshot saved for {{ $salesDate }}
+                      @if ($dailyClose->variance !== null)
+                        · cash variance Gh₵ {{ number_format((float) $dailyClose->variance, 2) }}
+                      @endif
+                    </p>
+                  </div>
+                  <a
+                    href="{{ route('dailyclose.print', ['date' => $salesDate]) }}"
+                    class="inventory-action-btn inventory-action-btn-primary"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    <i class="fa fa-print"></i>
+                    <span>Print EOD</span>
+                  </a>
+                @else
+                  <form
+                    action="{{ route('dailyclose.store') }}"
+                    method="POST"
+                    class="dash-sales-daily-close-form"
+                    onsubmit="return confirm('Close {{ $salesDate }}? This stores an end-of-day snapshot for your sales scope.');"
+                  >
+                    @csrf
+                    <p class="dash-sales-daily-close-title"><i class="fa fa-moon-o"></i> Close day</p>
+                    <label class="dash-sales-daily-close-field">
+                      <span>Counted cash</span>
+                      <input type="number" step="0.01" min="0" name="counted_cash" placeholder="Optional till count" />
+                    </label>
+                    <label class="dash-sales-daily-close-field">
+                      <span>Notes</span>
+                      <textarea name="notes" maxlength="255" rows="3" placeholder="Optional note"></textarea>
+                    </label>
+                    <button type="submit" class="inventory-action-btn inventory-action-btn-primary">
+                      <i class="fa fa-moon-o"></i>
+                      <span>Close day</span>
+                    </button>
+                  </form>
+                @endif
+              </div>
+            </div>
           </x-slot:actions>
         </x-dash-page-header>
         <div class="card-body dash-form-body">
@@ -896,6 +960,6 @@
       },
     };
   </script>
-  <script src="/maindir/js/dash-sales.js?v=3"></script>
+  <script src="/maindir/js/dash-sales.js?v=4"></script>
   <script src="/maindir/js/inventory-collapsible-filters.js?v=2"></script>
 @endsection

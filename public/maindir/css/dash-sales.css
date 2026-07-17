@@ -22,6 +22,11 @@
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid rgba(226, 232, 240, 0.7);
   box-shadow: 0 8px 28px rgba(15, 23, 42, 0.05);
+  overflow: visible;
+}
+
+.dash-sales-sticky-header .container-fluid {
+  overflow: visible;
 }
 
 .dash-sales-sticky-header .dash-sales-kpi-grid {
@@ -128,6 +133,7 @@ a.dash-sales-kpi:focus {
   border-left: 4px solid var(--sales-accent);
   border-radius: 14px;
   box-shadow: 0 2px 10px color-mix(in srgb, var(--sales-accent) 8%, transparent);
+  overflow: visible;
 }
 
 .dash-sales-date-info {
@@ -1038,4 +1044,98 @@ body.dash-sales-drawer-open {
     width: 100%;
     justify-content: flex-start;
   }
+
+  .dash-sales-daily-close-panel {
+    right: auto;
+    left: 0;
+  }
+}
+
+.dash-sales-daily-close-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.dash-page-header-actions .dash-sales-daily-close-menu > .dash-page-header-btn.is-closed {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+.dash-page-header-actions .dash-sales-daily-close-menu.is-open > .dash-page-header-btn {
+  background: rgba(255, 255, 255, 0.24);
+  border-color: rgba(255, 255, 255, 0.72);
+}
+
+.dash-sales-card > .dash-page-header {
+  overflow: visible;
+}
+
+.dash-sales-daily-close-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  width: min(320px, calc(100vw - 32px));
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--sales-accent) 18%, #e8ecef);
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(26, 37, 48, 0.14);
+}
+
+.dash-sales-daily-close-panel[hidden] {
+  display: none !important;
+}
+
+.dash-sales-daily-close-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+}
+
+.dash-sales-daily-close-panel-head {
+  margin-bottom: 12px;
+}
+
+.dash-sales-daily-close-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #66747d;
+}
+
+.dash-sales-daily-close-field input,
+.dash-sales-daily-close-field textarea {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid rgba(26, 37, 48, 0.12);
+  border-radius: 10px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  color: #24313a;
+}
+
+.dash-sales-daily-close-field textarea {
+  min-height: 72px;
+  padding: 10px 12px;
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.dash-sales-daily-close-title {
+  margin: 0 0 2px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #24313a;
+}
+
+.dash-sales-daily-close-text {
+  margin: 0;
+  font-size: 12px;
+  color: #66747d;
 }

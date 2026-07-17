@@ -18,6 +18,7 @@ use App\Models\CompanyBranch;
 use App\Models\OrderReturn;
 use App\Models\Closure as MonthClosure;
 use App\Services\ClosureService;
+use App\Services\DailyCloseService;
 use App\Services\SalesReportService;
 use App\Services\SiblingReportService;
 use Exception;
@@ -197,6 +198,10 @@ class DashController extends Controller
             $field => $uid_hold
         ];
         $carts = Cart::where($uidMatch)->where('created_at', 'LIKE', '%'.$salesDate.'%')->get();
+        $dailyCloseService = app(DailyCloseService::class);
+        // If staff skipped closing earlier days, lock them with assumed DB cash.
+        $dailyCloseService->autoClosePastDays(auth()->user());
+        $dailyClose = $dailyCloseService->findForUser(auth()->user(), $salesDate);
 
         $pass = [
             'i' => 1,
@@ -218,6 +223,7 @@ class DashController extends Controller
             'carts' => $carts,
             'filterPayMode' => $filterPayMode,
             'filterStatus' => $filterStatus,
+            'dailyClose' => $dailyClose,
         ];
         return view('pages.dash.sales')->with($pass);
     }
@@ -791,16 +797,24 @@ class DashController extends Controller
             return redirect('/dashboard'); 
         }
 
-        $currentYear = (int) date('Y');
+        $calendarYear = (int) date('Y');
+        $earliestMonth = MonthClosure::query()->min('month');
+        $earliestYear = $earliestMonth
+            ? (int) date('Y', strtotime($earliestMonth))
+            : $calendarYear;
+        $minYear = min($earliestYear, $calendarYear - 1);
+        $maxYear = $calendarYear;
+
+        $selectedYear = (int) $request->query('year', $calendarYear);
+        if ($selectedYear < $minYear || $selectedYear > $maxYear) {
+            $selectedYear = $calendarYear;
+        }
+
         $currentMonthKey = date('Y-m-01');
         $monthCards = [];
 
-        for ($month = 9; $month <= 12; $month++) {
-            $monthCards[] = $this->buildClosureMonthCard($currentYear - 1, $month);
-        }
-
         for ($month = 1; $month <= 12; $month++) {
-            $monthCards[] = $this->buildClosureMonthCard($currentYear, $month);
+            $monthCards[] = $this->buildClosureMonthCard($selectedYear, $month);
         }
 
         $closures = MonthClosure::whereIn('month', array_column($monthCards, 'month_key'))
@@ -825,17 +839,28 @@ class DashController extends Controller
         }
         unset($card);
 
+        $dailyCloses = \App\Models\DailyClosure::query()
+            ->where('close_date', 'LIKE', $selectedYear.'%')
+            ->orderByDesc('close_date')
+            ->orderByDesc('id')
+            ->limit(30)
+            ->get();
+
+        $dailyCloseService = app(DailyCloseService::class);
+        $dailyBranchBreakdowns = [];
+        foreach ($dailyCloses->pluck('close_date')->unique()->values() as $closeDate) {
+            $dailyBranchBreakdowns[$closeDate] = $dailyCloseService->summarizeBranchesForDate($closeDate);
+        }
+
         return view('pages.dash.closure', [
-            'priorYearCards' => array_values(array_filter(
-                $monthCards,
-                fn (array $card) => $card['year'] === $currentYear - 1
-            )),
-            'currentYearCards' => array_values(array_filter(
-                $monthCards,
-                fn (array $card) => $card['year'] === $currentYear
-            )),
-            'currentYear' => $currentYear,
-            'priorYear' => $currentYear - 1,
+            'monthCards' => $monthCards,
+            'selectedYear' => $selectedYear,
+            'minYear' => $minYear,
+            'maxYear' => $maxYear,
+            'prevYear' => $selectedYear > $minYear ? $selectedYear - 1 : null,
+            'nextYear' => $selectedYear < $maxYear ? $selectedYear + 1 : null,
+            'dailyCloses' => $dailyCloses,
+            'dailyBranchBreakdowns' => $dailyBranchBreakdowns,
         ]);
     }
 

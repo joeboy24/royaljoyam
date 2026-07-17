@@ -122,7 +122,14 @@ return [
             'label' => 'Closure',
             'url' => '/closure_page',
             'icon' => 'fa fa-calendar',
-            'match' => ['closure_page', 'closure_page/*', 'closure', 'closure/*'],
+            'match' => [
+                'closure_page',
+                'closure_page/*',
+                'closure',
+                'closure/*',
+                'sales/daily-close',
+                'sales/daily-close/*',
+            ],
         ],
     ],
 

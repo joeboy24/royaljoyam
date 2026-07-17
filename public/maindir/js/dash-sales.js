@@ -375,9 +375,61 @@
     updateCheckoutSummary();
   }
 
+  function initDailyCloseMenu() {
+    var menu = document.querySelector('[data-daily-close-menu]');
+    if (!menu) {
+      return;
+    }
+
+    var toggle = menu.querySelector('[data-daily-close-toggle]');
+    var panel = menu.querySelector('[data-daily-close-panel]');
+    if (!toggle || !panel) {
+      return;
+    }
+
+    function closeMenu() {
+      menu.classList.remove('is-open');
+      toggle.setAttribute('aria-expanded', 'false');
+      panel.hidden = true;
+    }
+
+    function openMenu() {
+      menu.classList.add('is-open');
+      toggle.setAttribute('aria-expanded', 'true');
+      panel.hidden = false;
+    }
+
+    toggle.addEventListener('click', function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (menu.classList.contains('is-open')) {
+        closeMenu();
+      } else {
+        openMenu();
+      }
+    });
+
+    panel.addEventListener('click', function (event) {
+      event.stopPropagation();
+    });
+
+    document.addEventListener('click', function () {
+      if (menu.classList.contains('is-open')) {
+        closeMenu();
+      }
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && menu.classList.contains('is-open')) {
+        closeMenu();
+      }
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     var config = window.dashSalesConfig || {};
     initPosSearch(config);
     initCheckoutDrawer(config);
+    initDailyCloseMenu();
   });
 })();

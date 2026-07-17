@@ -84,40 +84,61 @@ class ClosureService
         return 'Oops..! Contact the administrator to open '.$label.'.';
     }
 
-    public function openMonth(string $monthKey, User $user): Closure
+    /**
+     * Why this month cannot be opened, or null when opening is allowed.
+     * Previous month must be closed before a new month can open
+     * (except the very first bootstrap when no closures exist yet).
+     */
+    public function openBlockedReason(string $monthKey): ?string
     {
         $currentMonthKey = date('Y-m-01');
 
         if ($monthKey < $currentMonthKey) {
-            throw new InvalidArgumentException('Openings cannot be made for a past month.');
+            return 'Openings cannot be made for a past month.';
         }
 
         $existing = Closure::where('month', $monthKey)->latest()->first();
 
         if ($existing) {
             if ($existing->status === 'open') {
-                throw new InvalidArgumentException($this->monthLabel($monthKey).' is already open.');
+                return $this->monthLabel($monthKey).' is already open.';
             }
 
             if ($existing->status === 'closed') {
-                throw new InvalidArgumentException($this->monthLabel($monthKey).' is already closed.');
+                return $this->monthLabel($monthKey).' is already closed.';
             }
         }
 
         $previousMonthKey = $this->previousMonthKey($monthKey);
         $previous = Closure::where('month', $previousMonthKey)->latest()->first();
+        $previousClosed = $previous !== null && $previous->status === 'closed';
 
-        if ($previous === null) {
-            if (Closure::query()->exists()) {
-                throw new InvalidArgumentException(
-                    'Close '.$this->monthLabel($previousMonthKey).' before opening '.$this->monthLabel($monthKey).'.'
-                );
+        if (! $previousClosed) {
+            // Allow only the first-ever open when there is no closure history.
+            if ($previous === null && ! Closure::query()->exists()) {
+                return null;
             }
-        } elseif ($previous->status !== 'closed') {
-            throw new InvalidArgumentException(
-                'Close '.$this->monthLabel($previousMonthKey).' before opening '.$this->monthLabel($monthKey).'.'
-            );
+
+            return 'Close '.$this->monthLabel($previousMonthKey)
+                .' before opening '.$this->monthLabel($monthKey).'.';
         }
+
+        return null;
+    }
+
+    public function canOpenMonth(string $monthKey): bool
+    {
+        return $this->openBlockedReason($monthKey) === null;
+    }
+
+    public function openMonth(string $monthKey, User $user): Closure
+    {
+        $blocked = $this->openBlockedReason($monthKey);
+        if ($blocked !== null) {
+            throw new InvalidArgumentException($blocked);
+        }
+
+        $existing = Closure::where('month', $monthKey)->latest()->first();
 
         if ($existing) {
             $existing->user_id = (string) $user->id;

@@ -15,14 +15,14 @@
   <link href="/dashdir/css/material-dashboard.css?v=2.1.1" rel="stylesheet" />
   <link rel="stylesheet" href="/maindir/css/style.css">
   <link rel="stylesheet" href="/maindir/css/dash-sidebar.css?v=12">
-  <link rel="stylesheet" href="/maindir/css/dash-page-header.css?v=2">
+  <link rel="stylesheet" href="/maindir/css/dash-page-header.css?v=3">
   <link rel="stylesheet" href="/maindir/css/dash-form.css?v=30">
-  <link rel="stylesheet" href="/maindir/css/dash-sales.css?v=15">
+  <link rel="stylesheet" href="/maindir/css/dash-sales.css?v=19">
   <link rel="stylesheet" href="/maindir/css/dash-reports.css?v=35">
   <link rel="stylesheet" href="/maindir/css/dash-profile.css?v=2">
   <link rel="stylesheet" href="/maindir/css/dash-flash.css?v=1">
   <link rel="stylesheet" href="/maindir/css/dash-tip.css?v=2">
-  <link rel="stylesheet" href="/maindir/css/dash-topbar.css?v=2">
+  <link rel="stylesheet" href="/maindir/css/dash-topbar.css?v=3">
   {{-- <link rel="stylesheet" href="/dashdir/css/bootstrap.min.css"> --}}
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
 </head>
@@ -56,7 +56,27 @@
       @endphp
 
       <nav class="navbar navbar-expand-lg navbar-transparent navbar-absolute fixed-top hideMe dash-topbar">
-        <div class="container-fluid">
+        <div class="container-fluid dash-topbar-inner">
+          <div class="dash-topbar-leading">
+            <button
+              class="navbar-toggler dash-topbar-menu-toggle"
+              type="button"
+              aria-label="Open navigation menu"
+            >
+              <span class="navbar-toggler-icon icon-bar"></span>
+              <span class="navbar-toggler-icon icon-bar"></span>
+              <span class="navbar-toggler-icon icon-bar"></span>
+            </button>
+
+            <a href="/dashboard" class="dash-topbar-brand">
+              <span class="dash-topbar-brand-mark" aria-hidden="true">RJ</span>
+              <span class="dash-topbar-brand-copy">
+                <span class="dash-topbar-brand-title">Royal Joyam</span>
+                <span class="dash-topbar-brand-sub">Ventures</span>
+              </span>
+            </a>
+          </div>
+
           @hasSection('search')
             <div class="dash-topbar-start">
               @yield('search')
@@ -125,6 +145,10 @@
                   data-tip="Account menu"
                 >
                   <span class="dash-topbar-user-avatar" aria-hidden="true">{{ $topbarInitials }}</span>
+                  <span class="dash-topbar-user-meta">
+                    <span class="dash-topbar-user-name">{{ $topbarUser->name }}</span>
+                    <span class="dash-topbar-user-role">{{ $topbarIsAdmin ? 'Admin' : 'Branch' }}</span>
+                  </span>
                   <i class="fa fa-chevron-down dash-topbar-user-chevron" aria-hidden="true"></i>
                 </a>
                 <div class="dropdown-menu dropdown-menu-right dash-topbar-menu" aria-labelledby="navbarDropdownProfile">

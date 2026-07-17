@@ -216,6 +216,50 @@ class ClosureServiceTest extends TestCase
         $this->service->closeMonth($month, $this->admin);
     }
 
+    public function test_resolve_month_key_accepts_common_formats(): void
+    {
+        $this->assertSame('2026-07-01', $this->service->resolveMonthKey('01-07-2026'));
+        $this->assertSame('2026-07-01', $this->service->resolveMonthKey('2026-07-01'));
+        $this->assertSame('2026-07-01', $this->service->resolveMonthKey('2026-07-15'));
+    }
+
+    public function test_cannot_open_when_previous_month_missing_but_other_closures_exist(): void
+    {
+        $current = date('Y-m-01');
+        $older = date('Y-m-01', strtotime('-3 months'));
+
+        DB::table('closures')->insert([
+            'user_id' => (string) $this->admin->id,
+            'month' => $older,
+            'status' => 'closed',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Close');
+
+        $this->service->openMonth($current, $this->admin);
+    }
+
+    public function test_cannot_reopen_already_closed_month(): void
+    {
+        $month = date('Y-m-01');
+
+        DB::table('closures')->insert([
+            'user_id' => (string) $this->admin->id,
+            'month' => $month,
+            'status' => 'closed',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('already closed');
+
+        $this->service->openMonth($month, $this->admin);
+    }
+
     public function test_sales_permit_requires_open_status_for_staff(): void
     {
         $staffId = DB::table('users')->insertGetId([

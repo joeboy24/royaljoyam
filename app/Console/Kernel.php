@@ -15,7 +15,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        // Close yesterday (and any recent open days) after midnight local time.
+        $schedule->command('daily-close:auto')->dailyAt('00:15');
     }
 
     /**
