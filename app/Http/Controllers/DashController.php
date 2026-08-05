@@ -53,7 +53,7 @@ class DashController extends Controller
 
     public function configurations(){
 
-        if(auth()->user()->status != 'Administrator'){
+        if(!auth()->user()->hasAdminAccess()){
             return redirect('/dashboard'); 
         }
 
@@ -70,11 +70,11 @@ class DashController extends Controller
 
     public function dashuser(){
 
-        if(auth()->user()->status != 'Administrator'){
+        if(!auth()->user()->hasAdminAccess()){
             return redirect('/dashboard'); 
         }
 
-        $users = User::all();
+        $users = User::query()->visibleTo(auth()->user())->orderBy('name')->get();
         $cat = Category::all();
         $branches = CompanyBranch::all();
 
@@ -131,7 +131,7 @@ class DashController extends Controller
         $filterStatus = trim((string) $request->query('status', ''));
         $salesDate = session('date_today');
 
-        if(auth()->user()->status == 'Administrator'){
+        if(auth()->user()->hasAdminAccess()){
             $uid_hold = 'no';
             $field = "del";
             $debts = SalesPayment::where('del', 'no')->where('created_at', 'LIKE', '%'.$salesDate.'%')->get();
@@ -229,7 +229,7 @@ class DashController extends Controller
     }
 
     public function stockview(){
-        if(auth()->user()->status != 'Administrator'){
+        if(!auth()->user()->hasAdminAccess()){
             return redirect('/dashboard'); 
         }
         return view('pages.dash.stockview');
@@ -292,7 +292,7 @@ class DashController extends Controller
     }
 
     public function reportprinting(Request $request){
-        if(auth()->user()->status != 'Administrator'){
+        if(!auth()->user()->hasAdminAccess()){
             return redirect('/dashboard'); 
         }
 
@@ -338,7 +338,7 @@ class DashController extends Controller
     }
 
     public function stockreportprinting(){
-        if(auth()->user()->status != 'Administrator'){
+        if(!auth()->user()->hasAdminAccess()){
             return redirect('/dashboard'); 
         }
         // // return url()->previous();
@@ -355,7 +355,7 @@ class DashController extends Controller
 
     public function stockfillprint(){
         // return 1234;
-        if(auth()->user()->status != 'Administrator'){
+        if(!auth()->user()->hasAdminAccess()){
             return redirect('/dashboard'); 
         }
 
@@ -381,7 +381,7 @@ class DashController extends Controller
 
 
     public function returnprint(Request $request){
-        if(auth()->user()->status != 'Administrator'){
+        if(!auth()->user()->hasAdminAccess()){
             return redirect('/dashboard'); 
         }
 
@@ -408,7 +408,7 @@ class DashController extends Controller
     }
 
     public function expensereportprinting(Request $request){
-        if(auth()->user()->status != 'Administrator'){
+        if(!auth()->user()->hasAdminAccess()){
             return redirect('/dashboard'); 
         }
 
@@ -433,7 +433,7 @@ class DashController extends Controller
     }
 
     public function debtsreportprinting(Request $request){
-        if(auth()->user()->status != 'Administrator'){
+        if(!auth()->user()->hasAdminAccess()){
             return redirect('/dashboard'); 
         }
 
@@ -462,7 +462,7 @@ class DashController extends Controller
     public function genstockbal(){
         // return session('genstockbal');
         
-        if(auth()->user()->status != 'Administrator'){
+        if(!auth()->user()->hasAdminAccess()){
             return redirect('/dashboard'); 
         }
         // return url()->previous();
@@ -497,7 +497,7 @@ class DashController extends Controller
 
     public function stockbal(Request $request){
 
-        if(auth()->user()->status != 'Administrator'){
+        if(!auth()->user()->hasAdminAccess()){
             return redirect('/dashboard'); 
         }
         //
@@ -575,7 +575,7 @@ class DashController extends Controller
     }
 
     public function saleshistory(Request $request){
-        if (auth()->user()->status != 'Administrator') {
+        if (!auth()->user()->hasAdminAccess()) {
             return redirect('/dashboard');
         }
 
@@ -588,7 +588,7 @@ class DashController extends Controller
 
         // return 1234567;
 
-        if(auth()->user()->status != 'Administrator'){
+        if(!auth()->user()->hasAdminAccess()){
             return redirect('/dashboard'); 
         }
         $exp_b1 = 0;
@@ -691,7 +691,7 @@ class DashController extends Controller
 
         // return 1234567;
 
-        if(auth()->user()->status != 'Administrator'){
+        if(!auth()->user()->hasAdminAccess()){
             return redirect('/dashboard'); 
         }
 
@@ -731,7 +731,7 @@ class DashController extends Controller
 
     public function returnsreport(Request $request){
 
-        if(auth()->user()->status != 'Administrator'){
+        if(!auth()->user()->hasAdminAccess()){
             return redirect('/dashboard'); 
         }
         
@@ -768,7 +768,7 @@ class DashController extends Controller
 
     public function branchTransfersReport(Request $request)
     {
-        if (auth()->user()->status != 'Administrator') {
+        if (!auth()->user()->hasAdminAccess()) {
             return redirect('/dashboard');
         }
 
@@ -793,7 +793,7 @@ class DashController extends Controller
 
     public function closure(Request $request){
 
-        if(auth()->user()->status != 'Administrator'){
+        if(!auth()->user()->hasAdminAccess()){
             return redirect('/dashboard'); 
         }
 

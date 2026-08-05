@@ -16,14 +16,14 @@ class DailyCloseService
 
     public function scopeKeyFor(User $user): string
     {
-        return $user->status === 'Administrator'
+        return $user->hasAdminAccess()
             ? 'admin'
             : 'bv:'.(string) $user->bv;
     }
 
     public function branchLabelFor(User $user): string
     {
-        if ($user->status === 'Administrator') {
+        if ($user->hasAdminAccess()) {
             return 'All branches';
         }
 
@@ -55,7 +55,7 @@ class DailyCloseService
      */
     public function summarizeForUser(User $user, string $closeDate): array
     {
-        if ($user->status === 'Administrator') {
+        if ($user->hasAdminAccess()) {
             $field = 'del';
             $uidHold = 'no';
             $debts = SalesPayment::where('del', 'no')

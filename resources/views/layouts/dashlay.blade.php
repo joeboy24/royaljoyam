@@ -14,7 +14,7 @@
   <!-- CSS Files -->
   <link href="/dashdir/css/material-dashboard.css?v=2.1.1" rel="stylesheet" />
   <link rel="stylesheet" href="/maindir/css/style.css">
-  <link rel="stylesheet" href="/maindir/css/dash-sidebar.css?v=12">
+  <link rel="stylesheet" href="/maindir/css/dash-sidebar.css?v=13">
   <link rel="stylesheet" href="/maindir/css/dash-page-header.css?v=3">
   <link rel="stylesheet" href="/maindir/css/dash-form.css?v=30">
   <link rel="stylesheet" href="/maindir/css/dash-sales.css?v=19">
@@ -35,10 +35,38 @@
 
         Tip 2: you can also add an image using data-image tag
       -->
+      @php
+        $brandCompany = session('company');
+        $brandName = optional($brandCompany)->name ?: 'Company Assist';
+        $brandWords = preg_split('/\s+/', trim($brandName)) ?: [];
+        $brandTitle = $brandWords[0] ?? 'Company';
+        $brandSub = trim(implode(' ', array_slice($brandWords, 1)));
+        $brandMark = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $brandTitle) ?: 'CA', 0, 2));
+        $brandLogoFile = trim((string) optional($brandCompany)->logo);
+        $brandLogoUrl = null;
+        if ($brandLogoFile !== '' && \Illuminate\Support\Facades\Storage::disk('public')->exists('ss_imgs/'.$brandLogoFile)) {
+            $brandLogoUrl = asset('storage/ss_imgs/'.$brandLogoFile);
+        }
+      @endphp
       <div class="logo dash-sidebar-brand">
-        <a href="/dashboard" class="simple-text logo-normal">
-          <span class="dash-sidebar-brand-title">Royal Joyam</span>
-          <span class="dash-sidebar-brand-sub">Ventures</span>
+        <a href="/dashboard" class="simple-text logo-normal dash-sidebar-brand-link">
+          <span class="dash-sidebar-brand-media">
+            @if ($brandLogoUrl)
+              <img
+                src="{{ $brandLogoUrl }}"
+                alt="{{ $brandName }}"
+                class="dash-sidebar-brand-logo"
+              >
+            @else
+              <span class="dash-sidebar-brand-mark" aria-hidden="true">{{ $brandMark }}</span>
+            @endif
+          </span>
+          <span class="dash-sidebar-brand-copy">
+            <span class="dash-sidebar-brand-title">{{ $brandTitle }}</span>
+            @if ($brandSub !== '')
+              <span class="dash-sidebar-brand-sub">{{ $brandSub }}</span>
+            @endif
+          </span>
         </a>
       </div>
 
@@ -51,8 +79,11 @@
       @php
         $topbarUser = auth()->user();
         $topbarInitials = strtoupper(substr($topbarUser->name, 0, 1));
-        $topbarIsAdmin = $topbarUser->status === 'Administrator';
+        $topbarIsAdmin = $topbarUser->hasAdminAccess();
         $topbarOnDashboard = request()->is('dashboard');
+        $topbarRoleLabel = $topbarUser->isSuperAdmin()
+            ? 'Super Admin'
+            : ($topbarIsAdmin ? 'Admin' : 'Branch');
       @endphp
 
       <nav class="navbar navbar-expand-lg navbar-transparent navbar-absolute fixed-top hideMe dash-topbar">
@@ -69,10 +100,12 @@
             </button>
 
             <a href="/dashboard" class="dash-topbar-brand">
-              <span class="dash-topbar-brand-mark" aria-hidden="true">RJ</span>
+              <span class="dash-topbar-brand-mark" aria-hidden="true">{{ $brandMark }}</span>
               <span class="dash-topbar-brand-copy">
-                <span class="dash-topbar-brand-title">Royal Joyam</span>
-                <span class="dash-topbar-brand-sub">Ventures</span>
+                <span class="dash-topbar-brand-title">{{ $brandTitle }}</span>
+                @if ($brandSub !== '')
+                  <span class="dash-topbar-brand-sub">{{ $brandSub }}</span>
+                @endif
               </span>
             </a>
           </div>
@@ -147,7 +180,7 @@
                   <span class="dash-topbar-user-avatar" aria-hidden="true">{{ $topbarInitials }}</span>
                   <span class="dash-topbar-user-meta">
                     <span class="dash-topbar-user-name">{{ $topbarUser->name }}</span>
-                    <span class="dash-topbar-user-role">{{ $topbarIsAdmin ? 'Admin' : 'Branch' }}</span>
+                    <span class="dash-topbar-user-role">{{ $topbarRoleLabel }}</span>
                   </span>
                   <i class="fa fa-chevron-down dash-topbar-user-chevron" aria-hidden="true"></i>
                 </a>

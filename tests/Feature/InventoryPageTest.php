@@ -28,7 +28,7 @@ class InventoryPageTest extends TestCase
         DB::table('companies')->insert([
             'id' => 1,
             'user_id' => '1',
-            'name' => 'Royal Joyam Ventures',
+            'name' => 'Test Company Ltd',
             'address' => 'Test Address',
             'contact' => '0000000000',
             'logo' => 'logo.png',
@@ -507,10 +507,190 @@ class InventoryPageTest extends TestCase
 
         $response->assertOk();
         $response->assertHeader('content-type', 'text/csv; charset=UTF-8');
+        $this->assertStringContainsString('inventory-', $response->headers->get('content-disposition'));
+        $this->assertStringNotContainsString('inventory-template-', $response->headers->get('content-disposition'));
         $content = $response->streamedContent();
         $this->assertStringContainsString('CSV Alpha', $content);
         $this->assertStringNotContainsString('CSV Beta', $content);
         $this->assertStringContainsString('Stock Status', $content);
+        $this->assertStringContainsString('Item No', $content);
+    }
+
+    public function test_empty_inventory_export_downloads_upload_template(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/items/export');
+
+        $response->assertOk();
+        $response->assertHeader(
+            'content-type',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        );
+        $this->assertStringContainsString('inventory-template-', $response->headers->get('content-disposition'));
+        $this->assertStringContainsString('.xlsx', $response->headers->get('content-disposition'));
+
+        $temp = tempnam(sys_get_temp_dir(), 'invtpl');
+        file_put_contents($temp, $response->streamedContent());
+
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($temp);
+        @unlink($temp);
+
+        $sheet = $spreadsheet->getSheetByName('Inventory');
+        $this->assertNotNull($sheet);
+        $this->assertSame('Name', $sheet->getCell('A1')->getValue());
+        $this->assertSame('Description', $sheet->getCell('B1')->getValue());
+        $this->assertSame('Category', $sheet->getCell('C1')->getValue());
+        $this->assertSame('General', $sheet->getCell('C2')->getValue());
+        $this->assertSame(
+            \PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST,
+            $sheet->getCell('C2')->getDataValidation()->getType()
+        );
+
+        $categories = $spreadsheet->getSheetByName('Categories');
+        $this->assertNotNull($categories);
+        $this->assertSame('General', $categories->getCell('A1')->getValue());
+        $spreadsheet->disconnectWorksheets();
+    }
+
+    public function test_empty_inventory_export_redirects_when_no_categories(): void
+    {
+        \Illuminate\Support\Facades\DB::table('categories')->delete();
+
+        $response = $this->actingAs($this->admin)->get('/items/export');
+
+        $response->assertRedirect('/dashuser?add_category=1#registry-categories');
+        $response->assertSessionHas('error');
+        $this->assertStringContainsString('category', session('error'));
+    }
+
+    public function test_inventory_page_shows_template_tip_when_empty(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/items');
+
+        $response->assertOk();
+        $response->assertSee('Download Excel template', false);
+    }
+
+    public function test_admin_can_import_inventory_csv(): void
+    {
+        $csv = implode("\n", [
+            'Name,Description,Category,Brand,Barcode,General Qty,Base Price (Gh),Branch A Qty,Branch B Qty,Branch C Qty',
+            'Imported Widget,A sturdy widget,General,Acme,BC-IMP-1,12,15.50,5,4,3',
+            'Imported Gadget,A useful gadget,General,Acme,BC-IMP-2,8,9.00,2,3,3',
+        ]);
+
+        $file = \Illuminate\Http\UploadedFile::fake()->createWithContent('inventory.csv', $csv);
+
+        $response = $this->actingAs($this->admin)->post('/items/import', [
+            'csv' => $file,
+        ]);
+
+        $response->assertRedirect('/items');
+        $response->assertSessionHas('success');
+        $this->assertDatabaseHas('items', [
+            'name' => 'Imported Widget',
+            'desc' => 'A sturdy widget',
+            'cat' => 'General',
+            'qty' => '12',
+            'price' => '15.50',
+            'q1' => '5',
+            'q2' => '4',
+            'q3' => '3',
+            'del' => 'no',
+        ]);
+        $this->assertDatabaseHas('items', [
+            'name' => 'Imported Gadget',
+            'qty' => '8',
+        ]);
+    }
+
+    public function test_inventory_csv_import_skips_duplicate_and_invalid_rows(): void
+    {
+        $this->createItem(['name' => 'Existing Item']);
+
+        $csv = implode("\n", [
+            'Name,Description,Category,Brand,Barcode,General Qty,Base Price (Gh),Branch A Qty,Branch B Qty,Branch C Qty',
+            'Existing Item,Already here,General,Acme,BC1,5,10.00,1,1,1',
+            ',Missing name,General,Acme,BC2,5,10.00,1,1,1',
+            'Bad Qty Item,Has bad qty,General,Acme,BC3,abc,10.00,1,1,1',
+            'Over Branch Item,Too many branch qty,General,Acme,BC4,5,10.00,4,4,0',
+            'Good New Item,Valid row,General,Acme,BC5,6,11.00,2,2,2',
+        ]);
+
+        $file = \Illuminate\Http\UploadedFile::fake()->createWithContent('inventory.csv', $csv);
+
+        $response = $this->actingAs($this->admin)->post('/items/import', [
+            'csv' => $file,
+        ]);
+
+        $response->assertRedirect('/items');
+        $response->assertSessionHas('success');
+        $this->assertDatabaseHas('items', ['name' => 'Good New Item', 'qty' => '6']);
+        $this->assertDatabaseMissing('items', ['name' => 'Bad Qty Item']);
+        $this->assertDatabaseMissing('items', ['name' => 'Over Branch Item']);
+        $this->assertEquals(1, Item::where('name', 'Existing Item')->where('del', 'no')->count());
+    }
+
+    public function test_inventory_csv_import_requires_file(): void
+    {
+        $response = $this->actingAs($this->admin)->from('/items')->post('/items/import', []);
+
+        $response->assertRedirect('/items');
+        $response->assertSessionHasErrors('csv');
+    }
+
+    public function test_inventory_import_redirects_when_no_categories(): void
+    {
+        \Illuminate\Support\Facades\DB::table('categories')->delete();
+
+        $csv = "Name,Description,Category,Brand,Barcode,General Qty,Base Price (Gh)\nX,Y,General,B,C,1,1.00\n";
+        $file = \Illuminate\Http\UploadedFile::fake()->createWithContent('inventory.csv', $csv);
+
+        $response = $this->actingAs($this->admin)->post('/items/import', [
+            'csv' => $file,
+        ]);
+
+        $response->assertRedirect('/dashuser?add_category=1#registry-categories');
+        $this->assertDatabaseMissing('items', ['name' => 'X']);
+    }
+
+    public function test_inventory_csv_import_rejects_unknown_category(): void
+    {
+        $csv = implode("\n", [
+            'Name,Description,Category,Brand,Barcode,General Qty,Base Price (Gh),Branch A Qty,Branch B Qty,Branch C Qty',
+            'Mystery Item,No such category,Unregistered,Acme,BC9,5,10.00,1,1,1',
+        ]);
+        $file = \Illuminate\Http\UploadedFile::fake()->createWithContent('inventory.csv', $csv);
+
+        $response = $this->actingAs($this->admin)->post('/items/import', [
+            'csv' => $file,
+        ]);
+
+        $response->assertRedirect('/items');
+        $response->assertSessionHas('error');
+        $this->assertDatabaseMissing('items', ['name' => 'Mystery Item']);
+    }
+
+    public function test_non_admin_cannot_import_inventory_csv(): void
+    {
+        $user = $this->createBranchUser('branch.user', 'branch@test.example', 'Branch A', '1');
+        $csv = "Name,Description,Category,Brand,Barcode,General Qty,Base Price (Gh)\nX,Y,General,B,C,1,1.00\n";
+        $file = \Illuminate\Http\UploadedFile::fake()->createWithContent('inventory.csv', $csv);
+
+        $response = $this->actingAs($user)->post('/items/import', [
+            'csv' => $file,
+        ]);
+
+        $response->assertRedirect('/dashboard');
+        $this->assertDatabaseMissing('items', ['name' => 'X']);
+    }
+
+    public function test_inventory_page_shows_upload_csv_action(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/items');
+
+        $response->assertOk();
+        $response->assertSee('/items/import', false);
+        $response->assertSee('data-tip="Upload CSV / Excel"', false);
     }
 
     public function test_admin_can_open_inventory_print_view(): void
@@ -635,6 +815,8 @@ class InventoryPageTest extends TestCase
 
     public function test_inventory_page_shows_print_and_export_actions(): void
     {
+        $this->createItem(['name' => 'Export Action Item']);
+
         $response = $this->actingAs($this->admin)->get('/items');
 
         $response->assertOk();

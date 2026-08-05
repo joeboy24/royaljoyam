@@ -3,25 +3,56 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Royal Joyam Ventures · Sign in</title>
+  @php
+    $hasCompany = isset($company) && $company && filled($company->name);
+    $brandName = $hasCompany ? trim((string) $company->name) : 'Company Assist';
+    $brandWords = preg_split('/\s+/', $brandName) ?: [];
+    $brandMark = $hasCompany
+      ? strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $brandWords[0] ?? 'CA') ?: 'CA', 0, 2))
+      : 'CA';
+  @endphp
+  <title>{{ $brandName }} · Sign in</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-  <link rel="stylesheet" href="/maindir/css/login.css?v=3">
+  <link rel="stylesheet" href="/maindir/css/login.css?v=5">
+  <link rel="stylesheet" href="/maindir/css/setup.css?v=2">
 </head>
 <body class="login-page">
   <div class="login-backdrop" aria-hidden="true"></div>
 
   <main class="login-shell">
-    <section class="login-brand" aria-label="Royal Joyam Ventures">
+    <section class="login-brand" aria-label="{{ $brandName }}">
       <div class="login-brand-inner">
-        <span class="login-brand-mark">RJV</span>
-        <h1 class="login-brand-title">Royal Joyam Ventures</h1>
-        <p class="login-brand-lead">Manage inventory, sales, and daily branch operations from one secure dashboard.</p>
+        @if (! empty($companyLogoUrl))
+          <img
+            src="{{ $companyLogoUrl }}"
+            alt="{{ $brandName }}"
+            class="login-brand-logo"
+          >
+        @else
+          <span class="login-brand-mark">{{ $brandMark }}</span>
+        @endif
+
+        <h1 class="login-brand-title">{{ $brandName }}</h1>
+        @if ($hasCompany)
+          <p class="login-brand-by">Powered by · PivoApps</p>
+        @else
+          <p class="login-brand-by">by PivoApps</p>
+        @endif
+        <p class="login-brand-lead">
+          @if ($hasCompany)
+            Sign in to manage inventory, sales, expenses, and branch operations.
+          @else
+            One place to run inventory, sales, expenses, and multi-branch operations.
+          @endif
+        </p>
 
         <ul class="login-brand-points">
-          <li><i class="fa fa-check-circle" aria-hidden="true"></i> Real-time stock and sales tracking</li>
-          <li><i class="fa fa-check-circle" aria-hidden="true"></i> Branch-aware pricing and fulfillment</li>
-          <li><i class="fa fa-check-circle" aria-hidden="true"></i> Reports, waybills, and month-end closure</li>
+          <li><i class="fa fa-check-circle" aria-hidden="true"></i> Inventory tracking with branch stock</li>
+          <li><i class="fa fa-check-circle" aria-hidden="true"></i> Sales, debts, and daily close</li>
+          <li><i class="fa fa-check-circle" aria-hidden="true"></i> Expenses and reporting</li>
+          <li><i class="fa fa-check-circle" aria-hidden="true"></i> Waybills and distribution</li>
+          <li><i class="fa fa-check-circle" aria-hidden="true"></i> Month-end closure and staff registry</li>
         </ul>
       </div>
     </section>
@@ -31,23 +62,33 @@
         <header class="login-panel-header">
           <span class="login-panel-kicker">Welcome back</span>
           <h2 class="login-panel-title">Sign in to your account</h2>
-          <p class="login-panel-subtitle">Use your staff email and password to continue.</p>
+          <p class="login-panel-subtitle">Use your staff email or username and password to continue.</p>
         </header>
+
+        @if (session('info'))
+          <div class="setup-flash setup-flash-info" role="status">{{ session('info') }}</div>
+        @endif
+        @if (session('success'))
+          <div class="setup-flash setup-flash-success" role="status">{{ session('success') }}</div>
+        @endif
+        @if (session('error'))
+          <div class="setup-flash setup-flash-error" role="alert">{{ session('error') }}</div>
+        @endif
 
         <form class="login-form" method="POST" action="{{ route('login') }}" novalidate>
           @csrf
 
           <label class="login-field">
-            <span class="login-label">Email address</span>
+            <span class="login-label">Email or username</span>
             <span class="login-input-wrap">
               <i class="fa fa-envelope-o login-input-icon" aria-hidden="true"></i>
               <input
                 id="email"
                 class="login-input{{ $errors->has('email') ? ' is-invalid' : '' }}"
-                type="email"
+                type="text"
                 name="email"
                 value="{{ old('email') }}"
-                placeholder="you@company.com"
+                placeholder="you@company.com or username"
                 autocomplete="username"
                 required
                 autofocus
@@ -95,7 +136,13 @@
         </form>
 
         <footer class="login-panel-footer">
-          <p>Need access? Contact your administrator for login credentials.</p>
+          <p>
+            @if (Route::has('setup.show'))
+              New here? <a href="{{ route('setup.show') }}">Get started</a>
+            @else
+              Need access? Contact your administrator for login credentials.
+            @endif
+          </p>
         </footer>
       </div>
     </section>

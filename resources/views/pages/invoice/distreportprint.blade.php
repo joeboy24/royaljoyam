@@ -28,14 +28,7 @@
     <section id="invoice">
         <div class="invoiceContent">
 
-            <div class="invHeaderTop">
-                <h1>ROYAL JOYAM</h1>
-                <h4>Ventures</h4>
-                @if ($company)
-                  <P class="locInfo">{{ $company->address }}</P>
-                  <P class="contactInfo">{{ $company->contact }}, {{ $company->email }}</P>
-                @endif
-            </div>
+            <x-report-print-header :company="$company ?? null" />
 
             <div style="height: 50px">
             </div>

@@ -20,12 +20,7 @@
     <section id="invoice">
         <div class="invoiceContent">
 
-            <div class="invHeaderTop">
-                <h1>ROYAL JOYAM</h1>
-                <h4>Ventures</h4>
-                <P class="locInfo">{{session('company')->address}}</P>
-                <P class="contactInfo">{{session('company')->contact}}, {{session('company')->email}}</P>
-            </div>
+            <x-report-print-header />
 
             <div style="height: 50px">
             </div>
@@ -80,7 +75,6 @@
                             <td class="col-sm-3">{{number_format($qty)}}</td>
                             <td class="col-sm-2">{{number_format($btot, 2)}}</td>
                             <td class="col-sm-2">{{number_format($bprof, 2)}}</td>
-                            {{-- <td class="col-sm-3">Royal Joham V... {{session('company')->contact}}</td> --}}
                         </tr>
                         <tr>
                             <td class="col-sm-2 pr">Qty. Available :</td>

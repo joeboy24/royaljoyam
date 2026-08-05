@@ -11,12 +11,7 @@
 <body style="background: #eee">
     <section id="invoice">
         <div class="invoiceContent">
-            <div class="invHeaderTop">
-                <h1>ROYAL JOYAM</h1>
-                <h4>Ventures</h4>
-                <P class="locInfo">{{ session('company')->address }}</P>
-                <P class="contactInfo">{{ session('company')->contact }}, {{ session('company')->email }}</P>
-            </div>
+            <x-report-print-header />
 
             <div style="height: 50px"></div>
 

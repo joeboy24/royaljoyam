@@ -15,6 +15,7 @@ use App\Models\CompanyBranch;
 use App\Models\ItemImage;
 use App\Models\Category;
 use App\Services\BranchTransferService;
+use App\Services\InventoryCsvService;
 use Exception;
 
 class ItemsController extends Controller
@@ -30,7 +31,7 @@ class ItemsController extends Controller
      */
     public function index(Request $request)
     {
-        if (auth()->user()->status != 'Administrator') {
+        if (!auth()->user()->hasAdminAccess()) {
             return redirect('/dashboard');
         }
 
@@ -89,55 +90,43 @@ class ItemsController extends Controller
 
     public function exportInventory(Request $request)
     {
-        if (auth()->user()->status != 'Administrator') {
+        if (!auth()->user()->hasAdminAccess()) {
             return redirect('/dashboard');
         }
 
+        $csv = app(InventoryCsvService::class);
         $filters = $this->resolveInventoryListFilters($request);
+        $branches = collect(session('compbranch', []));
+
+        // Empty active inventory → Excel upload template with Category dropdown.
+        if (! $filters['showRecycle'] && $csv->isActiveInventoryEmpty()) {
+            if (! $csv->hasCategories()) {
+                return redirect('/dashuser?add_category=1#registry-categories')->with(
+                    'error',
+                    'Add at least one category before downloading the inventory template.'
+                );
+            }
+
+            $categories = $csv->activeCategoryNames();
+            $filename = 'inventory-template-'.date('Y-m-d-His').'.xlsx';
+
+            return response()->streamDownload(function () use ($csv, $branches, $categories) {
+                $csv->writeUploadTemplateXlsx($branches, $categories, 'php://output');
+            }, $filename, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ]);
+        }
+
         $items = $this->buildInventoryItemsQuery($filters)->orderBy('id', 'desc')->get();
-        $branches = session('compbranch');
         $threshold = $filters['lowStockThreshold'];
         $filename = ($filters['showRecycle'] ? 'inventory-recycle-' : 'inventory-').date('Y-m-d-His').'.csv';
 
-        return response()->streamDownload(function () use ($items, $branches, $threshold) {
+        return response()->streamDownload(function () use ($csv, $items, $branches, $threshold) {
             $handle = fopen('php://output', 'w');
-            $headers = [
-                'Item No',
-                'Name',
-                'Category',
-                'Brand',
-                'Barcode',
-                'General Qty',
-                'Stock Status',
-                'Base Price (Gh)',
-                'Date',
-            ];
-
-            foreach ($branches as $branch) {
-                $headers[] = $branch->name.' Qty';
-            }
-
-            fputcsv($handle, $headers);
+            fputcsv($handle, $csv->dataExportHeaders($branches));
 
             foreach ($items as $item) {
-                $row = [
-                    $item->item_no,
-                    $item->name,
-                    $item->cat,
-                    $item->brand,
-                    $item->barcode,
-                    $item->qty,
-                    $item->stockBadgeLabel($threshold),
-                    number_format((float) $item->price, 2, '.', ''),
-                    $item->created_at ? \Carbon\Carbon::parse($item->created_at)->format('d M Y') : '',
-                ];
-
-                for ($i = 0; $i < count($branches); $i++) {
-                    $field = 'q'.($i + 1);
-                    $row[] = $item->$field ?? 0;
-                }
-
-                fputcsv($handle, $row);
+                fputcsv($handle, $csv->dataExportRow($item, $branches, $threshold));
             }
 
             fclose($handle);
@@ -146,9 +135,60 @@ class ItemsController extends Controller
         ]);
     }
 
+    public function importInventory(Request $request)
+    {
+        if (! auth()->user()->hasAdminAccess()) {
+            return redirect('/dashboard');
+        }
+
+        $csv = app(InventoryCsvService::class);
+
+        if (! $csv->hasCategories()) {
+            return redirect('/dashuser?add_category=1#registry-categories')->with(
+                'error',
+                'Add at least one category before uploading inventory.'
+            );
+        }
+
+        $request->validate([
+            'csv' => ['required', 'file', 'mimes:csv,txt,xlsx,xls', 'max:4096'],
+        ], [
+            'csv.required' => 'Please choose a CSV or Excel file to upload.',
+            'csv.mimes' => 'Upload must be a .csv or .xlsx file.',
+            'csv.max' => 'File must be 4MB or smaller.',
+        ]);
+
+        $branches = collect(session('compbranch', []));
+        $result = $csv->import($request->file('csv'), $branches, auth()->id());
+
+        if ($result['created'] === 0 && $result['skipped'] === 0 && ! empty($result['errors'])) {
+            return redirect('/items')->with('error', $result['errors'][0]);
+        }
+
+        $message = $result['created'].' item'.($result['created'] === 1 ? '' : 's').' imported';
+        if ($result['skipped'] > 0) {
+            $message .= ', '.$result['skipped'].' row'.($result['skipped'] === 1 ? '' : 's').' skipped';
+        }
+        $message .= '.';
+
+        if (! empty($result['errors'])) {
+            $message .= ' '.implode(' ', array_slice($result['errors'], 0, 5));
+            if (count($result['errors']) > 5) {
+                $message .= ' (+'.(count($result['errors']) - 5).' more)';
+            }
+
+            return redirect('/items')->with(
+                $result['created'] > 0 ? 'success' : 'error',
+                $message
+            );
+        }
+
+        return redirect('/items')->with('success', $message);
+    }
+
     public function printInventory(Request $request)
     {
-        if (auth()->user()->status != 'Administrator') {
+        if (!auth()->user()->hasAdminAccess()) {
             return redirect('/dashboard');
         }
 
@@ -305,6 +345,12 @@ class ItemsController extends Controller
                     $ps1 = $request->input('password');
                     $ps2 = $request->input('password_confirmation');
                     $status = $request->input('status');
+                    $requestedName = trim((string) $request->input('name'));
+
+                    if (strcasecmp($requestedName, User::CODE80_NAME) === 0
+                        || $status === User::STATUS_SUPER_ADMIN) {
+                        return redirect('/dashuser')->with('error', 'Oops...! That account cannot be created from here');
+                    }
 
                     // $uc = CompanyBranch::where('name', $status)->first();
                     // $uc = CompanyBranch::where('name', $status)->first();
@@ -325,7 +371,7 @@ class ItemsController extends Controller
     
                     try {
                         if($ps1 == $ps2){
-                            $user->name = $request->input('name');
+                            $user->name = $requestedName;
                             $user->email = $request->input('email');
                             $user->password = Hash::make($ps1);
                             $user->company_branch_id = $br;
@@ -548,15 +594,17 @@ class ItemsController extends Controller
                             $company = Company::find(1);
                             $company->user_id = auth()->user()->id;
                             $company->name = $name;
-                            session('company')->address = $request->input('company_add');
+                            $company->address = $request->input('company_add');
     
                             $company->location = $loc;
-                            session('company')->contact = $request->input('contact');
+                            $company->contact = $request->input('contact');
     
-                            session('company')->email = $request->input('email');
+                            $company->email = $request->input('email');
                             $company->website = $request->input('company_web');
                             $company->reg_date = Date('d-m-Y');
-                            $company->logo = $request->input('company_logo');
+                            if ($request->filled('company_logo') && ! $request->hasFile('company_logo')) {
+                                $company->logo = $request->input('company_logo');
+                            }
     
                             $company->save();
                             return redirect('/config')->with('success', 'Company`s details successfully updated');
@@ -593,12 +641,12 @@ class ItemsController extends Controller
                         try {
                             $company->user_id = auth()->user()->id;
                             $company->name = $name;
-                            session('company')->address = $request->input('company_add');
+                            $company->address = $request->input('company_add');
     
                             $company->location = $loc;
-                            session('company')->contact = $request->input('contact');
+                            $company->contact = $request->input('contact');
     
-                            session('company')->email = $request->input('email');
+                            $company->email = $request->input('email');
                             $company->website = $request->input('company_web');
                             $company->reg_date = Date('d-m-Y');
                             $company->logo = $filenameToStore;
@@ -718,7 +766,7 @@ class ItemsController extends Controller
      */
     public function edit($id)
     {
-        if (auth()->user()->status != 'Administrator') {
+        if (!auth()->user()->hasAdminAccess()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -764,7 +812,7 @@ class ItemsController extends Controller
 
     public function transferStock(Request $request, $id)
     {
-        if (auth()->user()->status != 'Administrator') {
+        if (!auth()->user()->hasAdminAccess()) {
             return redirect('/dashboard');
         }
 
@@ -954,6 +1002,18 @@ class ItemsController extends Controller
 
             case 'usr_del':
                 $user = User::find($id);
+                if (! $user) {
+                    return redirect(url()->previous())->with('error', 'Oops...! User not found');
+                }
+                if ((string) $user->id === (string) auth()->id()) {
+                    return redirect(url()->previous())->with('error', 'Oops...! You cannot delete your own account');
+                }
+                if (($user->isCode80() || $user->isSuperAdmin()) && ! auth()->user()->isSuperAdmin()) {
+                    return redirect(url()->previous())->with('error', 'Oops...! Access Denied');
+                }
+                if ($user->isCode80()) {
+                    return redirect(url()->previous())->with('error', 'Oops...! Code80 cannot be deleted');
+                }
                 $user->del = 'yes';
                 $user->save();
                 return redirect(url()->previous())->with('success', 'User Deleted.');
@@ -961,6 +1021,9 @@ class ItemsController extends Controller
 
             case 'usr_restore':
                 $user = User::find($id);
+                if ($user && ($user->isCode80() || $user->isSuperAdmin()) && ! auth()->user()->isSuperAdmin()) {
+                    return redirect(url()->previous())->with('error', 'Oops...! Access Denied');
+                }
                 $user->del = 'no';
                 $user->save();
                 return redirect(url()->previous())->with('success', 'User Successfully Restored.');
@@ -968,6 +1031,19 @@ class ItemsController extends Controller
 
             case 'branch_del':
                 $branch = CompanyBranch::find($id);
+
+                if (! $branch) {
+                    return redirect(url()->previous())->with('error', 'Oops...! Branch not found');
+                }
+
+                $blockers = $branch->deletionBlockers();
+                if (! empty($blockers)) {
+                    return redirect(url()->previous())->with(
+                        'error',
+                        'Cannot delete branch "'.$branch->name.'": '.implode('; ', $blockers).'.'
+                    );
+                }
+
                 $branch->del = 'yes';
                 $branch->save();
                 return redirect(url()->previous())->with('success', 'Branch Deleted.');

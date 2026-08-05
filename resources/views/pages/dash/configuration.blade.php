@@ -144,7 +144,7 @@
 
                   <label class="inventory-edit-field">
                     <span class="inventory-edit-label">Branch name</span>
-                    <input type="text" class="inventory-edit-input" name="name" placeholder="e.g. RJV Adum Branch" required>
+                    <input type="text" class="inventory-edit-input" name="name" placeholder="e.g. Main Branch" required>
                   </label>
 
                   <label class="inventory-edit-field">
@@ -188,6 +188,7 @@
                     </thead>
                     <tbody>
                       @foreach ($activeBranches as $branch)
+                        @php $branchBlockers = $branch->deletionBlockers(); @endphp
                         <tr @class(['rowColour' => $loop->even])>
                           <td>
                             <span class="dash-config-branch-name">{{ $branch->name }}</span>
@@ -198,20 +199,34 @@
                           <td>{{ $branch->loc }}</td>
                           <td>{{ $branch->contact }}</td>
                           <td class="ryt">
-                            <form action="{{ action('ItemsController@destroy', $branch->id) }}" method="POST" class="dash-config-delete-form">
-                              @csrf
-                              @method('DELETE')
-                              <button
-                                type="submit"
-                                name="del_action"
-                                value="branch_del"
-                                class="inventory-action-btn inventory-action-btn-icon dash-config-delete-btn dash-tip"
-                                data-tip="Delete branch"
-                                onclick="return confirm('Are you sure you want to delete this branch?');"
-                              >
-                                <i class="fa fa-trash"></i>
-                              </button>
-                            </form>
+                            @if (! empty($branchBlockers))
+                              <span class="dash-tip" data-tip="Cannot delete: {{ implode('; ', $branchBlockers) }}">
+                                <button
+                                  type="button"
+                                  class="inventory-action-btn inventory-action-btn-icon dash-config-delete-btn is-disabled"
+                                  disabled
+                                  aria-disabled="true"
+                                  aria-label="Cannot delete branch"
+                                >
+                                  <i class="fa fa-trash"></i>
+                                </button>
+                              </span>
+                            @else
+                              <form action="{{ action('ItemsController@destroy', $branch->id) }}" method="POST" class="dash-config-delete-form">
+                                @csrf
+                                @method('DELETE')
+                                <button
+                                  type="submit"
+                                  name="del_action"
+                                  value="branch_del"
+                                  class="inventory-action-btn inventory-action-btn-icon dash-config-delete-btn dash-tip"
+                                  data-tip="Delete branch"
+                                  onclick="return confirm('Are you sure you want to delete this branch?');"
+                                >
+                                  <i class="fa fa-trash"></i>
+                                </button>
+                              </form>
+                            @endif
                           </td>
                         </tr>
                       @endforeach

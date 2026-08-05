@@ -65,7 +65,7 @@ class ClosureService
      */
     public function salesPermitFor(User $user): int
     {
-        if ($user->status === 'Administrator') {
+        if ($user->hasAdminAccess()) {
             return 1;
         }
 

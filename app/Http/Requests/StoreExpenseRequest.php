@@ -20,7 +20,7 @@ class StoreExpenseRequest extends FormRequest
             'expense_cost' => ['required', 'numeric', 'min:0'],
         ];
 
-        if ($this->user()->status === 'Administrator') {
+        if ($this->user()->hasAdminAccess()) {
             $rules['branch'] = [
                 'required',
                 Rule::exists('company_branches', 'id')->where('del', 'no'),
@@ -42,7 +42,7 @@ class StoreExpenseRequest extends FormRequest
 
     public function branchId(): string
     {
-        if ($this->user()->status === 'Administrator') {
+        if ($this->user()->hasAdminAccess()) {
             return (string) $this->input('branch');
         }
 

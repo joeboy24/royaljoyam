@@ -460,7 +460,7 @@ class WaybillPageTest extends TestCase
         DB::table('companies')->insert([
             'id' => 1,
             'user_id' => (string) $this->admin->id,
-            'name' => 'Royal Joyam',
+            'name' => 'Test Company',
             'address' => 'Test Address',
             'contact' => '0244000000',
             'email' => 'test@example.com',
@@ -685,7 +685,7 @@ class WaybillPageTest extends TestCase
         DB::table('companies')->insert([
             'id' => 1,
             'user_id' => (string) $this->admin->id,
-            'name' => 'Royal Joyam',
+            'name' => 'Test Company',
             'address' => 'Test Address',
             'contact' => '0244000000',
             'email' => 'test@example.com',

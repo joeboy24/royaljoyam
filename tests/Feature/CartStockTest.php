@@ -24,10 +24,21 @@ class CartStockTest extends TestCase
         DB::table('companies')->insert([
             'id' => 1,
             'user_id' => '1',
-            'name' => 'Royal Joyam Ventures',
+            'name' => 'Test Company Ltd',
             'address' => 'Test Address',
             'contact' => '0000000000',
             'logo' => 'logo.png',
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('company_branches')->insert([
+            'user_id' => '1',
+            'name' => 'Branch A',
+            'loc' => 'Loc 1',
+            'contact' => '0000000001',
+            'tag' => '1',
             'del' => 'no',
             'created_at' => now(),
             'updated_at' => now(),

@@ -69,6 +69,11 @@
                             <td>{{ $user->email }}</td>
                             <td>{{ $user->status }}</td>
                             <td class="ryt">
+                              @if ($user->isCode80())
+                                <span class="waybill-table-meta">Protected</span>
+                              @elseif ((string) $user->id === (string) auth()->id())
+                                <span class="waybill-table-meta">You</span>
+                              @else
                               <form action="{{ action('ItemsController@destroy', $user->id) }}" method="POST" class="dash-config-delete-form">
                                 @csrf
                                 @method('DELETE')
@@ -96,6 +101,7 @@
                                   </button>
                                 @endif
                               </form>
+                              @endif
                             </td>
                           </tr>
                         @endif
@@ -121,7 +127,7 @@
 
         <div class="col-lg-5">
           <div class="card dash-config-side-card">
-            <div class="card-body dash-form-body dash-config-side-body">
+            <div class="card-body dash-form-body dash-config-side-body" id="registry-categories">
               <div class="dist-section-toolbar">
                 <h6 class="inventory-edit-section-title"><i class="fa fa-folder-open"></i> Registered categories</h6>
                 <span class="dash-config-branch-count">{{ count($category) }}</span>
@@ -304,5 +310,17 @@
       </div>
     </div>
   </div>
+
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('add_category') !== '1') {
+        return;
+      }
+      if (window.jQuery && typeof jQuery.fn.modal === 'function') {
+        jQuery('#catModal').modal('show');
+      }
+    })();
+  </script>
 
 @endsection

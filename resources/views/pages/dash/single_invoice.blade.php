@@ -20,12 +20,7 @@
     <section id="invoice">
         <div class="invoiceContent">
 
-            <div class="invHeaderTop">
-                <h1>ROYAL JOYAM</h1>
-                <h4>Ventures</h4>
-                <P class="locInfo">{{session('company')->address}}</P>
-                <P class="contactInfo">{{session('company')->contact}}, {{session('company')->email}}</P>
-            </div>
+            <x-report-print-header />
 
             <div style="height: 50px">
             </div>
@@ -72,7 +67,7 @@
                             <td class="col-sm-3">Sales Person :</td>
                             <td class="col-sm-3">{{$user->name}}</td>
                             <td class="col-sm-2">Received By :</td>
-                            <td class="col-sm-4">Royal Joham V... {{session('company')->contact}}</td>
+                            <td class="col-sm-4">{{ optional(session('company'))->name }} {{ optional(session('company'))->contact }}</td>
                         </tr>
                         <tr>
                             <td class="col-sm-3">Payment Method :</td>

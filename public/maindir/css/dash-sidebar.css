@@ -1,4 +1,4 @@
-/* Royal Joyam dashboard sidebar enhancements */
+/* Dashboard sidebar enhancements */
 
 html {
   --dash-header-from: #00acc1;
@@ -142,13 +142,55 @@ html[data-sidebar-theme="mint"] {
   display: none;
 }
 
-.sidebar .logo.dash-sidebar-brand .simple-text {
-  display: block;
-  text-align: center;
+.sidebar .logo.dash-sidebar-brand .simple-text,
+.sidebar .logo.dash-sidebar-brand .dash-sidebar-brand-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
   line-height: 1.25;
   padding: 0;
   text-transform: none;
   font-weight: 600;
+  text-decoration: none !important;
+}
+
+.dash-sidebar-brand-media {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.dash-sidebar-brand-logo {
+  width: 38px;
+  height: 38px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.dash-sidebar-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(0, 172, 193, 0.18);
+  border: 1px solid rgba(0, 172, 193, 0.35);
+  color: #7ee7f2;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.dash-sidebar-brand-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .dash-sidebar-brand-title {
@@ -156,6 +198,9 @@ html[data-sidebar-theme="mint"] {
   font-size: 1.05rem;
   letter-spacing: 0.04em;
   color: #f5f7fa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dash-sidebar-brand-sub {
@@ -166,6 +211,9 @@ html[data-sidebar-theme="mint"] {
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: #00acc1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sidebar .sidebar-wrapper.dash-sidebar {

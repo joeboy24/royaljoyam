@@ -30,6 +30,15 @@ Route::get('/test_mode', function () {
 
 Route::get('/', 'PagesController@index');
 Route::get('/code80', 'Code80Controller@code80');
+
+Route::get('/setup', 'SetupController@show')->name('setup.show');
+Route::get('/setup/signin', 'SetupController@signin')->name('setup.signin');
+Route::post('/setup/migrate', 'SetupController@migrate')->name('setup.migrate');
+Route::post('/setup/company', 'SetupController@storeCompany')->name('setup.company');
+Route::post('/setup/branch', 'SetupController@storeBranch')->name('setup.branch');
+Route::post('/setup/admin', 'SetupController@storeAdmin')->name('setup.admin');
+Route::post('/setup/skip-admin', 'SetupController@skipAdmin')->name('setup.skip-admin');
+
 Route::get('/expenses', 'ExpensesController@index')->name('expenses.index');
 Route::post('/expenses', 'ExpensesController@store')->name('expenses.store');
 Route::delete('/expenses/{expense}', 'ExpensesController@destroy')->name('expenses.destroy');
@@ -56,6 +65,7 @@ Route::get('/dashboard', 'DashController@dashboard');
 Route::get('/config', 'DashController@configurations');
 Route::get('/dashuser', 'DashController@dashuser');
 Route::get('/items/export', 'ItemsController@exportInventory');
+Route::post('/items/import', 'ItemsController@importInventory')->middleware('throttle:10,1');
 Route::get('/items/print', 'ItemsController@printInventory');
 Route::post('/items/{id}/transfer', 'ItemsController@transferStock');
 Route::resource('/items', 'ItemsController');
@@ -82,7 +92,7 @@ Route::get('/debtsreportprinting', 'DashController@debtsreportprinting');
 
 
 
-Auth::routes();
+Auth::routes(['register' => false]);
 
 Route::redirect('/home', '/dashboard')->name('home');
 Route::get('/orders', 'DashController@orders');
