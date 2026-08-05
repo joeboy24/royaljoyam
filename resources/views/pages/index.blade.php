@@ -8,8 +8,7 @@
 				<div class="container">
 					<div class="banner_content text-center">
 						<h6>PivoApps</h6>
-						<h2>Royal Joyam</h2>
-						<h4>VENTURES</h4>
+						<h2>Company Manager</h2>
 						<p>Access all of our products from<br> Any platform of your choice to make work more easier.</p>
 						<a href="" data-toggle="modal" data-target="" class="btn theme_btn button_hover">Register With Us</a>
 					</div>

@@ -32,6 +32,7 @@ Route::get('/', 'PagesController@index');
 Route::get('/code80', 'Code80Controller@code80');
 
 Route::get('/setup', 'SetupController@show')->name('setup.show');
+Route::get('/setup/signin', 'SetupController@signin')->name('setup.signin');
 Route::post('/setup/migrate', 'SetupController@migrate')->name('setup.migrate');
 Route::post('/setup/company', 'SetupController@storeCompany')->name('setup.company');
 Route::post('/setup/branch', 'SetupController@storeBranch')->name('setup.branch');

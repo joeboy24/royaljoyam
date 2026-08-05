@@ -76,7 +76,9 @@ class SetupWizardTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Company details');
-        $response->assertSee('Save company');
+        $response->assertSee('Continue');
+        $response->assertSee('Company Manager');
+        $response->assertSee('by PivoApps');
     }
 
     public function test_can_save_company_branch_and_admin_to_complete_setup(): void
@@ -153,5 +155,22 @@ class SetupWizardTest extends TestCase
         $this->post(route('setup.migrate'))->assertRedirect(route('setup.show'));
         $this->assertTrue(Schema::hasTable('users'));
         $this->assertTrue(Schema::hasTable('companies'));
+    }
+
+    public function test_signin_stays_on_setup_when_migrations_are_pending(): void
+    {
+        $this->mock(SetupService::class, function ($mock) {
+            $mock->shouldReceive('isComplete')->andReturn(false);
+            $mock->shouldReceive('migrationsPending')->andReturn(true);
+            $mock->shouldReceive('isAppReady')->andReturn(false);
+            $mock->shouldReceive('currentStep')->andReturn('migrate');
+            $mock->shouldReceive('hasCompany')->andReturn(false);
+            $mock->shouldReceive('hasBranch')->andReturn(false);
+            $mock->shouldReceive('hasAdministrator')->andReturn(false);
+        });
+
+        $this->get(route('setup.signin'))
+            ->assertRedirect(route('setup.show'))
+            ->assertSessionHas('info');
     }
 }

@@ -71,6 +71,8 @@
                             <td class="ryt">
                               @if ($user->isCode80())
                                 <span class="waybill-table-meta">Protected</span>
+                              @elseif ((string) $user->id === (string) auth()->id())
+                                <span class="waybill-table-meta">You</span>
                               @else
                               <form action="{{ action('ItemsController@destroy', $user->id) }}" method="POST" class="dash-config-delete-form">
                                 @csrf

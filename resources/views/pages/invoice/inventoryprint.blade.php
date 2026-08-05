@@ -287,8 +287,7 @@
                 </div>
 
                 <div class="inventory-print-header-top">
-                    <h1>Royal Joyam</h1>
-                    <h4>Ventures</h4>
+                    <h1>{{ $company->name ?? 'Company Manager' }}</h1>
                     @if ($company)
                         <p class="inventory-print-loc">{{ $company->address }}</p>
                         <p class="inventory-print-contact">{{ $company->contact }}</p>
@@ -350,7 +349,7 @@
                 </div>
 
                 <div class="inventory-print-footer">
-                    <span>Royal Joyam Ventures — {{ $showRecycle ? 'Recycle bin' : 'Inventory' }}</span>
+                    <span>{{ optional($company)->name ?? 'Company Manager' }} — {{ $showRecycle ? 'Recycle bin' : 'Inventory' }}</span>
                     <span>Printed {{ now()->format('d M Y, H:i') }}</span>
                 </div>
             </div>

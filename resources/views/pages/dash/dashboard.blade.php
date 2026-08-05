@@ -10,7 +10,7 @@
       @php
         $user = auth()->user();
         $isAdmin = $user->hasAdminAccess();
-        $companyName = optional(session('company'))->name ?? 'Royal Joyam Ventures';
+        $companyName = optional(session('company'))->name ?? 'Company Manager';
         $branch = collect(session('compbranch', []))->firstWhere('id', (int) $user->company_branch_id);
         $branchName = $branch->name ?? null;
         $heroChips = array_values(array_unique(array_filter([

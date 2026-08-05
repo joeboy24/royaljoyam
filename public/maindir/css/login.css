@@ -1,4 +1,4 @@
-/* Royal Joyam — sign-in page */
+/* Company Manager by PivoApps — sign-in page */
 
 .login-page {
   --login-accent: #00acc1;
@@ -99,11 +99,20 @@
 }
 
 .login-brand-title {
-  margin: 0 0 14px;
+  margin: 0 0 6px;
   font-size: clamp(1.65rem, 3vw, 2rem);
   font-weight: 700;
   line-height: 1.15;
   letter-spacing: -0.02em;
+}
+
+.login-brand-by {
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
 }
 
 .login-brand-lead {

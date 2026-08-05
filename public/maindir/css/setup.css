@@ -1,15 +1,32 @@
-/* First-run setup — extends login page tokens */
+/* First-run setup — same split layout as login */
 
 .setup-shell {
-  min-height: min(720px, calc(100vh - 48px));
+  align-items: stretch;
+  min-height: min(640px, calc(100vh - 48px));
+}
+
+.setup-page .login-brand,
+.setup-page .login-panel {
+  align-self: stretch;
+  min-height: 100%;
+}
+
+.setup-page .login-brand-inner {
+  justify-content: flex-start;
+  padding-top: 8px;
+  max-width: 400px;
+}
+
+.setup-page .login-brand-points {
+  margin-bottom: 24px;
 }
 
 .setup-steps {
-  margin: 28px 0 0;
+  margin: 8px 0 0;
   padding: 0;
   list-style: none;
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .setup-steps li {
@@ -62,6 +79,24 @@
   gap: 14px;
 }
 
+.setup-required-note {
+  margin: -4px 0 2px;
+  font-size: 12px;
+  color: var(--login-muted);
+}
+
+.setup-required {
+  color: #d32f2f;
+  font-weight: 700;
+}
+
+.setup-optional {
+  color: var(--login-muted);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 .setup-textarea {
   min-height: 84px;
   resize: vertical;
@@ -77,6 +112,11 @@
   color: #b71c1c;
   border: 1px solid #f5c6cb;
   font-size: 0.9rem;
+}
+
+.setup-errors ul {
+  margin: 0;
+  padding-left: 18px;
 }
 
 .setup-flash {
@@ -98,6 +138,12 @@
   border: 1px solid #f5c6cb;
 }
 
+.setup-flash-info {
+  background: #e3f2fd;
+  color: #0d47a1;
+  border: 1px solid #bbdefb;
+}
+
 .setup-skip-form {
   margin-top: 12px;
   text-align: center;
@@ -117,20 +163,120 @@
   color: var(--login-ink);
 }
 
-.setup-errors ul {
+.setup-file {
+  position: relative;
+  display: block;
   margin: 0;
-  padding-left: 18px;
+  border: 1px dashed #c9d5db;
+  border-radius: 12px;
+  background: #f7fbfc;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
 }
 
-.login-panel .alert,
-.setup-page .alert {
-  margin-bottom: 14px;
+.setup-file:hover,
+.setup-file:focus-within {
+  border-color: rgba(var(--login-accent-rgb), 0.55);
+  background: rgba(var(--login-accent-rgb), 0.05);
+  box-shadow: 0 0 0 3px rgba(var(--login-accent-rgb), 0.12);
+}
+
+.setup-file.has-file {
+  border-style: solid;
+  border-color: rgba(var(--login-accent-rgb), 0.35);
+  background: #fff;
+}
+
+.setup-file-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.setup-file-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  pointer-events: none;
+}
+
+.setup-file-media {
+  flex: 0 0 auto;
+}
+
+.setup-file-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
   border-radius: 10px;
+  background: rgba(var(--login-accent-rgb), 0.12);
+  color: var(--login-accent-dark);
+  font-size: 16px;
+}
+
+.setup-file-preview-img {
+  display: block;
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--login-border);
+  background: #fff;
+}
+
+.setup-file-preview-img[hidden],
+.setup-file-icon[hidden] {
+  display: none;
+}
+
+.setup-file-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.setup-file-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--login-ink);
+}
+
+.setup-file-hint {
+  font-size: 12px;
+  color: var(--login-muted);
+}
+
+.setup-file-name {
+  font-size: 12px;
+  color: #7a8b94;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.setup-file.has-file .setup-file-name {
+  color: var(--login-accent-dark);
+  font-weight: 600;
+}
+
+.setup-file-hint[hidden] {
+  display: none;
 }
 
 @media (max-width: 860px) {
   .setup-shell {
     grid-template-columns: 1fr;
     min-height: auto;
+  }
+
+  .setup-page .login-brand-inner {
+    max-width: none;
   }
 }

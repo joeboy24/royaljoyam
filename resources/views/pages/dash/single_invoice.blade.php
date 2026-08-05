@@ -72,7 +72,7 @@
                             <td class="col-sm-3">Sales Person :</td>
                             <td class="col-sm-3">{{$user->name}}</td>
                             <td class="col-sm-2">Received By :</td>
-                            <td class="col-sm-4">Royal Joham V... {{session('company')->contact}}</td>
+                            <td class="col-sm-4">{{ optional(session('company'))->name }} {{ optional(session('company'))->contact }}</td>
                         </tr>
                         <tr>
                             <td class="col-sm-3">Payment Method :</td>

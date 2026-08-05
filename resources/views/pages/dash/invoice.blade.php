@@ -64,7 +64,7 @@
                             <td class="col-sm-3"></td>
                             <td class="col-sm-3"></td>
                             <td class="col-sm-2">Sales Person :</td>
-                            <td class="col-sm-4">Royal Joham V... {{session('company')->contact}}</td>
+                            <td class="col-sm-4">{{ optional(session('company'))->name }} {{ optional(session('company'))->contact }}</td>
                         </tr>
                         <tr>
                             <td class="col-sm-3">Payment Methods :</td>

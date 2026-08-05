@@ -35,10 +35,20 @@
 
         Tip 2: you can also add an image using data-image tag
       -->
+      @php
+        $brandCompany = session('company');
+        $brandName = optional($brandCompany)->name ?: 'Company Manager';
+        $brandWords = preg_split('/\s+/', trim($brandName)) ?: [];
+        $brandTitle = $brandWords[0] ?? 'Company';
+        $brandSub = trim(implode(' ', array_slice($brandWords, 1)));
+        $brandMark = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $brandTitle) ?: 'CM', 0, 2));
+      @endphp
       <div class="logo dash-sidebar-brand">
         <a href="/dashboard" class="simple-text logo-normal">
-          <span class="dash-sidebar-brand-title">Royal Joyam</span>
-          <span class="dash-sidebar-brand-sub">Ventures</span>
+          <span class="dash-sidebar-brand-title">{{ $brandTitle }}</span>
+          @if ($brandSub !== '')
+            <span class="dash-sidebar-brand-sub">{{ $brandSub }}</span>
+          @endif
         </a>
       </div>
 
@@ -72,10 +82,12 @@
             </button>
 
             <a href="/dashboard" class="dash-topbar-brand">
-              <span class="dash-topbar-brand-mark" aria-hidden="true">RJ</span>
+              <span class="dash-topbar-brand-mark" aria-hidden="true">{{ $brandMark }}</span>
               <span class="dash-topbar-brand-copy">
-                <span class="dash-topbar-brand-title">Royal Joyam</span>
-                <span class="dash-topbar-brand-sub">Ventures</span>
+                <span class="dash-topbar-brand-title">{{ $brandTitle }}</span>
+                @if ($brandSub !== '')
+                  <span class="dash-topbar-brand-sub">{{ $brandSub }}</span>
+                @endif
               </span>
             </a>
           </div>

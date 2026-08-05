@@ -554,15 +554,17 @@ class ItemsController extends Controller
                             $company = Company::find(1);
                             $company->user_id = auth()->user()->id;
                             $company->name = $name;
-                            session('company')->address = $request->input('company_add');
+                            $company->address = $request->input('company_add');
     
                             $company->location = $loc;
-                            session('company')->contact = $request->input('contact');
+                            $company->contact = $request->input('contact');
     
-                            session('company')->email = $request->input('email');
+                            $company->email = $request->input('email');
                             $company->website = $request->input('company_web');
                             $company->reg_date = Date('d-m-Y');
-                            $company->logo = $request->input('company_logo');
+                            if ($request->filled('company_logo') && ! $request->hasFile('company_logo')) {
+                                $company->logo = $request->input('company_logo');
+                            }
     
                             $company->save();
                             return redirect('/config')->with('success', 'Company`s details successfully updated');
@@ -599,12 +601,12 @@ class ItemsController extends Controller
                         try {
                             $company->user_id = auth()->user()->id;
                             $company->name = $name;
-                            session('company')->address = $request->input('company_add');
+                            $company->address = $request->input('company_add');
     
                             $company->location = $loc;
-                            session('company')->contact = $request->input('contact');
+                            $company->contact = $request->input('contact');
     
-                            session('company')->email = $request->input('email');
+                            $company->email = $request->input('email');
                             $company->website = $request->input('company_web');
                             $company->reg_date = Date('d-m-Y');
                             $company->logo = $filenameToStore;
@@ -960,10 +962,16 @@ class ItemsController extends Controller
 
             case 'usr_del':
                 $user = User::find($id);
-                if ($user && ($user->isCode80() || $user->isSuperAdmin()) && ! auth()->user()->isSuperAdmin()) {
+                if (! $user) {
+                    return redirect(url()->previous())->with('error', 'Oops...! User not found');
+                }
+                if ((string) $user->id === (string) auth()->id()) {
+                    return redirect(url()->previous())->with('error', 'Oops...! You cannot delete your own account');
+                }
+                if (($user->isCode80() || $user->isSuperAdmin()) && ! auth()->user()->isSuperAdmin()) {
                     return redirect(url()->previous())->with('error', 'Oops...! Access Denied');
                 }
-                if ($user && $user->isCode80()) {
+                if ($user->isCode80()) {
                     return redirect(url()->previous())->with('error', 'Oops...! Code80 cannot be deleted');
                 }
                 $user->del = 'yes';
@@ -983,6 +991,19 @@ class ItemsController extends Controller
 
             case 'branch_del':
                 $branch = CompanyBranch::find($id);
+
+                if (! $branch) {
+                    return redirect(url()->previous())->with('error', 'Oops...! Branch not found');
+                }
+
+                $blockers = $branch->deletionBlockers();
+                if (! empty($blockers)) {
+                    return redirect(url()->previous())->with(
+                        'error',
+                        'Cannot delete branch "'.$branch->name.'": '.implode('; ', $blockers).'.'
+                    );
+                }
+
                 $branch->del = 'yes';
                 $branch->save();
                 return redirect(url()->previous())->with('success', 'Branch Deleted.');

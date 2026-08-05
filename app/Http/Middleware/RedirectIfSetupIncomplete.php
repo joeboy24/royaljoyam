@@ -35,6 +35,13 @@ class RedirectIfSetupIncomplete
             return $next($request);
         }
 
+        // Sign-in before tables exist: stay in setup with a clear prompt.
+        if ($request->is('login') && $this->setup->migrationsPending()) {
+            return redirect()
+                ->route('setup.show')
+                ->with('info', 'Complete setup first before signing in.');
+        }
+
         if ($this->shouldAllowWithoutSetup($request)) {
             return $next($request);
         }

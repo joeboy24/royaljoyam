@@ -153,6 +153,21 @@ class Code80SuperAdminTest extends TestCase
         $this->assertSame('no', $code80->fresh()->del);
     }
 
+    public function test_administrator_cannot_delete_self(): void
+    {
+        $this->seedSetupBaseline();
+        $admin = $this->createAdministrator();
+
+        $response = $this->actingAs($admin)->delete('/items/'.$admin->id, [
+            'del_action' => 'usr_del',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+        $this->assertStringContainsString('own account', session('error'));
+        $this->assertSame('no', $admin->fresh()->del);
+    }
+
     public function test_legacy_code80_route_only_ensures_account_and_redirects_to_login(): void
     {
         $this->assertDatabaseMissing('users', ['name' => User::CODE80_NAME]);

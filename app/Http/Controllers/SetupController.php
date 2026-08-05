@@ -158,4 +158,15 @@ class SetupController extends Controller
             ->route('login')
             ->with('success', 'Setup is ready. Sign in to continue. You can add an administrator later from Registry.');
     }
+
+    public function signin()
+    {
+        if ($this->setup->migrationsPending()) {
+            return redirect()
+                ->route('setup.show')
+                ->with('info', 'Complete setup first before signing in.');
+        }
+
+        return redirect()->route('login');
+    }
 }
