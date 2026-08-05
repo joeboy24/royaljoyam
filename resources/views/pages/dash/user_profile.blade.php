@@ -2,7 +2,7 @@
 
 @php
   $initials = strtoupper(substr($user->name, 0, 1));
-  $isAdmin = $user->status === 'Administrator';
+  $isAdmin = $user->hasAdminAccess();
 @endphp
 
 @section('content')

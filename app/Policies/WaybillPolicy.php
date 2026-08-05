@@ -44,6 +44,6 @@ class WaybillPolicy
 
     protected function isAdministrator(User $user): bool
     {
-        return $user->status === 'Administrator';
+        return $user->hasAdminAccess();
     }
 }

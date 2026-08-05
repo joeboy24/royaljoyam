@@ -17,7 +17,7 @@ class WaybillContentController extends Controller
     ) {
         $this->middleware(['auth', 'load_auth']);
         $this->middleware(function ($request, $next) {
-            if (auth()->user()->status != 'Administrator') {
+            if (!auth()->user()->hasAdminAccess()) {
                 return redirect('/dashboard');
             }
 

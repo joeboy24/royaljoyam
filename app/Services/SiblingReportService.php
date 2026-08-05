@@ -97,7 +97,7 @@ class SiblingReportService
 
     public function paidDebtsContext(Request $request, User $user): array
     {
-        $isAdmin = $user->status === 'Administrator';
+        $isAdmin = $user->hasAdminAccess();
         $salesDate = session('date_today') ?: now()->format('Y-m-d');
         $dateFrom = trim((string) $request->query('date_from', ''));
         $dateTo = trim((string) $request->query('date_to', ''));

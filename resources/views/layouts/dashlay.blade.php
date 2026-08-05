@@ -51,8 +51,11 @@
       @php
         $topbarUser = auth()->user();
         $topbarInitials = strtoupper(substr($topbarUser->name, 0, 1));
-        $topbarIsAdmin = $topbarUser->status === 'Administrator';
+        $topbarIsAdmin = $topbarUser->hasAdminAccess();
         $topbarOnDashboard = request()->is('dashboard');
+        $topbarRoleLabel = $topbarUser->isSuperAdmin()
+            ? 'Super Admin'
+            : ($topbarIsAdmin ? 'Admin' : 'Branch');
       @endphp
 
       <nav class="navbar navbar-expand-lg navbar-transparent navbar-absolute fixed-top hideMe dash-topbar">
@@ -147,7 +150,7 @@
                   <span class="dash-topbar-user-avatar" aria-hidden="true">{{ $topbarInitials }}</span>
                   <span class="dash-topbar-user-meta">
                     <span class="dash-topbar-user-name">{{ $topbarUser->name }}</span>
-                    <span class="dash-topbar-user-role">{{ $topbarIsAdmin ? 'Admin' : 'Branch' }}</span>
+                    <span class="dash-topbar-user-role">{{ $topbarRoleLabel }}</span>
                   </span>
                   <i class="fa fa-chevron-down dash-topbar-user-chevron" aria-hidden="true"></i>
                 </a>

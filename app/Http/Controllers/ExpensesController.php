@@ -26,7 +26,7 @@ class ExpensesController extends Controller
 
         $salesDate = session('date_today') ?: now()->format('Y-m-d');
         $user = $request->user();
-        $isAdmin = $user->status === 'Administrator';
+        $isAdmin = $user->hasAdminAccess();
 
         $query = Expense::with('companybranch')
             ->where('del', 'no')
@@ -93,7 +93,7 @@ class ExpensesController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->status === 'Administrator') {
+        if ($user->hasAdminAccess()) {
             return true;
         }
 

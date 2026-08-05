@@ -9,7 +9,7 @@
 
       @php
         $user = auth()->user();
-        $isAdmin = $user->status === 'Administrator';
+        $isAdmin = $user->hasAdminAccess();
         $companyName = optional(session('company'))->name ?? 'Royal Joyam Ventures';
         $branch = collect(session('compbranch', []))->firstWhere('id', (int) $user->company_branch_id);
         $branchName = $branch->name ?? null;

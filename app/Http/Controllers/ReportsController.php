@@ -28,7 +28,7 @@ class ReportsController extends Controller
      */
     public function index(Request $request)
     {
-        if (auth()->user()->status != 'Administrator') {
+        if (!auth()->user()->hasAdminAccess()) {
             return redirect('/dashboard');
         }
 
@@ -150,7 +150,7 @@ class ReportsController extends Controller
      */
     public function edit($id)
     {
-        if (auth()->user()->status != 'Administrator') {
+        if (!auth()->user()->hasAdminAccess()) {
             return redirect('/dashboard');
         }
 

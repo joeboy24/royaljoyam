@@ -270,7 +270,7 @@ class SalesService
 
     public function removeCartItem(Cart $cart): RedirectResponse
     {
-        if ((string) $cart->user_id !== (string) auth()->user()->id && auth()->user()->status !== 'Administrator') {
+        if ((string) $cart->user_id !== (string) auth()->user()->id && !auth()->user()->hasAdminAccess()) {
             return Redirect::back()->with('error', 'Cart item not found');
         }
 
@@ -347,6 +347,6 @@ class SalesService
 
     protected function isAdministrator(): bool
     {
-        return auth()->user()->status === 'Administrator';
+        return auth()->user()->hasAdminAccess();
     }
 }

@@ -38,7 +38,7 @@ class ClosureController extends Controller
 
     public function show($full_date)
     {
-        if (auth()->user()->status != 'Administrator') {
+        if (! $this->authUser()->hasAdminAccess()) {
             return redirect('/dashboard');
         }
 
@@ -53,7 +53,7 @@ class ClosureController extends Controller
 
     public function print(string $month)
     {
-        if (auth()->user()->status != 'Administrator') {
+        if (! $this->authUser()->hasAdminAccess()) {
             return redirect('/dashboard');
         }
 
@@ -73,7 +73,7 @@ class ClosureController extends Controller
 
     public function export(string $month): StreamedResponse|\Illuminate\Http\RedirectResponse
     {
-        if (auth()->user()->status != 'Administrator') {
+        if (! $this->authUser()->hasAdminAccess()) {
             return redirect('/dashboard');
         }
 
@@ -131,13 +131,13 @@ class ClosureController extends Controller
 
     public function open(Request $request, string $month)
     {
-        if ($request->user()->status != 'Administrator') {
+        if (! $this->authUser()->hasAdminAccess()) {
             return redirect('/dashboard');
         }
 
         try {
             $monthKey = $this->closureService->resolveMonthKey($month);
-            $this->closureService->openMonth($monthKey, $request->user());
+            $this->closureService->openMonth($monthKey, $this->authUser());
         } catch (InvalidArgumentException $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }
@@ -149,13 +149,13 @@ class ClosureController extends Controller
 
     public function close(Request $request, string $month)
     {
-        if ($request->user()->status != 'Administrator') {
+        if (! $this->authUser()->hasAdminAccess()) {
             return redirect('/dashboard');
         }
 
         try {
             $monthKey = $this->closureService->resolveMonthKey($month);
-            $this->closureService->closeMonth($monthKey, $request->user());
+            $this->closureService->closeMonth($monthKey, $this->authUser());
         } catch (InvalidArgumentException $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }

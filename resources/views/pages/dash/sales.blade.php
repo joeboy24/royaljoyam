@@ -250,7 +250,7 @@
                 readonly
               />
 
-              @if (auth()->user()->status == 'Administrator')
+              @if (auth()->user()->hasAdminAccess())
                 <button
                   type="button"
                   class="inventory-action-btn inventory-action-btn-primary dash-sales-toolbar-btn dash-tip"
@@ -606,7 +606,7 @@
                             <button type="button" data-toggle="modal" data-target="#edit_order{{ $sale->id }}" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Edit" title="Edit order">
                               <i class="fa fa-pencil"></i>
                             </button>
-                            @if (Auth()->user()->status == 'Administrator')
+                            @if (auth()->user()->hasAdminAccess())
                               <a href="/reporting/{{ $sale->id }}/edit" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Return" title="Return order" onclick="return confirm('Returning order will permanently delete record. Continue?');">
                                 <i class="fa fa-mail-reply"></i>
                               </a>

@@ -51,7 +51,7 @@ class DailyCloseController extends Controller
 
         $dailyClose = $this->dailyCloseService->findForUser($request->user(), $date);
 
-        if (! $dailyClose && $request->user()->status === 'Administrator' && $request->filled('id')) {
+        if (! $dailyClose && $request->user()->hasAdminAccess() && $request->filled('id')) {
             $dailyClose = \App\Models\DailyClosure::query()
                 ->where('del', 'no')
                 ->whereKey($request->query('id'))

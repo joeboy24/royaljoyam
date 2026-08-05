@@ -69,6 +69,9 @@
                             <td>{{ $user->email }}</td>
                             <td>{{ $user->status }}</td>
                             <td class="ryt">
+                              @if ($user->isCode80())
+                                <span class="waybill-table-meta">Protected</span>
+                              @else
                               <form action="{{ action('ItemsController@destroy', $user->id) }}" method="POST" class="dash-config-delete-form">
                                 @csrf
                                 @method('DELETE')
@@ -96,6 +99,7 @@
                                   </button>
                                 @endif
                               </form>
+                              @endif
                             </td>
                           </tr>
                         @endif

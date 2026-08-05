@@ -43,7 +43,7 @@ class SalesController extends Controller
 
     public function updateCartQuantity(UpdateCartQuantityRequest $request, Cart $cart)
     {
-        if ((string) $cart->user_id !== (string) auth()->user()->id && auth()->user()->status !== 'Administrator') {
+        if ((string) $cart->user_id !== (string) auth()->user()->id && !auth()->user()->hasAdminAccess()) {
             abort(404);
         }
 
@@ -52,7 +52,7 @@ class SalesController extends Controller
 
     public function removeCartItem(Cart $cart)
     {
-        if ((string) $cart->user_id !== (string) auth()->user()->id && auth()->user()->status !== 'Administrator') {
+        if ((string) $cart->user_id !== (string) auth()->user()->id && !auth()->user()->hasAdminAccess()) {
             abort(404);
         }
 

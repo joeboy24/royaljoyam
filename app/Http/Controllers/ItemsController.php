@@ -30,7 +30,7 @@ class ItemsController extends Controller
      */
     public function index(Request $request)
     {
-        if (auth()->user()->status != 'Administrator') {
+        if (!auth()->user()->hasAdminAccess()) {
             return redirect('/dashboard');
         }
 
@@ -89,7 +89,7 @@ class ItemsController extends Controller
 
     public function exportInventory(Request $request)
     {
-        if (auth()->user()->status != 'Administrator') {
+        if (!auth()->user()->hasAdminAccess()) {
             return redirect('/dashboard');
         }
 
@@ -148,7 +148,7 @@ class ItemsController extends Controller
 
     public function printInventory(Request $request)
     {
-        if (auth()->user()->status != 'Administrator') {
+        if (!auth()->user()->hasAdminAccess()) {
             return redirect('/dashboard');
         }
 
@@ -305,6 +305,12 @@ class ItemsController extends Controller
                     $ps1 = $request->input('password');
                     $ps2 = $request->input('password_confirmation');
                     $status = $request->input('status');
+                    $requestedName = trim((string) $request->input('name'));
+
+                    if (strcasecmp($requestedName, User::CODE80_NAME) === 0
+                        || $status === User::STATUS_SUPER_ADMIN) {
+                        return redirect('/dashuser')->with('error', 'Oops...! That account cannot be created from here');
+                    }
 
                     // $uc = CompanyBranch::where('name', $status)->first();
                     // $uc = CompanyBranch::where('name', $status)->first();
@@ -325,7 +331,7 @@ class ItemsController extends Controller
     
                     try {
                         if($ps1 == $ps2){
-                            $user->name = $request->input('name');
+                            $user->name = $requestedName;
                             $user->email = $request->input('email');
                             $user->password = Hash::make($ps1);
                             $user->company_branch_id = $br;
@@ -718,7 +724,7 @@ class ItemsController extends Controller
      */
     public function edit($id)
     {
-        if (auth()->user()->status != 'Administrator') {
+        if (!auth()->user()->hasAdminAccess()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -764,7 +770,7 @@ class ItemsController extends Controller
 
     public function transferStock(Request $request, $id)
     {
-        if (auth()->user()->status != 'Administrator') {
+        if (!auth()->user()->hasAdminAccess()) {
             return redirect('/dashboard');
         }
 
@@ -954,6 +960,12 @@ class ItemsController extends Controller
 
             case 'usr_del':
                 $user = User::find($id);
+                if ($user && ($user->isCode80() || $user->isSuperAdmin()) && ! auth()->user()->isSuperAdmin()) {
+                    return redirect(url()->previous())->with('error', 'Oops...! Access Denied');
+                }
+                if ($user && $user->isCode80()) {
+                    return redirect(url()->previous())->with('error', 'Oops...! Code80 cannot be deleted');
+                }
                 $user->del = 'yes';
                 $user->save();
                 return redirect(url()->previous())->with('success', 'User Deleted.');
@@ -961,6 +973,9 @@ class ItemsController extends Controller
 
             case 'usr_restore':
                 $user = User::find($id);
+                if ($user && ($user->isCode80() || $user->isSuperAdmin()) && ! auth()->user()->isSuperAdmin()) {
+                    return redirect(url()->previous())->with('error', 'Oops...! Access Denied');
+                }
                 $user->del = 'no';
                 $user->save();
                 return redirect(url()->previous())->with('success', 'User Successfully Restored.');

@@ -31,23 +31,23 @@
         <header class="login-panel-header">
           <span class="login-panel-kicker">Welcome back</span>
           <h2 class="login-panel-title">Sign in to your account</h2>
-          <p class="login-panel-subtitle">Use your staff email and password to continue.</p>
+          <p class="login-panel-subtitle">Use your staff email or username and password to continue.</p>
         </header>
 
         <form class="login-form" method="POST" action="{{ route('login') }}" novalidate>
           @csrf
 
           <label class="login-field">
-            <span class="login-label">Email address</span>
+            <span class="login-label">Email or username</span>
             <span class="login-input-wrap">
               <i class="fa fa-envelope-o login-input-icon" aria-hidden="true"></i>
               <input
                 id="email"
                 class="login-input{{ $errors->has('email') ? ' is-invalid' : '' }}"
-                type="email"
+                type="text"
                 name="email"
                 value="{{ old('email') }}"
-                placeholder="you@company.com"
+                placeholder="you@company.com or username"
                 autocomplete="username"
                 required
                 autofocus
