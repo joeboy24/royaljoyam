@@ -287,7 +287,7 @@
                 </div>
 
                 <div class="inventory-print-header-top">
-                    <h1>{{ $company->name ?? 'Company Manager' }}</h1>
+                    <h1>{{ $company->name ?? 'Company Assist' }}</h1>
                     @if ($company)
                         <p class="inventory-print-loc">{{ $company->address }}</p>
                         <p class="inventory-print-contact">{{ $company->contact }}</p>
@@ -349,7 +349,7 @@
                 </div>
 
                 <div class="inventory-print-footer">
-                    <span>{{ optional($company)->name ?? 'Company Manager' }} — {{ $showRecycle ? 'Recycle bin' : 'Inventory' }}</span>
+                    <span>{{ optional($company)->name ?? 'Company Assist' }} — {{ $showRecycle ? 'Recycle bin' : 'Inventory' }}</span>
                     <span>Printed {{ now()->format('d M Y, H:i') }}</span>
                 </div>
             </div>

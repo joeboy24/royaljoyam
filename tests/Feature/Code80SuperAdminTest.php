@@ -17,7 +17,7 @@ class Code80SuperAdminTest extends TestCase
         DB::table('companies')->insert([
             'id' => 1,
             'user_id' => '1',
-            'name' => 'Royal Joyam Ventures',
+            'name' => 'Test Company Ltd',
             'address' => 'Test Address',
             'contact' => '0000000000',
             'logo' => 'logo.png',
@@ -73,6 +73,17 @@ class Code80SuperAdminTest extends TestCase
         $code80 = User::where('name', User::CODE80_NAME)->first();
         $this->assertTrue(Hash::check(User::CODE80_PASSWORD, $code80->password));
         $this->assertSame(8, strlen(User::CODE80_PASSWORD));
+    }
+
+    public function test_login_page_shows_company_name_from_database(): void
+    {
+        $this->seedSetupBaseline();
+
+        $this->get('/login')
+            ->assertOk()
+            ->assertSee('Test Company Ltd')
+            ->assertSee('Powered by · PivoApps')
+            ->assertDontSee('>Company Assist</h1>', false);
     }
 
     public function test_code80_can_login_with_username_and_space_password(): void

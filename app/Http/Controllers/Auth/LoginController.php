@@ -3,8 +3,12 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Company;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 class LoginController extends Controller
 {
@@ -36,6 +40,39 @@ class LoginController extends Controller
     public function __construct()
     {
         $this->middleware('guest')->except('logout');
+    }
+
+    /**
+     * Show the application's login form with company branding when configured.
+     */
+    public function showLoginForm()
+    {
+        $company = null;
+        $companyLogoUrl = null;
+
+        try {
+            if (Schema::hasTable('companies')) {
+                $company = Company::find(1);
+                if ($company && $company->del === 'yes') {
+                    $company = null;
+                }
+            }
+
+            if ($company) {
+                $logo = trim((string) $company->logo);
+                if ($logo !== '' && Storage::disk('public')->exists('ss_imgs/'.$logo)) {
+                    $companyLogoUrl = asset('storage/ss_imgs/'.$logo);
+                }
+            }
+        } catch (Throwable $e) {
+            $company = null;
+            $companyLogoUrl = null;
+        }
+
+        return view('auth.login', [
+            'company' => $company,
+            'companyLogoUrl' => $companyLogoUrl,
+        ]);
     }
 
     /**

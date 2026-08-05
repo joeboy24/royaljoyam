@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Company Manager · Setup</title>
+  <title>Company Assist · Setup</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
   <link rel="stylesheet" href="/maindir/css/login.css?v=4">
@@ -13,10 +13,10 @@
   <div class="login-backdrop" aria-hidden="true"></div>
 
   <main class="login-shell setup-shell">
-    <section class="login-brand" aria-label="Company Manager by PivoApps">
+    <section class="login-brand" aria-label="Company Assist by PivoApps">
       <div class="login-brand-inner">
-        <span class="login-brand-mark">CM</span>
-        <h1 class="login-brand-title">Company Manager</h1>
+        <span class="login-brand-mark">CA</span>
+        <h1 class="login-brand-title">Company Assist</h1>
         <p class="login-brand-by">by PivoApps</p>
         <p class="login-brand-lead">One place to run inventory, sales, expenses, and multi-branch operations.</p>
 

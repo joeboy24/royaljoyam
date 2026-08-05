@@ -38,7 +38,7 @@ class ClosurePageTest extends TestCase
         DB::table('companies')->insert([
             'id' => 1,
             'user_id' => '1',
-            'name' => 'Royal Joyam Ventures',
+            'name' => 'Test Company Ltd',
             'address' => 'Test Address',
             'contact' => '0000000000',
             'logo' => 'logo.png',

@@ -3,22 +3,49 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Company Manager · Sign in</title>
+  @php
+    $hasCompany = isset($company) && $company && filled($company->name);
+    $brandName = $hasCompany ? trim((string) $company->name) : 'Company Assist';
+    $brandWords = preg_split('/\s+/', $brandName) ?: [];
+    $brandMark = $hasCompany
+      ? strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $brandWords[0] ?? 'CA') ?: 'CA', 0, 2))
+      : 'CA';
+  @endphp
+  <title>{{ $brandName }} · Sign in</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-  <link rel="stylesheet" href="/maindir/css/login.css?v=4">
+  <link rel="stylesheet" href="/maindir/css/login.css?v=5">
   <link rel="stylesheet" href="/maindir/css/setup.css?v=2">
 </head>
 <body class="login-page">
   <div class="login-backdrop" aria-hidden="true"></div>
 
   <main class="login-shell">
-    <section class="login-brand" aria-label="Company Manager by PivoApps">
+    <section class="login-brand" aria-label="{{ $brandName }}">
       <div class="login-brand-inner">
-        <span class="login-brand-mark">CM</span>
-        <h1 class="login-brand-title">Company Manager</h1>
-        <p class="login-brand-by">by PivoApps</p>
-        <p class="login-brand-lead">One place to run inventory, sales, expenses, and multi-branch operations.</p>
+        @if (! empty($companyLogoUrl))
+          <img
+            src="{{ $companyLogoUrl }}"
+            alt="{{ $brandName }}"
+            class="login-brand-logo"
+          >
+        @else
+          <span class="login-brand-mark">{{ $brandMark }}</span>
+        @endif
+
+        <h1 class="login-brand-title">{{ $brandName }}</h1>
+        @if ($hasCompany)
+          <p class="login-brand-by">Powered by · PivoApps</p>
+        @else
+          <p class="login-brand-by">by PivoApps</p>
+        @endif
+        <p class="login-brand-lead">
+          @if ($hasCompany)
+            Sign in to manage inventory, sales, expenses, and branch operations.
+          @else
+            One place to run inventory, sales, expenses, and multi-branch operations.
+          @endif
+        </p>
 
         <ul class="login-brand-points">
           <li><i class="fa fa-check-circle" aria-hidden="true"></i> Inventory tracking with branch stock</li>

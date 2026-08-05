@@ -14,7 +14,7 @@
   <!-- CSS Files -->
   <link href="/dashdir/css/material-dashboard.css?v=2.1.1" rel="stylesheet" />
   <link rel="stylesheet" href="/maindir/css/style.css">
-  <link rel="stylesheet" href="/maindir/css/dash-sidebar.css?v=12">
+  <link rel="stylesheet" href="/maindir/css/dash-sidebar.css?v=13">
   <link rel="stylesheet" href="/maindir/css/dash-page-header.css?v=3">
   <link rel="stylesheet" href="/maindir/css/dash-form.css?v=30">
   <link rel="stylesheet" href="/maindir/css/dash-sales.css?v=19">
@@ -37,18 +37,36 @@
       -->
       @php
         $brandCompany = session('company');
-        $brandName = optional($brandCompany)->name ?: 'Company Manager';
+        $brandName = optional($brandCompany)->name ?: 'Company Assist';
         $brandWords = preg_split('/\s+/', trim($brandName)) ?: [];
         $brandTitle = $brandWords[0] ?? 'Company';
         $brandSub = trim(implode(' ', array_slice($brandWords, 1)));
-        $brandMark = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $brandTitle) ?: 'CM', 0, 2));
+        $brandMark = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $brandTitle) ?: 'CA', 0, 2));
+        $brandLogoFile = trim((string) optional($brandCompany)->logo);
+        $brandLogoUrl = null;
+        if ($brandLogoFile !== '' && \Illuminate\Support\Facades\Storage::disk('public')->exists('ss_imgs/'.$brandLogoFile)) {
+            $brandLogoUrl = asset('storage/ss_imgs/'.$brandLogoFile);
+        }
       @endphp
       <div class="logo dash-sidebar-brand">
-        <a href="/dashboard" class="simple-text logo-normal">
-          <span class="dash-sidebar-brand-title">{{ $brandTitle }}</span>
-          @if ($brandSub !== '')
-            <span class="dash-sidebar-brand-sub">{{ $brandSub }}</span>
-          @endif
+        <a href="/dashboard" class="simple-text logo-normal dash-sidebar-brand-link">
+          <span class="dash-sidebar-brand-media">
+            @if ($brandLogoUrl)
+              <img
+                src="{{ $brandLogoUrl }}"
+                alt="{{ $brandName }}"
+                class="dash-sidebar-brand-logo"
+              >
+            @else
+              <span class="dash-sidebar-brand-mark" aria-hidden="true">{{ $brandMark }}</span>
+            @endif
+          </span>
+          <span class="dash-sidebar-brand-copy">
+            <span class="dash-sidebar-brand-title">{{ $brandTitle }}</span>
+            @if ($brandSub !== '')
+              <span class="dash-sidebar-brand-sub">{{ $brandSub }}</span>
+            @endif
+          </span>
         </a>
       </div>
 

@@ -27,7 +27,7 @@ class SetupWizardTest extends TestCase
         DB::table('companies')->insert([
             'id' => 1,
             'user_id' => '1',
-            'name' => 'Royal Joyam Ventures',
+            'name' => 'Test Company Ltd',
             'address' => 'Test Address',
             'contact' => '0000000000',
             'logo' => 'logo.png',
@@ -78,7 +78,7 @@ class SetupWizardTest extends TestCase
         $response->assertOk();
         $response->assertSee('Company details');
         $response->assertSee('Continue');
-        $response->assertSee('Company Manager');
+        $response->assertSee('Company Assist');
         $response->assertSee('by PivoApps');
     }
 

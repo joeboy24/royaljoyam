@@ -30,7 +30,7 @@ class ReportPrintPageTest extends TestCase
         DB::table('companies')->insert([
             'id' => 1,
             'user_id' => '1',
-            'name' => 'Royal Joyam Ventures',
+            'name' => 'Test Company Ltd',
             'address' => 'Test Address',
             'contact' => '0000000000',
             'logo' => 'logo.png',
@@ -206,6 +206,27 @@ class ReportPrintPageTest extends TestCase
             ->assertOk()
             ->assertSee('Print Fuel')
             ->assertSee('Expenses Report');
+    }
+
+    public function test_report_print_header_uses_setup_company_name(): void
+    {
+        DB::table('companies')->where('id', 1)->update([
+            'name' => 'PivoApps Trading Ltd',
+            'address' => '12 Setup Street',
+            'contact' => '0244000999',
+            'email' => 'office@pivoapps.test',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->withSession(['genstockbal' => collect()])
+            ->get('/genstockbal')
+            ->assertOk()
+            ->assertSee('PivoApps')
+            ->assertSee('Trading Ltd')
+            ->assertSee('12 Setup Street')
+            ->assertSee('0244000999')
+            ->assertDontSee('ROYAL JOYAM')
+            ->assertDontSee('>Ventures</h4>', false);
     }
 
     public function test_sales_report_page_does_not_include_related_report_links(): void
