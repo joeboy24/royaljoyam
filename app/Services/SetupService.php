@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Category;
 use App\Models\Company;
 use App\Models\CompanyBranch;
 use App\Models\User;
@@ -94,6 +95,56 @@ class SetupService
     public function isComplete(): bool
     {
         return $this->isAppReady() && $this->hasAdministrator();
+    }
+
+    public function completionFlagPath(): string
+    {
+        return (string) config('setup.completion_flag', storage_path('framework/setup.complete'));
+    }
+
+    public function hasCompletionFlag(): bool
+    {
+        return is_file($this->completionFlagPath());
+    }
+
+    public function markComplete(): void
+    {
+        $path = $this->completionFlagPath();
+        $dir = dirname($path);
+
+        if (! is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        file_put_contents($path, now()->toIso8601String().PHP_EOL);
+    }
+
+    /**
+     * Seed a starter category when none exist (supports inventory CSV template).
+     */
+    public function ensureDefaultCategory(?User $actor = null): void
+    {
+        try {
+            if (! Schema::hasTable('categories')) {
+                return;
+            }
+
+            if (Category::query()->exists()) {
+                return;
+            }
+
+            $ownerId = $actor?->id
+                ?? User::query()->where('name', User::CODE80_NAME)->value('id')
+                ?? 1;
+
+            $category = new Category;
+            $category->user_id = (string) $ownerId;
+            $category->name = (string) config('setup.default_category', 'General');
+            $category->desc = 'Default category';
+            $category->save();
+        } catch (Throwable $e) {
+            // Non-fatal during setup; Registry can still create categories.
+        }
     }
 
     /**
@@ -200,6 +251,8 @@ class SetupService
         $branch->del = 'no';
         $branch->save();
 
+        $this->ensureDefaultCategory($actor);
+
         return $branch;
     }
 
@@ -218,6 +271,8 @@ class SetupService
         $user->company_branch_id = '1';
         $user->del = 'no';
         $user->save();
+
+        $this->markComplete();
 
         return $user;
     }

@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\User;
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
@@ -15,9 +16,8 @@ class RegisterController extends Controller
     | Register Controller
     |--------------------------------------------------------------------------
     |
-    | This controller handles the registration of new users as well as their
-    | validation and creation. By default this controller uses a trait to
-    | provide this functionality without requiring any additional code.
+    | Public self-registration is disabled. New accounts are created through
+    | first-run setup or the Registry by an administrator.
     |
     */
 
@@ -41,6 +41,22 @@ class RegisterController extends Controller
     }
 
     /**
+     * Public registration is disabled.
+     */
+    public function showRegistrationForm()
+    {
+        abort(404);
+    }
+
+    /**
+     * Public registration is disabled.
+     */
+    public function register(Request $request)
+    {
+        abort(404);
+    }
+
+    /**
      * Get a validator for an incoming registration request.
      *
      * @param  array  $data
@@ -59,7 +75,7 @@ class RegisterController extends Controller
      * Create a new user instance after a valid registration.
      *
      * @param  array  $data
-     * @return \App\User
+     * @return \App\Models\User
      */
     protected function create(array $data)
     {

@@ -19,6 +19,7 @@ class SetupWizardTest extends TestCase
         parent::setUp();
 
         config(['setup.enforce' => true]);
+        @unlink(app(SetupService::class)->completionFlagPath());
     }
 
     protected function seedCompanyAndBranch(): void
@@ -126,6 +127,10 @@ class SetupWizardTest extends TestCase
 
         $this->assertTrue(app(SetupService::class)->isComplete());
         $this->assertTrue(app(SetupService::class)->isAppReady());
+        $this->assertTrue(app(SetupService::class)->hasCompletionFlag());
+        $this->assertDatabaseHas('categories', [
+            'name' => 'General',
+        ]);
         $this->get('/dashboard')->assertRedirect(route('login'));
     }
 
@@ -172,5 +177,29 @@ class SetupWizardTest extends TestCase
         $this->get(route('setup.signin'))
             ->assertRedirect(route('setup.show'))
             ->assertSessionHas('info');
+    }
+
+    public function test_public_register_routes_are_disabled(): void
+    {
+        $this->get('/register')->assertNotFound();
+        $this->post('/register', [
+            'name' => 'public.user',
+            'email' => 'public@test.example',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ])->assertNotFound();
+
+        $this->assertDatabaseMissing('users', ['email' => 'public@test.example']);
+    }
+
+    public function test_ensure_default_category_is_idempotent(): void
+    {
+        User::ensureCode80Exists();
+        $setup = app(SetupService::class);
+
+        $setup->ensureDefaultCategory();
+        $setup->ensureDefaultCategory();
+
+        $this->assertSame(1, \App\Models\Category::query()->where('name', 'General')->count());
     }
 }

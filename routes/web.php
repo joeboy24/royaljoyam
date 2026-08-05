@@ -65,7 +65,7 @@ Route::get('/dashboard', 'DashController@dashboard');
 Route::get('/config', 'DashController@configurations');
 Route::get('/dashuser', 'DashController@dashuser');
 Route::get('/items/export', 'ItemsController@exportInventory');
-Route::post('/items/import', 'ItemsController@importInventory');
+Route::post('/items/import', 'ItemsController@importInventory')->middleware('throttle:10,1');
 Route::get('/items/print', 'ItemsController@printInventory');
 Route::post('/items/{id}/transfer', 'ItemsController@transferStock');
 Route::resource('/items', 'ItemsController');
@@ -92,7 +92,7 @@ Route::get('/debtsreportprinting', 'DashController@debtsreportprinting');
 
 
 
-Auth::routes();
+Auth::routes(['register' => false]);
 
 Route::redirect('/home', '/dashboard')->name('home');
 Route::get('/orders', 'DashController@orders');
