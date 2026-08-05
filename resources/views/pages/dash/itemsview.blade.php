@@ -120,7 +120,7 @@
                       <a href="{{ url('/items/print?' . http_build_query($inventoryListQuery)) }}" target="_blank" rel="noopener" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Print list">
                         <i class="fa fa-print"></i>
                       </a>
-                      <a href="{{ url('/items/export?' . http_build_query($inventoryListQuery)) }}" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Export CSV">
+                      <a href="{{ url('/items/export?' . http_build_query($inventoryListQuery)) }}" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="{{ (! $showRecycle && (int) $grandTotalCount === 0) ? 'Download CSV template' : 'Export CSV' }}">
                         <i class="fa fa-download"></i>
                       </a>
                       @unless ($showRecycle)

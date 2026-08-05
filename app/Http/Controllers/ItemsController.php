@@ -15,6 +15,7 @@ use App\Models\CompanyBranch;
 use App\Models\ItemImage;
 use App\Models\Category;
 use App\Services\BranchTransferService;
+use App\Services\InventoryCsvService;
 use Exception;
 
 class ItemsController extends Controller
@@ -93,51 +94,33 @@ class ItemsController extends Controller
             return redirect('/dashboard');
         }
 
+        $csv = app(InventoryCsvService::class);
         $filters = $this->resolveInventoryListFilters($request);
+        $branches = collect(session('compbranch', []));
+
+        // Empty active inventory → upload template; otherwise keep current data export.
+        if (! $filters['showRecycle'] && $csv->isActiveInventoryEmpty()) {
+            $filename = 'inventory-template-'.date('Y-m-d-His').'.csv';
+
+            return response()->streamDownload(function () use ($csv, $branches) {
+                $handle = fopen('php://output', 'w');
+                fputcsv($handle, $csv->templateHeaders($branches));
+                fclose($handle);
+            }, $filename, [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+            ]);
+        }
+
         $items = $this->buildInventoryItemsQuery($filters)->orderBy('id', 'desc')->get();
-        $branches = session('compbranch');
         $threshold = $filters['lowStockThreshold'];
         $filename = ($filters['showRecycle'] ? 'inventory-recycle-' : 'inventory-').date('Y-m-d-His').'.csv';
 
-        return response()->streamDownload(function () use ($items, $branches, $threshold) {
+        return response()->streamDownload(function () use ($csv, $items, $branches, $threshold) {
             $handle = fopen('php://output', 'w');
-            $headers = [
-                'Item No',
-                'Name',
-                'Category',
-                'Brand',
-                'Barcode',
-                'General Qty',
-                'Stock Status',
-                'Base Price (Gh)',
-                'Date',
-            ];
-
-            foreach ($branches as $branch) {
-                $headers[] = $branch->name.' Qty';
-            }
-
-            fputcsv($handle, $headers);
+            fputcsv($handle, $csv->dataExportHeaders($branches));
 
             foreach ($items as $item) {
-                $row = [
-                    $item->item_no,
-                    $item->name,
-                    $item->cat,
-                    $item->brand,
-                    $item->barcode,
-                    $item->qty,
-                    $item->stockBadgeLabel($threshold),
-                    number_format((float) $item->price, 2, '.', ''),
-                    $item->created_at ? \Carbon\Carbon::parse($item->created_at)->format('d M Y') : '',
-                ];
-
-                for ($i = 0; $i < count($branches); $i++) {
-                    $field = 'q'.($i + 1);
-                    $row[] = $item->$field ?? 0;
-                }
-
-                fputcsv($handle, $row);
+                fputcsv($handle, $csv->dataExportRow($item, $branches, $threshold));
             }
 
             fclose($handle);

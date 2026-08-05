@@ -507,10 +507,46 @@ class InventoryPageTest extends TestCase
 
         $response->assertOk();
         $response->assertHeader('content-type', 'text/csv; charset=UTF-8');
+        $this->assertStringContainsString('inventory-', $response->headers->get('content-disposition'));
+        $this->assertStringNotContainsString('inventory-template-', $response->headers->get('content-disposition'));
         $content = $response->streamedContent();
         $this->assertStringContainsString('CSV Alpha', $content);
         $this->assertStringNotContainsString('CSV Beta', $content);
         $this->assertStringContainsString('Stock Status', $content);
+        $this->assertStringContainsString('Item No', $content);
+    }
+
+    public function test_empty_inventory_export_downloads_upload_template(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/items/export');
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'text/csv; charset=UTF-8');
+        $this->assertStringContainsString('inventory-template-', $response->headers->get('content-disposition'));
+
+        $content = $response->streamedContent();
+        $this->assertStringContainsString('Name', $content);
+        $this->assertStringContainsString('Description', $content);
+        $this->assertStringContainsString('Category', $content);
+        $this->assertStringContainsString('Brand', $content);
+        $this->assertStringContainsString('Barcode', $content);
+        $this->assertStringContainsString('General Qty', $content);
+        $this->assertStringContainsString('Base Price (Gh)', $content);
+        $this->assertStringContainsString('Branch A Qty', $content);
+        $this->assertStringNotContainsString('Stock Status', $content);
+        $this->assertStringNotContainsString('Item No', $content);
+
+        // Headers only — no data rows.
+        $lines = array_values(array_filter(preg_split("/\r\n|\n|\r/", trim($content))));
+        $this->assertCount(1, $lines);
+    }
+
+    public function test_inventory_page_shows_template_tip_when_empty(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/items');
+
+        $response->assertOk();
+        $response->assertSee('Download CSV template', false);
     }
 
     public function test_admin_can_open_inventory_print_view(): void
@@ -635,6 +671,8 @@ class InventoryPageTest extends TestCase
 
     public function test_inventory_page_shows_print_and_export_actions(): void
     {
+        $this->createItem(['name' => 'Export Action Item']);
+
         $response = $this->actingAs($this->admin)->get('/items');
 
         $response->assertOk();
