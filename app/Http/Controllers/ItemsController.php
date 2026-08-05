@@ -98,16 +98,22 @@ class ItemsController extends Controller
         $filters = $this->resolveInventoryListFilters($request);
         $branches = collect(session('compbranch', []));
 
-        // Empty active inventory → upload template; otherwise keep current data export.
+        // Empty active inventory → Excel upload template with Category dropdown.
         if (! $filters['showRecycle'] && $csv->isActiveInventoryEmpty()) {
-            $filename = 'inventory-template-'.date('Y-m-d-His').'.csv';
+            if (! $csv->hasCategories()) {
+                return redirect('/dashuser?add_category=1#registry-categories')->with(
+                    'error',
+                    'Add at least one category before downloading the inventory template.'
+                );
+            }
 
-            return response()->streamDownload(function () use ($csv, $branches) {
-                $handle = fopen('php://output', 'w');
-                fputcsv($handle, $csv->templateHeaders($branches));
-                fclose($handle);
+            $categories = $csv->activeCategoryNames();
+            $filename = 'inventory-template-'.date('Y-m-d-His').'.xlsx';
+
+            return response()->streamDownload(function () use ($csv, $branches, $categories) {
+                $csv->writeUploadTemplateXlsx($branches, $categories, 'php://output');
             }, $filename, [
-                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             ]);
         }
 
@@ -127,6 +133,57 @@ class ItemsController extends Controller
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
+    }
+
+    public function importInventory(Request $request)
+    {
+        if (! auth()->user()->hasAdminAccess()) {
+            return redirect('/dashboard');
+        }
+
+        $csv = app(InventoryCsvService::class);
+
+        if (! $csv->hasCategories()) {
+            return redirect('/dashuser?add_category=1#registry-categories')->with(
+                'error',
+                'Add at least one category before uploading inventory.'
+            );
+        }
+
+        $request->validate([
+            'csv' => ['required', 'file', 'mimes:csv,txt,xlsx,xls', 'max:4096'],
+        ], [
+            'csv.required' => 'Please choose a CSV or Excel file to upload.',
+            'csv.mimes' => 'Upload must be a .csv or .xlsx file.',
+            'csv.max' => 'File must be 4MB or smaller.',
+        ]);
+
+        $branches = collect(session('compbranch', []));
+        $result = $csv->import($request->file('csv'), $branches, auth()->id());
+
+        if ($result['created'] === 0 && $result['skipped'] === 0 && ! empty($result['errors'])) {
+            return redirect('/items')->with('error', $result['errors'][0]);
+        }
+
+        $message = $result['created'].' item'.($result['created'] === 1 ? '' : 's').' imported';
+        if ($result['skipped'] > 0) {
+            $message .= ', '.$result['skipped'].' row'.($result['skipped'] === 1 ? '' : 's').' skipped';
+        }
+        $message .= '.';
+
+        if (! empty($result['errors'])) {
+            $message .= ' '.implode(' ', array_slice($result['errors'], 0, 5));
+            if (count($result['errors']) > 5) {
+                $message .= ' (+'.(count($result['errors']) - 5).' more)';
+            }
+
+            return redirect('/items')->with(
+                $result['created'] > 0 ? 'success' : 'error',
+                $message
+            );
+        }
+
+        return redirect('/items')->with('success', $message);
     }
 
     public function printInventory(Request $request)

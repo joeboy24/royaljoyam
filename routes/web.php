@@ -65,6 +65,7 @@ Route::get('/dashboard', 'DashController@dashboard');
 Route::get('/config', 'DashController@configurations');
 Route::get('/dashuser', 'DashController@dashuser');
 Route::get('/items/export', 'ItemsController@exportInventory');
+Route::post('/items/import', 'ItemsController@importInventory');
 Route::get('/items/print', 'ItemsController@printInventory');
 Route::post('/items/{id}/transfer', 'ItemsController@transferStock');
 Route::resource('/items', 'ItemsController');

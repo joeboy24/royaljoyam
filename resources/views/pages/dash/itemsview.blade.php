@@ -120,10 +120,25 @@
                       <a href="{{ url('/items/print?' . http_build_query($inventoryListQuery)) }}" target="_blank" rel="noopener" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Print list">
                         <i class="fa fa-print"></i>
                       </a>
-                      <a href="{{ url('/items/export?' . http_build_query($inventoryListQuery)) }}" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="{{ (! $showRecycle && (int) $grandTotalCount === 0) ? 'Download CSV template' : 'Export CSV' }}">
+                      <a href="{{ url('/items/export?' . http_build_query($inventoryListQuery)) }}" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="{{ (! $showRecycle && (int) $grandTotalCount === 0) ? 'Download Excel template' : 'Export CSV' }}">
                         <i class="fa fa-download"></i>
                       </a>
                       @unless ($showRecycle)
+                        <form action="{{ url('/items/import') }}" method="POST" enctype="multipart/form-data" class="inventory-csv-import-form">
+                          @csrf
+                          <label class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Upload CSV / Excel" for="inventory-csv-upload">
+                            <i class="fa fa-upload" aria-hidden="true"></i>
+                            <span class="sr-only">Upload CSV / Excel</span>
+                          </label>
+                          <input
+                            id="inventory-csv-upload"
+                            class="inventory-csv-file"
+                            type="file"
+                            name="csv"
+                            accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            onchange="this.form.submit()"
+                          >
+                        </form>
                         <a href="{{ url('/items?recycle=1') }}" class="inventory-action-btn inventory-action-btn-icon dash-tip" data-tip="Recycle bin">
                           <i class="fa fa-trash"></i>
                         </a>
