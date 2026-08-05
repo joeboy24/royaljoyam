@@ -33,6 +33,17 @@ class CartStockTest extends TestCase
             'updated_at' => now(),
         ]);
 
+        DB::table('company_branches')->insert([
+            'user_id' => '1',
+            'name' => 'Branch A',
+            'loc' => 'Loc 1',
+            'contact' => '0000000001',
+            'tag' => '1',
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
         DB::table('closures')->insert([
             'user_id' => '1',
             'month' => now()->format('Y-m-01'),

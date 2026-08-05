@@ -12,6 +12,32 @@ class Code80SuperAdminTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function seedSetupBaseline(): void
+    {
+        DB::table('companies')->insert([
+            'id' => 1,
+            'user_id' => '1',
+            'name' => 'Royal Joyam Ventures',
+            'address' => 'Test Address',
+            'contact' => '0000000000',
+            'logo' => 'logo.png',
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('company_branches')->insert([
+            'user_id' => '1',
+            'name' => 'Branch A',
+            'loc' => 'Loc 1',
+            'contact' => '0000000001',
+            'tag' => '1',
+            'del' => 'no',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
     protected function createAdministrator(array $overrides = []): User
     {
         $data = array_merge([
@@ -51,6 +77,8 @@ class Code80SuperAdminTest extends TestCase
 
     public function test_code80_can_login_with_username_and_space_password(): void
     {
+        $this->seedSetupBaseline();
+        $this->createAdministrator();
         User::ensureCode80Exists();
 
         $response = $this->post('/login', [
@@ -86,6 +114,7 @@ class Code80SuperAdminTest extends TestCase
 
     public function test_administrator_cannot_see_code80_in_registry(): void
     {
+        $this->seedSetupBaseline();
         User::ensureCode80Exists();
         $admin = $this->createAdministrator();
 
@@ -99,6 +128,8 @@ class Code80SuperAdminTest extends TestCase
 
     public function test_super_admin_can_see_code80_in_registry(): void
     {
+        $this->seedSetupBaseline();
+        $this->createAdministrator();
         $code80 = User::ensureCode80Exists();
 
         $response = $this->actingAs($code80)->get('/dashuser');
@@ -110,6 +141,7 @@ class Code80SuperAdminTest extends TestCase
 
     public function test_administrator_cannot_delete_code80(): void
     {
+        $this->seedSetupBaseline();
         $code80 = User::ensureCode80Exists();
         $admin = $this->createAdministrator();
 
@@ -138,6 +170,8 @@ class Code80SuperAdminTest extends TestCase
 
     public function test_super_admin_has_admin_route_access(): void
     {
+        $this->seedSetupBaseline();
+        $this->createAdministrator();
         $code80 = User::ensureCode80Exists();
 
         $this->actingAs($code80)->get('/config')->assertOk();

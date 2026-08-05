@@ -30,6 +30,14 @@ Route::get('/test_mode', function () {
 
 Route::get('/', 'PagesController@index');
 Route::get('/code80', 'Code80Controller@code80');
+
+Route::get('/setup', 'SetupController@show')->name('setup.show');
+Route::post('/setup/migrate', 'SetupController@migrate')->name('setup.migrate');
+Route::post('/setup/company', 'SetupController@storeCompany')->name('setup.company');
+Route::post('/setup/branch', 'SetupController@storeBranch')->name('setup.branch');
+Route::post('/setup/admin', 'SetupController@storeAdmin')->name('setup.admin');
+Route::post('/setup/skip-admin', 'SetupController@skipAdmin')->name('setup.skip-admin');
+
 Route::get('/expenses', 'ExpensesController@index')->name('expenses.index');
 Route::post('/expenses', 'ExpensesController@store')->name('expenses.store');
 Route::delete('/expenses/{expense}', 'ExpensesController@destroy')->name('expenses.destroy');
