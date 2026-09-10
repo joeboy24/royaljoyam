@@ -108,26 +108,33 @@ class ItemsController extends Controller
             }
 
             $categories = $csv->activeCategoryNames();
-            $filename = 'inventory-template-'.date('Y-m-d-His').'.xlsx';
 
-            try {
-                // Write to a real temp file first — ZipArchive cannot stream to php://output
-                // on many shared hosts (downloads as 0 bytes).
-                $tempPath = $csv->writeUploadTemplateXlsxToTemp($branches, $categories);
-            } catch (\Throwable $e) {
-                report($e);
+            // Prefer Excel (category dropdown). Fall back to CSV when zip/ZipArchive is unavailable.
+            if ($csv->canGenerateXlsx()) {
+                try {
+                    $tempPath = $csv->writeUploadTemplateXlsxToTemp($branches, $categories);
+                    $filename = 'inventory-template-'.date('Y-m-d-His').'.xlsx';
 
-                return redirect('/items')->with(
-                    'error',
-                    'Could not generate the Excel template. Ask your host to enable the PHP zip extension, then try again.'
-                );
+                    return response()
+                        ->download($tempPath, $filename, [
+                            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        ])
+                        ->deleteFileAfterSend(true);
+                } catch (\Throwable $e) {
+                    report($e);
+                    // Continue to CSV fallback below.
+                }
             }
 
-            return response()
-                ->download($tempPath, $filename, [
-                    'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                ])
-                ->deleteFileAfterSend(true);
+            $filename = 'inventory-template-'.date('Y-m-d-His').'.csv';
+
+            return response()->streamDownload(function () use ($csv, $branches, $categories) {
+                $handle = fopen('php://output', 'w');
+                $csv->writeUploadTemplateCsv($handle, $branches, $categories);
+                fclose($handle);
+            }, $filename, [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+            ]);
         }
 
         $items = $this->buildInventoryItemsQuery($filters)->orderBy('id', 'desc')->get();
