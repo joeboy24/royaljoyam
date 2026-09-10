@@ -528,11 +528,11 @@ class InventoryPageTest extends TestCase
         $this->assertStringContainsString('inventory-template-', $response->headers->get('content-disposition'));
         $this->assertStringContainsString('.xlsx', $response->headers->get('content-disposition'));
 
-        $temp = tempnam(sys_get_temp_dir(), 'invtpl');
-        file_put_contents($temp, $response->streamedContent());
+        $file = $response->baseResponse->getFile();
+        $this->assertNotNull($file);
+        $this->assertGreaterThan(0, $file->getSize());
 
-        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($temp);
-        @unlink($temp);
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getPathname());
 
         $sheet = $spreadsheet->getSheetByName('Inventory');
         $this->assertNotNull($sheet);

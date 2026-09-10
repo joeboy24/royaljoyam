@@ -110,11 +110,24 @@ class ItemsController extends Controller
             $categories = $csv->activeCategoryNames();
             $filename = 'inventory-template-'.date('Y-m-d-His').'.xlsx';
 
-            return response()->streamDownload(function () use ($csv, $branches, $categories) {
-                $csv->writeUploadTemplateXlsx($branches, $categories, 'php://output');
-            }, $filename, [
-                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            ]);
+            try {
+                // Write to a real temp file first — ZipArchive cannot stream to php://output
+                // on many shared hosts (downloads as 0 bytes).
+                $tempPath = $csv->writeUploadTemplateXlsxToTemp($branches, $categories);
+            } catch (\Throwable $e) {
+                report($e);
+
+                return redirect('/items')->with(
+                    'error',
+                    'Could not generate the Excel template. Ask your host to enable the PHP zip extension, then try again.'
+                );
+            }
+
+            return response()
+                ->download($tempPath, $filename, [
+                    'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                ])
+                ->deleteFileAfterSend(true);
         }
 
         $items = $this->buildInventoryItemsQuery($filters)->orderBy('id', 'desc')->get();

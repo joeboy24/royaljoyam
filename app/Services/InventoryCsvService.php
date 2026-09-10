@@ -155,20 +155,20 @@ class InventoryCsvService
         $categoryRange = 'Categories!$A$1:$A$'.$lastCategoryRow;
         $maxRow = self::MAX_IMPORT_ROWS + 1;
 
-        for ($row = 2; $row <= $maxRow; $row++) {
-            $validation = $sheet->getCell('C'.$row)->getDataValidation();
-            $validation->setType(DataValidation::TYPE_LIST);
-            $validation->setErrorStyle(DataValidation::STYLE_STOP);
-            $validation->setAllowBlank(false);
-            $validation->setShowInputMessage(true);
-            $validation->setShowErrorMessage(true);
-            $validation->setShowDropDown(true);
-            $validation->setErrorTitle('Invalid category');
-            $validation->setError('Choose a category from the list. Free text is not allowed.');
-            $validation->setPromptTitle('Category');
-            $validation->setPrompt('Select a registered category.');
-            $validation->setFormula1($categoryRange);
-        }
+        // One validation rule for the whole Category column (faster / safer on shared hosts).
+        $validation = $sheet->getCell('C2')->getDataValidation();
+        $validation->setType(DataValidation::TYPE_LIST);
+        $validation->setErrorStyle(DataValidation::STYLE_STOP);
+        $validation->setAllowBlank(false);
+        $validation->setShowInputMessage(true);
+        $validation->setShowErrorMessage(true);
+        $validation->setShowDropDown(true);
+        $validation->setErrorTitle('Invalid category');
+        $validation->setError('Choose a category from the list. Free text is not allowed.');
+        $validation->setPromptTitle('Category');
+        $validation->setPrompt('Select a registered category.');
+        $validation->setFormula1($categoryRange);
+        $validation->setSqref('C2:C'.$maxRow);
 
         $sheet->getStyle('A1:'.$sheet->getHighestColumn().'1')->getFont()->setBold(true);
         foreach (range(1, count($headers)) as $col) {
@@ -181,7 +181,44 @@ class InventoryCsvService
     }
 
     /**
-     * Stream an XLSX upload template to output.
+     * Write an XLSX upload template to a real temp file.
+     *
+     * ZipArchive (used by PhpSpreadsheet) cannot reliably write to php://output
+     * on many shared hosts, which produces 0-byte downloads.
+     *
+     * @param  \Illuminate\Support\Collection<int, object>  $branches
+     * @param  \Illuminate\Support\Collection<int, string>  $categories
+     */
+    public function writeUploadTemplateXlsxToTemp(Collection $branches, Collection $categories): string
+    {
+        $tempBase = tempnam(sys_get_temp_dir(), 'invtpl');
+        if ($tempBase === false) {
+            throw new \RuntimeException('Could not create a temporary file for the Excel template.');
+        }
+
+        $path = $tempBase.'.xlsx';
+        @unlink($tempBase);
+
+        $spreadsheet = $this->buildUploadTemplateSpreadsheet($branches, $categories);
+
+        try {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save($path);
+        } finally {
+            $spreadsheet->disconnectWorksheets();
+            unset($spreadsheet);
+        }
+
+        if (! is_file($path) || filesize($path) === 0) {
+            @unlink($path);
+            throw new \RuntimeException('Excel template was not generated. Ensure the PHP zip extension is enabled.');
+        }
+
+        return $path;
+    }
+
+    /**
+     * @deprecated Prefer writeUploadTemplateXlsxToTemp() for downloads.
      *
      * @param  \Illuminate\Support\Collection<int, object>  $branches
      * @param  \Illuminate\Support\Collection<int, string>  $categories
@@ -189,10 +226,22 @@ class InventoryCsvService
      */
     public function writeUploadTemplateXlsx(Collection $branches, Collection $categories, $outputStream): void
     {
-        $spreadsheet = $this->buildUploadTemplateSpreadsheet($branches, $categories);
-        $writer = new Xlsx($spreadsheet);
-        $writer->save($outputStream);
-        $spreadsheet->disconnectWorksheets();
+        if (is_string($outputStream) && $outputStream !== 'php://output' && $outputStream !== 'php://stdout') {
+            $spreadsheet = $this->buildUploadTemplateSpreadsheet($branches, $categories);
+            $writer = new Xlsx($spreadsheet);
+            $writer->save($outputStream);
+            $spreadsheet->disconnectWorksheets();
+
+            return;
+        }
+
+        $path = $this->writeUploadTemplateXlsxToTemp($branches, $categories);
+
+        try {
+            readfile($path);
+        } finally {
+            @unlink($path);
+        }
     }
 
     /**
