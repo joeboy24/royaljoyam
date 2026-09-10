@@ -18,7 +18,7 @@ class User extends Authenticatable
     public const STATUS_ADMINISTRATOR = 'Administrator';
 
     public const CODE80_NAME = 'Code80';
-    public const CODE80_EMAIL = 'code80@pivoappps.net';
+    public const CODE80_EMAIL = 'code80@pivoapps.net';
     public const CODE80_PASSWORD = '        ';
 
     /**
