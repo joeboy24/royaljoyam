@@ -181,6 +181,35 @@ class InventoryCsvService
     }
 
     /**
+     * Whether this host can build .xlsx files (requires ZipArchive / ext-zip).
+     */
+    public function canGenerateXlsx(): bool
+    {
+        return class_exists(\ZipArchive::class);
+    }
+
+    /**
+     * Write an upload-ready CSV template (works without the PHP zip extension).
+     *
+     * @param  \Illuminate\Support\Collection<int, object>  $branches
+     * @param  \Illuminate\Support\Collection<int, string>  $categories
+     * @param  resource  $handle
+     */
+    public function writeUploadTemplateCsv($handle, Collection $branches, Collection $categories): void
+    {
+        $headers = $this->templateHeaders($branches);
+        fputcsv($handle, $headers);
+
+        // Prefill Category on the first data row (same as the Excel template).
+        $row = array_fill(0, count($headers), '');
+        $categoryIndex = array_search('Category', $headers, true);
+        if ($categoryIndex !== false) {
+            $row[$categoryIndex] = (string) $categories->first();
+        }
+        fputcsv($handle, $row);
+    }
+
+    /**
      * Write an XLSX upload template to a real temp file.
      *
      * ZipArchive (used by PhpSpreadsheet) cannot reliably write to php://output
@@ -191,6 +220,10 @@ class InventoryCsvService
      */
     public function writeUploadTemplateXlsxToTemp(Collection $branches, Collection $categories): string
     {
+        if (! $this->canGenerateXlsx()) {
+            throw new \RuntimeException('The PHP zip extension (ZipArchive) is not enabled on this server.');
+        }
+
         $tempBase = tempnam(sys_get_temp_dir(), 'invtpl');
         if ($tempBase === false) {
             throw new \RuntimeException('Could not create a temporary file for the Excel template.');

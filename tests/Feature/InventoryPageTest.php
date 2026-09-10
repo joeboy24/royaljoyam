@@ -521,34 +521,69 @@ class InventoryPageTest extends TestCase
         $response = $this->actingAs($this->admin)->get('/items/export');
 
         $response->assertOk();
-        $response->assertHeader(
-            'content-type',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        );
         $this->assertStringContainsString('inventory-template-', $response->headers->get('content-disposition'));
-        $this->assertStringContainsString('.xlsx', $response->headers->get('content-disposition'));
 
-        $file = $response->baseResponse->getFile();
-        $this->assertNotNull($file);
-        $this->assertGreaterThan(0, $file->getSize());
+        if (class_exists(\ZipArchive::class)) {
+            $response->assertHeader(
+                'content-type',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            );
+            $this->assertStringContainsString('.xlsx', $response->headers->get('content-disposition'));
 
-        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getPathname());
+            $file = $response->baseResponse->getFile();
+            $this->assertNotNull($file);
+            $this->assertGreaterThan(0, $file->getSize());
 
-        $sheet = $spreadsheet->getSheetByName('Inventory');
-        $this->assertNotNull($sheet);
-        $this->assertSame('Name', $sheet->getCell('A1')->getValue());
-        $this->assertSame('Description', $sheet->getCell('B1')->getValue());
-        $this->assertSame('Category', $sheet->getCell('C1')->getValue());
-        $this->assertSame('General', $sheet->getCell('C2')->getValue());
-        $this->assertSame(
-            \PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST,
-            $sheet->getCell('C2')->getDataValidation()->getType()
-        );
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getPathname());
 
-        $categories = $spreadsheet->getSheetByName('Categories');
-        $this->assertNotNull($categories);
-        $this->assertSame('General', $categories->getCell('A1')->getValue());
-        $spreadsheet->disconnectWorksheets();
+            $sheet = $spreadsheet->getSheetByName('Inventory');
+            $this->assertNotNull($sheet);
+            $this->assertSame('Name', $sheet->getCell('A1')->getValue());
+            $this->assertSame('Description', $sheet->getCell('B1')->getValue());
+            $this->assertSame('Category', $sheet->getCell('C1')->getValue());
+            $this->assertSame('General', $sheet->getCell('C2')->getValue());
+            $this->assertSame(
+                \PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST,
+                $sheet->getCell('C2')->getDataValidation()->getType()
+            );
+
+            $categories = $spreadsheet->getSheetByName('Categories');
+            $this->assertNotNull($categories);
+            $this->assertSame('General', $categories->getCell('A1')->getValue());
+            $spreadsheet->disconnectWorksheets();
+        } else {
+            $response->assertHeader('content-type', 'text/csv; charset=UTF-8');
+            $this->assertStringContainsString('.csv', $response->headers->get('content-disposition'));
+            $content = $response->streamedContent();
+            $this->assertStringContainsString('Name', $content);
+            $this->assertStringContainsString('Description', $content);
+            $this->assertStringContainsString('Category', $content);
+            $this->assertStringContainsString('General', $content);
+        }
+    }
+
+    public function test_empty_inventory_export_falls_back_to_csv_without_zip(): void
+    {
+        if (! class_exists(\ZipArchive::class)) {
+            $this->markTestSkipped('ZipArchive already unavailable in this environment.');
+        }
+
+        $csv = \Mockery::mock(\App\Services\InventoryCsvService::class)->makePartial();
+        $csv->shouldReceive('canGenerateXlsx')->andReturn(false);
+        $csv->shouldReceive('isActiveInventoryEmpty')->andReturn(true);
+        $csv->shouldReceive('hasCategories')->andReturn(true);
+        $csv->shouldReceive('activeCategoryNames')->andReturn(collect(['General']));
+        $this->app->instance(\App\Services\InventoryCsvService::class, $csv);
+
+        $response = $this->actingAs($this->admin)->get('/items/export');
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'text/csv; charset=UTF-8');
+        $this->assertStringContainsString('.csv', $response->headers->get('content-disposition'));
+        $content = $response->streamedContent();
+        $this->assertStringContainsString('Name', $content);
+        $this->assertStringContainsString('Category', $content);
+        $this->assertStringContainsString('General', $content);
     }
 
     public function test_empty_inventory_export_redirects_when_no_categories(): void
