@@ -8,7 +8,8 @@ use App\Models\Company;
 use App\Models\Category;
 use App\Models\CompanyBranch;
 use App\Services\ClosureService;
-use Session;
+use App\Support\BranchQuantities;
+use Illuminate\Support\Facades\Session;
 
 class load_auth
 {
@@ -35,7 +36,7 @@ class load_auth
 
         $branchLabels = ['A', 'B', 'C', 'D', 'E'];
         for ($tag = 1; $tag <= 5; $tag++) {
-            $branch = CompanyBranch::where('tag', $tag)->first();
+            $branch = CompanyBranch::where('tag', $tag)->where('del', 'no')->first();
             $name = $branch ? $branch->name : '';
             Session::put('branch_'.$tag, $name);
             Session::put('branch_'.$branchLabels[$tag - 1], $name);
@@ -43,7 +44,7 @@ class load_auth
 
         Session::put('cats', Category::all());
         Session::put('company', Company::find(1));
-        Session::put('compbranch', CompanyBranch::all());
+        Session::put('compbranch', BranchQuantities::activeBranches());
 
         return $next($request);
     }

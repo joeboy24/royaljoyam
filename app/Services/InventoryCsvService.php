@@ -116,7 +116,8 @@ class InventoryCsvService
         ];
 
         for ($i = 0; $i < $branches->count(); $i++) {
-            $field = 'q'.($i + 1);
+            $tag = (int) ($branches[$i]->tag ?? ($i + 1));
+            $field = 'q'.$tag;
             $row[] = $item->$field ?? 0;
         }
 
@@ -584,8 +585,9 @@ class InventoryCsvService
         $item->thumb_img = 'no_image.png';
 
         for ($i = 0; $i < $branches->count(); $i++) {
-            $field = 'q'.($i + 1);
-            $priceField = 'b'.($i + 1);
+            $tag = (int) ($branches[$i]->tag ?? ($i + 1));
+            $field = 'q'.$tag;
+            $priceField = 'b'.$tag;
             $item->$field = (string) ($data['branch_qtys'][$i] ?? 0);
             $item->$priceField = $data['price'];
         }
