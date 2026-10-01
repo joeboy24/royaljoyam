@@ -175,6 +175,39 @@ class InventoryPageTest extends TestCase
         $response->assertSee('data-tip="Clear filters"', false);
     }
 
+    public function test_inventory_branch_breakdown_hides_deleted_branches_and_keeps_tag_qty(): void
+    {
+        DB::table('company_branches')->where('tag', '2')->update(['del' => 'yes', 'name' => 'Deleted Branch B']);
+
+        $item = $this->createItem([
+            'name' => 'Pipes Stock',
+            'qty' => '10',
+            'q1' => '0',
+            'q2' => '0',
+            'q3' => '10',
+            'b1' => '0',
+            'b2' => '0',
+            'b3' => '6.80',
+        ]);
+
+        $response = $this->actingAs($this->admin)->get('/items');
+
+        $response->assertOk();
+        $response->assertDontSee('Deleted Branch B');
+        $response->assertSee('Branch A');
+        $response->assertSee('Branch C');
+        $response->assertSee('>10</td>', false);
+
+        $edit = $this->actingAs($this->admin)->getJson('/items/'.$item->id.'/edit');
+        $edit->assertOk();
+        $edit->assertJsonPath('branches.0.tag', '1');
+        $edit->assertJsonPath('branches.0.index', 1);
+        $edit->assertJsonPath('branches.1.tag', '3');
+        $edit->assertJsonPath('branches.1.index', 3);
+        $edit->assertJsonPath('branches.1.qty', 10);
+        $this->assertCount(2, $edit->json('branches'));
+    }
+
     public function test_dash_sidebar_highlights_registry_on_registry_page(): void
     {
         $response = $this->actingAs($this->admin)->get('/dashuser');

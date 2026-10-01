@@ -140,12 +140,13 @@
                             <tr>
                             <td>{{$x++}}</td>
                             <td>{{$stk->item->name}}<br><p class="small_p">{{$stk->item->item_no.' - '.$stk->item->desc}}</p></td>
-                            @for ($i = 0; $i < count(session('compbranch')); $i++)
-                                <input type="hidden" value="{{$qval = 'q'.$i+1}}">
+                            @foreach (session('compbranch') as $branch)
+                                @php $tag = (int) $branch->tag; @endphp
+                                <input type="hidden" value="{{$qval = 'q'.$tag}}">
                                 <input type="hidden" name="tvalue" value="{{$qtr = $stk->item->$qval}}">
                                 <input type="hidden" name="tvalue" value="{{$qtr_tot = $qtr_tot + $stk->item->$qval}}">
                                 @foreach (session('sales_history') as $sh)
-                                    @if ($stk->item_id == $sh->item_id && $sh->user_bv == $i+1)
+                                    @if ($stk->item_id == $sh->item_id && (int) $sh->user_bv == $tag)
                                         <input type="hidden" value="{{$qts = $qts + $sh->qty}}">
                                         <input type="hidden" value="{{$tamt = $tamt + $sh->tot}}">
                                         <input type="hidden" value="{{$tprof = $tprof + $sh->profits}}">
@@ -159,7 +160,7 @@
                                 <input type="hidden" value="{{$qts=0}}">
                                 <input type="hidden" value="{{$tamt=0}}">
                                 <input type="hidden" value="{{$tprof=0}}">
-                            @endfor
+                            @endforeach
                             <input type="hidden" value="{{$qtr=0}}">
                             </tr>
 
@@ -168,18 +169,18 @@
                             <tr>
                                 <td></td>
                                 <td><h6>Total</h6></td>
-                                @for ($i = 0; $i < count(session('compbranch')); $i++)
-                                    
+                                @foreach (session('compbranch') as $branch)
+                                    @php $tag = (int) $branch->tag; @endphp
                                     <input type="hidden" name="tvalue" value="{{$qtr_tot = $qtr_tot + $stk->item->$qval}}">
                                     @foreach (session('sales_history') as $sh)
-                                        @if ($sh->user_bv == $i+1)
+                                        @if ((int) $sh->user_bv == $tag)
                                         <input type="hidden" value="{{$qts = $qts + $sh->qty}}">
                                         <input type="hidden" value="{{$tamt = $tamt + $sh->tot}}">
                                         <input type="hidden" value="{{$tprof = $tprof + $sh->profits}}">
                                         @endif
                                     @endforeach
 
-                                    <input type="hidden" value="{{$qval = 'q'.$i+1}}">
+                                    <input type="hidden" value="{{$qval = 'q'.$tag}}">
                                     <td class="ryt avl2 c1"><h6>@if($qts!=0){{number_format($qts)}}@endif</h6></td>
                                     <td class="ryt avl2 c2"><h6>@if($tamt!=0){{number_format($tamt)}}@endif</h6></td>
                                     <td class="added c3">
@@ -190,7 +191,7 @@
                                     <input type="hidden" value="{{$qts=0}}">
                                     <input type="hidden" value="{{$tamt=0}}">
                                     <input type="hidden" value="{{$tprof=0}}">
-                                @endfor
+                                @endforeach
                             </tr>
 
                         </tbody>

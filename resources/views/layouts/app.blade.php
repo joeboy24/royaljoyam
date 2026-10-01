@@ -5,7 +5,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         <link rel="icon" href="/maindir/image/favicon.png" type="image/png">
-        <title>Royal JV </title>
+        <title>Company Assist</title>
         <!-- Bootstrap CSS -->
         <link rel="stylesheet" href="/maindir/css/bootstrap.css">
         <link rel="stylesheet" href="/maindir/vendors/linericon/style.css">

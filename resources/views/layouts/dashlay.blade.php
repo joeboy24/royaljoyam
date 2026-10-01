@@ -6,7 +6,20 @@
   <link rel="apple-touch-icon" sizes="76x76" href="/dashdir/img/apple-icon.png">
   <link rel="icon" type="image/png" href="/dashdir/img/favicon.png">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-  <title>Royal JV</title>
+  @php
+    $brandCompany = session('company');
+    $brandName = optional($brandCompany)->name ?: 'Company Assist';
+    $brandWords = preg_split('/\s+/', trim($brandName)) ?: [];
+    $brandTitle = $brandWords[0] ?? 'Company';
+    $brandSub = trim(implode(' ', array_slice($brandWords, 1)));
+    $brandMark = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $brandTitle) ?: 'CA', 0, 2));
+    $brandLogoFile = trim((string) optional($brandCompany)->logo);
+    $brandLogoUrl = null;
+    if ($brandLogoFile !== '' && \Illuminate\Support\Facades\Storage::disk('public')->exists('ss_imgs/'.$brandLogoFile)) {
+        $brandLogoUrl = asset('storage/ss_imgs/'.$brandLogoFile);
+    }
+  @endphp
+  <title>{{ $brandName }}</title>
   <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no' name='viewport' />
   <!--     Fonts and icons     -->
   <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:400,700|Material+Icons" />
@@ -35,19 +48,7 @@
 
         Tip 2: you can also add an image using data-image tag
       -->
-      @php
-        $brandCompany = session('company');
-        $brandName = optional($brandCompany)->name ?: 'Company Assist';
-        $brandWords = preg_split('/\s+/', trim($brandName)) ?: [];
-        $brandTitle = $brandWords[0] ?? 'Company';
-        $brandSub = trim(implode(' ', array_slice($brandWords, 1)));
-        $brandMark = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $brandTitle) ?: 'CA', 0, 2));
-        $brandLogoFile = trim((string) optional($brandCompany)->logo);
-        $brandLogoUrl = null;
-        if ($brandLogoFile !== '' && \Illuminate\Support\Facades\Storage::disk('public')->exists('ss_imgs/'.$brandLogoFile)) {
-            $brandLogoUrl = asset('storage/ss_imgs/'.$brandLogoFile);
-        }
-      @endphp
+
       <div class="logo dash-sidebar-brand">
         <a href="/dashboard" class="simple-text logo-normal dash-sidebar-brand-link">
           <span class="dash-sidebar-brand-media">

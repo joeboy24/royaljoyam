@@ -26,24 +26,27 @@ class BranchQuantities
     /** @return list<string> */
     public static function activeColumnKeys(): array
     {
-        $count = min(self::activeBranches()->count(), self::MAX_COLUMNS);
-
-        if ($count <= 0) {
-            return [];
-        }
-
-        return array_map(fn (int $i) => 'q'.$i, range(1, $count));
+        return self::activeBranches()
+            ->take(self::MAX_COLUMNS)
+            ->map(fn (CompanyBranch $branch) => 'q'.(int) $branch->tag)
+            ->values()
+            ->all();
     }
 
     public static function columnForBranchTag(int|string $tag): ?string
     {
-        foreach (self::activeBranches()->values() as $index => $branch) {
-            if ((string) $branch->tag === (string) $tag) {
-                return 'q'.($index + 1);
-            }
+        $tag = (string) $tag;
+        $tagInt = (int) $tag;
+
+        if ($tagInt < 1 || $tagInt > self::MAX_COLUMNS) {
+            return null;
         }
 
-        return null;
+        $isActive = self::activeBranches()->contains(
+            fn (CompanyBranch $branch) => (string) $branch->tag === $tag
+        );
+
+        return $isActive ? 'q'.$tagInt : null;
     }
 
     /** @return array<string, int> */

@@ -258,11 +258,11 @@
                                         </tr>
                                       </thead>
                                       <tbody>
-                                        @for ($i = 0; $i < count(session('compbranch')); $i++)
+                                        @foreach (session('compbranch') as $branch)
                                           @php
-                                            $branch = session('compbranch')[$i];
-                                            $qField = 'q'.($i + 1);
-                                            $bField = 'b'.($i + 1);
+                                            $tag = (int) $branch->tag;
+                                            $qField = 'q'.$tag;
+                                            $bField = 'b'.$tag;
                                             $branchQty = (int) ($item->$qField ?? 0);
                                             $branchPrice = $item->$bField ?? 0;
                                           @endphp
@@ -271,7 +271,7 @@
                                             <td class="{{ $branchQty === 0 ? 'branch-qty-zero' : '' }}">{{ $branchQty }}</td>
                                             <td>{{ ($branchPrice !== '' && $branchPrice != 0) ? number_format((float) $branchPrice, 2) : '—' }}</td>
                                           </tr>
-                                        @endfor
+                                        @endforeach
                                       </tbody>
                                     </table>
                                   </td>
@@ -497,13 +497,13 @@
 
                 @if (count(session('compbranch')) > 0)
                   <div class="inventory-edit-branch-grid">
-                    @for ($i = 0; $i < count(session('compbranch')); $i++)
-                      @php $branch = session('compbranch')[$i]; @endphp
+                    @foreach (session('compbranch') as $branch)
+                      @php $tag = (int) $branch->tag; @endphp
                       <label class="inventory-edit-field inventory-edit-field-compact">
                         <span class="inventory-edit-label">{{ $branch->name }} qty</span>
-                        <input type="number" class="inventory-edit-input inventory-edit-branch-qty" name="q{{ $i + 1 }}" id="edit-q-{{ $i + 1 }}" placeholder="0" min="0" step="1" oninput="validateEditBranchQty()" required/>
+                        <input type="number" class="inventory-edit-input inventory-edit-branch-qty" name="q{{ $tag }}" id="edit-q-{{ $tag }}" placeholder="0" min="0" step="1" oninput="validateEditBranchQty()" required/>
                       </label>
-                    @endfor
+                    @endforeach
                   </div>
                 @endif
 
@@ -517,13 +517,13 @@
 
                 @if (count(session('compbranch')) > 0)
                   <div class="inventory-edit-branch-grid">
-                    @for ($i = 0; $i < count(session('compbranch')); $i++)
-                      @php $branch = session('compbranch')[$i]; @endphp
+                    @foreach (session('compbranch') as $branch)
+                      @php $tag = (int) $branch->tag; @endphp
                       <label class="inventory-edit-field inventory-edit-field-compact">
                         <span class="inventory-edit-label">{{ $branch->name }} price (Gh₵)</span>
-                        <input type="number" class="inventory-edit-input" name="b{{ $i + 1 }}" id="edit-b-{{ $i + 1 }}" placeholder="0.00" step="0.01" min="0" required/>
+                        <input type="number" class="inventory-edit-input" name="b{{ $tag }}" id="edit-b-{{ $tag }}" placeholder="0.00" step="0.01" min="0" required/>
                       </label>
-                    @endfor
+                    @endforeach
                   </div>
                 @endif
               </div>
@@ -1260,19 +1260,15 @@
 </style>
 
 <script type="text/javascript">
-  var INVENTORY_BRANCH_COUNT = {{ count(session('compbranch')) }};
-
   function validateEditBranchQty() {
     var generalQty = Number(document.getElementById('editItemQty').value || 0);
     var branchTotal = 0;
     var status = document.getElementById('editBranchStatus');
+    var branchInputs = document.querySelectorAll('.inventory-edit-branch-qty');
 
-    for (var i = 1; i <= INVENTORY_BRANCH_COUNT; i++) {
-      var branchInput = document.getElementById('edit-q-' + i);
-      if (branchInput) {
-        branchTotal += Number(branchInput.value || 0);
-      }
-    }
+    branchInputs.forEach(function(branchInput) {
+      branchTotal += Number(branchInput.value || 0);
+    });
 
     if (!status) {
       return branchTotal <= generalQty;
@@ -1283,7 +1279,7 @@
     if (branchTotal > generalQty) {
       status.textContent = 'Branch totals exceed general quantity (' + branchTotal + ' / ' + generalQty + ').';
       status.classList.add('is-error');
-    } else if (INVENTORY_BRANCH_COUNT > 0) {
+    } else if (branchInputs.length > 0) {
       status.textContent = 'Branch totals are within general quantity (' + branchTotal + ' / ' + generalQty + ').';
       status.classList.add('is-ok');
     } else {

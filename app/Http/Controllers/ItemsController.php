@@ -31,7 +31,7 @@ class ItemsController extends Controller
      */
     public function index(Request $request)
     {
-        if (!auth()->user()->hasAdminAccess()) {
+        if (!$this->authUser()->hasAdminAccess()) {
             return redirect('/dashboard');
         }
 
@@ -90,7 +90,7 @@ class ItemsController extends Controller
 
     public function exportInventory(Request $request)
     {
-        if (!auth()->user()->hasAdminAccess()) {
+        if (!$this->authUser()->hasAdminAccess()) {
             return redirect('/dashboard');
         }
 
@@ -157,7 +157,7 @@ class ItemsController extends Controller
 
     public function importInventory(Request $request)
     {
-        if (! auth()->user()->hasAdminAccess()) {
+        if (!$this->authUser()->hasAdminAccess()) {
             return redirect('/dashboard');
         }
 
@@ -208,7 +208,7 @@ class ItemsController extends Controller
 
     public function printInventory(Request $request)
     {
-        if (!auth()->user()->hasAdminAccess()) {
+        if (!$this->authUser()->hasAdminAccess()) {
             return redirect('/dashboard');
         }
 
@@ -786,7 +786,7 @@ class ItemsController extends Controller
      */
     public function edit($id)
     {
-        if (!auth()->user()->hasAdminAccess()) {
+        if (!$this->authUser()->hasAdminAccess()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -799,14 +799,15 @@ class ItemsController extends Controller
         $branches = session('compbranch', collect());
         $branchPayload = [];
 
-        for ($i = 0; $i < count($branches); $i++) {
-            $qField = 'q' . ($i + 1);
-            $bField = 'b' . ($i + 1);
+        foreach ($branches as $branch) {
+            $tag = (int) $branch->tag;
+            $qField = 'q'.$tag;
+            $bField = 'b'.$tag;
 
             $branchPayload[] = [
-                'index' => $i + 1,
-                'tag' => (string) $branches[$i]->tag,
-                'name' => $branches[$i]->name,
+                'index' => $tag,
+                'tag' => (string) $branch->tag,
+                'name' => $branch->name,
                 'qty' => (int) ($item->$qField ?? 0),
                 'price' => number_format((float) ($item->$bField ?? 0), 2, '.', ''),
             ];
@@ -832,7 +833,7 @@ class ItemsController extends Controller
 
     public function transferStock(Request $request, $id)
     {
-        if (!auth()->user()->hasAdminAccess()) {
+        if (!$this->authUser()->hasAdminAccess()) {
             return redirect('/dashboard');
         }
 
@@ -895,7 +896,7 @@ class ItemsController extends Controller
                 try {
                     $generalQty = max(0, (int) $request->input('qty', 0));
                     $branchQtyTotal = 0;
-                    $branchCount = count(session('compbranch'));
+                    $branches = collect(session('compbranch', []));
 
                     $basePriceInput = $request->input('price');
                     if (!is_numeric($basePriceInput) || (float) $basePriceInput < 0) {
@@ -903,9 +904,10 @@ class ItemsController extends Controller
                     }
                     $basePrice = number_format((float) $basePriceInput, 2, '.', '');
 
-                    for ($i = 1; $i <= $branchCount; $i++) {
-                        $qq = 'q' . $i;
-                        $bb = 'b' . $i;
+                    foreach ($branches as $branch) {
+                        $tag = (int) $branch->tag;
+                        $qq = 'q'.$tag;
+                        $bb = 'b'.$tag;
                         $qtyValue = max(0, (int) $request->input($qq, 0));
                         $branchPriceInput = $request->input($bb, 0);
 
@@ -1028,7 +1030,7 @@ class ItemsController extends Controller
                 if ((string) $user->id === (string) auth()->id()) {
                     return redirect(url()->previous())->with('error', 'Oops...! You cannot delete your own account');
                 }
-                if (($user->isCode80() || $user->isSuperAdmin()) && ! auth()->user()->isSuperAdmin()) {
+                if (($user->isCode80() || $user->isSuperAdmin()) && !$this->authUser()->isSuperAdmin()) {
                     return redirect(url()->previous())->with('error', 'Oops...! Access Denied');
                 }
                 if ($user->isCode80()) {
@@ -1041,7 +1043,7 @@ class ItemsController extends Controller
 
             case 'usr_restore':
                 $user = User::find($id);
-                if ($user && ($user->isCode80() || $user->isSuperAdmin()) && ! auth()->user()->isSuperAdmin()) {
+                if ($user && ($user->isCode80() || $user->isSuperAdmin()) && !$this->authUser()->isSuperAdmin()) {
                     return redirect(url()->previous())->with('error', 'Oops...! Access Denied');
                 }
                 $user->del = 'no';
